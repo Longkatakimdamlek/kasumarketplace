@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -194,52 +197,46 @@ ACCOUNT_SESSION_REMEMBER = True
 # Google OAuth2 Configuration
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
+        'SCOPE': ['profile', 'email'],
         'AUTH_PARAMS': {
             'access_type': 'online',
             'prompt': 'select_account'
         },
         'APP': {
-            'client_id': '304446665368-q899v6aeka96tg91jafv0odsjaell7vs.apps.googleusercontent.com',
-            'secret': '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',
+            'client_id': os.getenv("GOOGLE_CLIENT_ID"),
+            'secret': os.getenv("GOOGLE_CLIENT_SECRET"),
             'key': ''
         }
     },
+
     'facebook': {
         'METHOD': 'oauth2',
         'SCOPE': ['email', 'public_profile'],
         'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
         'INIT_PARAMS': {'cookie': True},
         'FIELDS': [
-            'id',
-            'email',
-            'name',
-            'first_name',
-            'last_name',
+            'id', 'email', 'name', 'first_name', 'last_name'
         ],
         'EXCHANGE_TOKEN': True,
         'VERIFIED_EMAIL': False,
         'VERSION': 'v13.0',
         'APP': {
-            'client_id': 'your-facebook-app-id-here',
-            'secret': 'your-facebook-app-secret-here',
+            'client_id': os.getenv("FACEBOOK_CLIENT_ID"),
+            'secret': os.getenv("FACEBOOK_CLIENT_SECRET"),
             'key': ''
         }
     },
+
     'apple': {
         'APP': {
-            'client_id': 'your-apple-service-id-here',
-            'secret': 'your-apple-team-id-here',
-            'key': 'your-apple-key-id-here',
-            'certificate_key': '''-----BEGIN PRIVATE KEY-----
-your-apple-private-key-here
------END PRIVATE KEY-----'''
+            'client_id': os.getenv("APPLE_CLIENT_ID"),
+            'secret': os.getenv("APPLE_TEAM_ID"),
+            'key': os.getenv("APPLE_KEY_ID"),
+            'certificate_key': os.getenv("APPLE_PRIVATE_KEY")
         }
     }
 }
+
 
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
@@ -248,15 +245,14 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 
 
 # EMAIL CONFIGURATION
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'kasumarketplace@gmail.com'
-EMAIL_HOST_PASSWORD = 'ogsvqcabkqdtvzez'
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-# SERVER_EMAIL = 'server@kasumarketplace.com'
+
 
 OTP_EXPIRY_TIME = 10
 OTP_LENGTH = 6
@@ -268,8 +264,8 @@ OTP_LENGTH = 6
 # RECAPTCHA_PUBLIC_KEY = 'your-recaptcha-site-key-here'
 # RECAPTCHA_PRIVATE_KEY = 'your-recaptcha-secret-key-here'
 # For testing without actual reCAPTCHA validation
-RECAPTCHA_PUBLIC_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'  # Test key
-RECAPTCHA_PRIVATE_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'  # Test key
+RECAPTCHA_PUBLIC_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
+RECAPTCHA_PRIVATE_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'
 
 
 REST_FRAMEWORK = {
