@@ -1,0 +1,162 @@
+{% extends 'vendors/emails/base_email.html' %}
+
+{% block title %}Payout Successful - KasuMarketplace{% endblock %}
+
+{% block email_title %}💰 Payout Processed{% endblock %}
+
+{% block content %}
+<div class="success-box">
+    <p style="margin: 0; font-weight: bold; color: #065f46;">
+        ✅ Your payout has been successfully processed and is on its way to your bank account!
+    </p>
+</div>
+
+<p>Hello {{ vendor.user.first_name|default:"Vendor" }},</p>
+
+<p>
+    Great news! Your payout request has been <strong>successfully processed</strong>. 
+    The funds should appear in your bank account within 1-3 business days.
+</p>
+
+<h2>Payout Details</h2>
+<div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; border-radius: 12px; margin: 25px 0; text-align: center; color: white;">
+    <p style="margin: 0 0 10px 0; font-size: 16px; opacity: 0.9;">Amount Transferred</p>
+    <p style="margin: 0; font-size: 48px; font-weight: bold;">₦{{ payout.amount|floatformat:2 }}</p>
+    <p style="margin: 15px 0 0 0; font-size: 14px; opacity: 0.8;">
+        Processed on {{ payout.processed_at|date:"F d, Y - g:i A" }}
+    </p>
+</div>
+
+<h2>Transaction Information</h2>
+<div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Transaction ID:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace;">
+                {{ payout.transaction_id }}
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Payout Amount:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace; font-size: 18px; color: #10b981;">
+                ₦{{ payout.amount|floatformat:2 }}
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Processing Fee:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace;">
+                ₦0.00
+            </td>
+        </tr>
+        <tr style="border-top: 2px solid #e5e7eb;">
+            <td style="padding: 12px 0 8px 0; color: #6b7280; font-size: 16px;">Net Amount:</td>
+            <td style="padding: 12px 0 8px 0; font-weight: bold; text-align: right; font-family: monospace; font-size: 20px; color: #059669;">
+                ₦{{ payout.amount|floatformat:2 }}
+            </td>
+        </tr>
+    </table>
+</div>
+
+<h2>Bank Account Details</h2>
+<div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin: 20px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; color: #1e40af;">Bank Name:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">{{ payout.bank_account.bank_name }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #1e40af;">Account Number:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace;">{{ payout.bank_account.account_number }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #1e40af;">Account Name:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">{{ payout.bank_account.account_name }}</td>
+        </tr>
+    </table>
+</div>
+
+<h2>What Happens Next?</h2>
+<div style="margin: 25px 0;">
+    <div style="padding: 15px; background-color: #f0fdf4; margin-bottom: 12px; border-radius: 8px;">
+        <p style="margin: 0; font-weight: bold; color: #065f46;">
+            🏦 Bank Processing (1-3 Business Days)
+        </p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Your bank will credit the funds to your account. Processing time varies by bank.
+        </p>
+    </div>
+    <div style="padding: 15px; background-color: #eff6ff; margin-bottom: 12px; border-radius: 8px;">
+        <p style="margin: 0; font-weight: bold; color: #1e40af;">
+            📱 Check Your Account
+        </p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Monitor your bank account for the incoming credit notification
+        </p>
+    </div>
+    <div style="padding: 15px; background-color: #fef3c7; border-radius: 8px;">
+        <p style="margin: 0; font-weight: bold; color: #92400e;">
+            📧 Confirmation
+        </p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            You'll receive a confirmation from your bank once the funds are credited
+        </p>
+    </div>
+</div>
+
+<h2>Your Wallet Summary</h2>
+<div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Previous Balance:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace;">
+                ₦{{ previous_balance|floatformat:2 }}
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Withdrawn:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace; color: #ef4444;">
+                -₦{{ payout.amount|floatformat:2 }}
+            </td>
+        </tr>
+        <tr style="border-top: 2px solid #e5e7eb;">
+            <td style="padding: 12px 0 8px 0; color: #6b7280; font-size: 16px;">Current Balance:</td>
+            <td style="padding: 12px 0 8px 0; font-weight: bold; text-align: right; font-family: monospace; font-size: 18px; color: #6a3df5;">
+                ₦{{ current_balance|floatformat:2 }}
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ base_url }}/vendors/wallet/transactions/" class="button">
+        View Transaction History →
+    </a>
+</div>
+
+<div class="info-box">
+    <p style="margin: 0; font-size: 14px;">
+        <strong>💡 Important Notes:</strong><br>
+        • Keep this email for your records<br>
+        • Quote the Transaction ID if you need to contact support<br>
+        • Typical processing time is 1-3 business days<br>
+        • Weekends and holidays may extend processing time
+    </p>
+</div>
+
+<div class="divider"></div>
+
+<h2>Need Help?</h2>
+<p style="font-size: 14px; color: #6b7280;">
+    If you don't receive the funds within 3 business days, please contact us with your 
+    Transaction ID: <strong style="color: #111827; font-family: monospace;">{{ payout.transaction_id }}</strong>
+</p>
+
+<p style="margin-top: 30px;">
+    Thank you for selling on KasuMarketplace!
+</p>
+
+<p>
+    Best regards,<br>
+    <strong>The KasuMarketplace Finance Team</strong>
+</p>
+{% endblock %}

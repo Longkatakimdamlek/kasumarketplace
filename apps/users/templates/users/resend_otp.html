@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Resend verification code - KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="margin-bottom: 20px;">
+        <i class="fas fa-envelope" style="font-size: 48px; color: #6366f1;"></i>
+    </div>
+    <h2>Resend verification code</h2>
+    <p class="subtitle">Enter the email address you used to sign up and we'll send a new verification code.</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <label for="{{ form.email.id_for_label }}">Email address</label>
+        <input
+            type="email"
+            name="email"
+            id="{{ form.email.id_for_label }}"
+            value="{{ form.email.value|default_if_none:'' }}"
+            required
+            class="input"
+            placeholder="you@example.com"
+        />
+        {% if form.email.errors %}
+            <div class="error-message">{{ form.email.errors.0 }}</div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 12px;">Resend code</button>
+    </form>
+
+    <div style="margin-top: 16px;">
+        <a href="{% url 'users:verify_otp' %}">Back to verification</a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var el = document.getElementById('{{ form.email.id_for_label }}');
+        if (el) { el.focus(); }
+    });
+</script>
+{% endblock %}

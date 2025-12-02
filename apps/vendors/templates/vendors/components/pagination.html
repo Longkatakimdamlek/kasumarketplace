@@ -1,0 +1,132 @@
+<!-- Reusable Pagination Component
+Usage in templates:
+{% include 'vendors/components/pagination.html' with page_obj=products %}
+
+Requires Django Paginator page_obj context variable
+Shows: Previous, page numbers, Next
+Mobile-friendly with simplified view on small screens
+-->
+
+{% if page_obj.has_other_pages %}
+<nav class="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-8 pt-4">
+    
+    <!-- Mobile View: Simple Previous/Next -->
+    <div class="flex w-0 flex-1 sm:hidden">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" 
+           class="inline-flex items-center pr-4 text-sm font-medium text-gray-700 hover:text-primary">
+            <svg class="mr-2 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+            </svg>
+            Previous
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- Mobile: Page Info -->
+    <div class="flex sm:hidden">
+        <p class="text-sm text-gray-700">
+            Page <span class="font-semibold">{{ page_obj.number }}</span> of 
+            <span class="font-semibold">{{ page_obj.paginator.num_pages }}</span>
+        </p>
+    </div>
+    
+    <!-- Mobile: Next -->
+    <div class="flex w-0 flex-1 justify-end sm:hidden">
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" 
+           class="inline-flex items-center pl-4 text-sm font-medium text-gray-700 hover:text-primary">
+            Next
+            <svg class="ml-2 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- Desktop View: Full Pagination -->
+    <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+        <div>
+            <p class="text-sm text-gray-700">
+                Showing 
+                <span class="font-semibold">{{ page_obj.start_index }}</span>
+                to 
+                <span class="font-semibold">{{ page_obj.end_index }}</span>
+                of 
+                <span class="font-semibold">{{ page_obj.paginator.count }}</span>
+                results
+            </p>
+        </div>
+        
+        <div>
+            <nav class="isolate inline-flex -space-x-px rounded-lg shadow-sm" aria-label="Pagination">
+                
+                <!-- Previous Button -->
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" 
+                   class="relative inline-flex items-center rounded-l-lg px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:text-primary transition-colors">
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="ml-1">Previous</span>
+                </a>
+                {% else %}
+                <span class="relative inline-flex items-center rounded-l-lg px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 cursor-not-allowed">
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="ml-1">Previous</span>
+                </span>
+                {% endif %}
+                
+                <!-- Page Numbers -->
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <!-- Current Page -->
+                    <span class="relative z-10 inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-primary border border-primary focus:z-20">
+                        {{ num }}
+                    </span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <!-- Nearby Pages -->
+                    <a href="?page={{ num }}" 
+                       class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:text-primary transition-colors">
+                        {{ num }}
+                    </a>
+                    {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                    <!-- First and Last Page Always Shown -->
+                    <a href="?page={{ num }}" 
+                       class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:text-primary transition-colors">
+                        {{ num }}
+                    </a>
+                    {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                    <!-- Ellipsis -->
+                    <span class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300">
+                        ...
+                    </span>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- Next Button -->
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" 
+                   class="relative inline-flex items-center rounded-r-lg px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:text-primary transition-colors">
+                    <span class="mr-1">Next</span>
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </a>
+                {% else %}
+                <span class="relative inline-flex items-center rounded-r-lg px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 cursor-not-allowed">
+                    <span class="mr-1">Next</span>
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </span>
+                {% endif %}
+                
+            </nav>
+        </div>
+    </div>
+    
+</nav>
+{% endif %}

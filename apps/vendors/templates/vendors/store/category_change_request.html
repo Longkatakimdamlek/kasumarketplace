@@ -1,0 +1,210 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Request Category Change - KasuMarketplace{% endblock %}
+
+{% block page_title %}Category Change Request{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+    
+    <!-- Back Button -->
+    <a href="{% url 'vendors:store_settings' %}" 
+       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Store Settings
+    </a>
+    
+    <!-- Warning Header -->
+    <div class="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-8 mb-8">
+        <div class="flex items-start">
+            <svg class="w-8 h-8 text-yellow-600 mt-0.5 mr-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <div>
+                <h1 class="text-2xl font-bold text-yellow-900 mb-2">Request Category Change</h1>
+                <p class="text-yellow-800">
+                    Category changes require admin approval to maintain marketplace integrity. 
+                    Please provide a valid reason for your request.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Current Category -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+        <h2 class="font-bold text-gray-900 mb-4">Current Category</h2>
+        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+                <p class="text-sm text-gray-600 mb-1">Main Category</p>
+                <p class="text-2xl font-bold text-gray-900">{{ store.main_category.name }}</p>
+            </div>
+            <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Request Form -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Submit Change Request</h2>
+        
+        <form method="post" x-data="{ submitting: false }">
+            {% csrf_token %}
+            
+            <!-- New Category -->
+            <div class="mb-6">
+                <label for="{{ form.new_category.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    New Category
+                    <span class="text-red-500">*</span>
+                </label>
+                <select name="{{ form.new_category.html_name }}"
+                        id="{{ form.new_category.id_for_label }}"
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        required>
+                    <option value="">Select new category</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if category.id == store.main_category.id %}disabled{% endif %}>
+                        {{ category.name }}
+                        {% if category.id == store.main_category.id %}(Current){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if form.new_category.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.new_category.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Reason -->
+            <div class="mb-6">
+                <label for="{{ form.reason.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Reason for Change
+                    <span class="text-red-500">*</span>
+                </label>
+                <textarea name="{{ form.reason.html_name }}"
+                          id="{{ form.reason.id_for_label }}"
+                          rows="6"
+                          placeholder="Explain why you need to change your store category. Be specific and detailed."
+                          class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                          required></textarea>
+                {% if form.reason.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.reason.errors.0 }}</p>
+                {% else %}
+                <p class="mt-2 text-xs text-gray-500">
+                    Minimum 50 characters. Valid reasons include: business pivot, incorrect initial selection, expanded product range.
+                </p>
+                {% endif %}
+            </div>
+            
+            <!-- Additional Info -->
+            <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div>
+                        <h4 class="text-sm font-semibold text-blue-900 mb-1">What happens next?</h4>
+                        <ul class="text-xs text-blue-800 space-y-1">
+                            <li>• Admin will review your request within 2-3 business days</li>
+                            <li>• You'll receive an email with the decision</li>
+                            <li>• If approved, category will be updated automatically</li>
+                            <li>• If rejected, you can submit a new request after 30 days</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Acknowledgment -->
+            <div class="mb-6">
+                <label class="flex items-start">
+                    <input type="checkbox" 
+                           name="acknowledge"
+                           required
+                           class="mt-1 w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary">
+                    <span class="ml-3 text-sm text-gray-700">
+                        I understand that category changes are subject to admin approval and false or misleading 
+                        information may result in account suspension.
+                        <span class="text-red-500">*</span>
+                    </span>
+                </label>
+            </div>
+            
+            <!-- Submit Buttons -->
+            <div class="flex gap-4">
+                <button type="submit" 
+                        :disabled="submitting"
+                        @click="submitting = true"
+                        class="flex-1 py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                    <span x-show="!submitting">Submit Request</span>
+                    <span x-show="submitting" class="flex items-center justify-center">
+                        <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Submitting...
+                    </span>
+                </button>
+                
+                <a href="{% url 'vendors:store_settings' %}" 
+                   class="px-8 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- FAQ -->
+    <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="font-bold text-gray-900 mb-4">Common Questions</h3>
+        
+        <div class="space-y-4" x-data="{ openFaq: null }">
+            <div class="border-b border-gray-200 pb-4">
+                <button @click="openFaq = openFaq === 1 ? null : 1" 
+                        class="flex items-center justify-between w-full text-left">
+                    <span class="text-sm font-semibold text-gray-900">How long does approval take?</span>
+                    <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 1 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="openFaq === 1" x-collapse class="mt-2 text-sm text-gray-600">
+                    Most requests are reviewed within 2-3 business days. Complex cases may take up to 5 business days.
+                </div>
+            </div>
+            
+            <div class="border-b border-gray-200 pb-4">
+                <button @click="openFaq = openFaq === 2 ? null : 2" 
+                        class="flex items-center justify-between w-full text-left">
+                    <span class="text-sm font-semibold text-gray-900">What are valid reasons?</span>
+                    <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 2 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="openFaq === 2" x-collapse class="mt-2 text-sm text-gray-600">
+                    Valid reasons include: business model changes, incorrect initial category selection, expansion into new product areas. 
+                    Requests for fraudulent purposes will be denied.
+                </div>
+            </div>
+            
+            <div class="pb-4">
+                <button @click="openFaq = openFaq === 3 ? null : 3" 
+                        class="flex items-center justify-between w-full text-left">
+                    <span class="text-sm font-semibold text-gray-900">Can I request again if denied?</span>
+                    <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 3 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="openFaq === 3" x-collapse class="mt-2 text-sm text-gray-600">
+                    Yes, but you must wait 30 days before submitting a new request. Use this time to address the 
+                    reasons for denial mentioned in the admin's feedback.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}

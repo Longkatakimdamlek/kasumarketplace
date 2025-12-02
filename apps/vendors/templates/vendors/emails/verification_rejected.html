@@ -1,0 +1,95 @@
+{% extends 'vendors/emails/base_email.html' %}
+
+{% block title %}Verification Update - KasuMarketplace{% endblock %}
+
+{% block email_title %}Verification Update{% endblock %}
+
+{% block content %}
+<div class="warning-box">
+    <p style="margin: 0; font-weight: bold; color: #92400e;">
+        ⚠️ Your vendor verification requires attention
+    </p>
+</div>
+
+<p>Hello {{ vendor.user.first_name|default:"Vendor" }},</p>
+
+<p>
+    Thank you for your interest in selling on KasuMarketplace. After reviewing your 
+    vendor application, we've identified some issues that need to be addressed before 
+    we can approve your account.
+</p>
+
+<h2>Reason for Review</h2>
+<div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
+    <p style="margin: 0; color: #78350f; font-size: 15px; line-height: 1.6;">
+        {{ rejection_reason|default:"We need additional information to complete your verification. Please review the requirements and resubmit your application." }}
+    </p>
+</div>
+
+<h2>Common Issues</h2>
+<p>Here are some common reasons verification may be delayed:</p>
+
+<ul style="padding-left: 20px; color: #374151; line-height: 1.8;">
+    <li><strong>Incomplete Information</strong> - Missing or incorrect NIN/BVN details</li>
+    <li><strong>Document Quality</strong> - Blurry or unreadable ID documents</li>
+    <li><strong>Mismatched Information</strong> - Names don't match across documents</li>
+    <li><strong>Store Details</strong> - Insufficient or inappropriate store description</li>
+    <li><strong>Category Issues</strong> - Selected category doesn't match products</li>
+</ul>
+
+<h2>What You Need to Do</h2>
+<div style="margin: 25px 0;">
+    <div style="padding: 15px; background-color: #eff6ff; margin-bottom: 12px; border-radius: 8px;">
+        <p style="margin: 0; font-weight: bold; color: #1e40af;">1. Review the Feedback</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Check the specific issues mentioned in the rejection reason above
+        </p>
+    </div>
+    <div style="padding: 15px; background-color: #eff6ff; margin-bottom: 12px; border-radius: 8px;">
+        <p style="margin: 0; font-weight: bold; color: #1e40af;">2. Update Your Information</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Correct any errors or provide additional required documents
+        </p>
+    </div>
+    <div style="padding: 15px; background-color: #eff6ff; border-radius: 8px;">
+        <p style="margin: 0; font-weight: bold; color: #1e40af;">3. Resubmit for Review</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Once corrected, we'll review your application again within 24 hours
+        </p>
+    </div>
+</div>
+
+<div style="text-align: center;">
+    <a href="{{ base_url }}/vendors/verification/" class="button">
+        Update Verification Details →
+    </a>
+</div>
+
+<div class="info-box">
+    <p style="margin: 0; font-size: 14px;">
+        <strong>Need Help?</strong><br>
+        If you're unsure about what needs to be corrected, our support team is ready to assist you. 
+        Contact us at <a href="mailto:support@kasumarketplace.com" style="color: #3b82f6;">support@kasumarketplace.com</a>
+    </p>
+</div>
+
+<div class="divider"></div>
+
+<h2>Important Notes</h2>
+<p style="font-size: 14px; color: #6b7280;">
+    • You can resubmit your verification as many times as needed<br>
+    • Make sure all information matches your official documents exactly<br>
+    • Ensure uploaded photos are clear and all text is readable<br>
+    • Verification typically completes within 24 hours of resubmission
+</p>
+
+<p style="margin-top: 30px;">
+    We appreciate your patience and look forward to welcoming you as a verified seller 
+    on KasuMarketplace once these issues are resolved.
+</p>
+
+<p>
+    Best regards,<br>
+    <strong>The KasuMarketplace Verification Team</strong>
+</p>
+{% endblock %}

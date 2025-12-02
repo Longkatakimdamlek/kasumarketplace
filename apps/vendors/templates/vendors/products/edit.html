@@ -1,0 +1,296 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Edit Product - KasuMarketplace{% endblock %}
+
+{% block page_title %}Edit Product{% endblock %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto">
+    
+    <!-- Back Button -->
+    <a href="{% url 'vendors:product_list' %}" 
+       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Products
+    </a>
+    
+    <!-- Form Card -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        
+        <form method="post" 
+              enctype="multipart/form-data" 
+              x-data="{
+                  submitting: false,
+                  mainCategory: '{{ product.main_category.id }}',
+                  subcategory: '{{ product.subcategory.id }}',
+                  subcategories: {{ subcategories_json|safe }},
+                  attributes: {{ attributes_json|safe }},
+                  existingImages: {{ product.images.all|length }},
+                  
+                  async loadSubcategories(mainCategoryId) {
+                      if (!mainCategoryId) {
+                          this.subcategories = [];
+                          this.subcategory = '';
+                          this.attributes = [];
+                          return;
+                      }
+                      
+                      try {
+                          const response = await fetch(`/vendors/ajax/subcategories/?main_category_id=${mainCategoryId}`);
+                          const data = await response.json();
+                          this.subcategories = data.subcategories || [];
+                      } catch (error) {
+                          console.error('Error loading subcategories:', error);
+                      }
+                  },
+                  
+                  async loadAttributes(subcategoryId) {
+                      if (!subcategoryId) {
+                          this.attributes = [];
+                          return;
+                      }
+                      
+                      try {
+                          const response = await fetch(`/vendors/ajax/attributes/?subcategory_id=${subcategoryId}`);
+                          const data = await response.json();
+                          this.attributes = data.attributes || [];
+                      } catch (error) {
+                          console.error('Error loading attributes:', error);
+                      }
+                  }
+              }"
+              @submit="submitting = true">
+            {% csrf_token %}
+            
+            <!-- Header with Actions -->
+            <div class="flex items-center justify-between mb-6 pb-6 border-b border-gray-200">
+                <h1 class="text-2xl font-bold text-gray-900">Editing: {{ product.name }}</h1>
+                <a href="{% url 'vendors:product_delete' product.id %}" 
+                   class="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors">
+                    Delete Product
+                </a>
+            </div>
+            
+            <!-- Basic Information -->
+            <div class="mb-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Basic Information</h2>
+                
+                <div class="mb-6">
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                        Product Name <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           name="{{ form.name.html_name }}"
+                           id="{{ form.name.id_for_label }}"
+                           value="{{ form.name.value }}"
+                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                           required>
+                </div>
+                
+                <div class="mb-6">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                        Description <span class="text-red-500">*</span>
+                    </label>
+                    <textarea name="{{ form.description.html_name }}"
+                              id="{{ form.description.id_for_label }}"
+                              rows="5"
+                              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                              required>{{ form.description.value }}</textarea>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Main Category</label>
+                        <input type="text" 
+                               value="{{ product.main_category.name }}"
+                               disabled
+                               class="w-full px-4 py-3 border-2 border-gray-200 bg-gray-50 rounded-lg text-gray-600">
+                        <p class="mt-2 text-xs text-gray-500">Category is locked and cannot be changed</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.subcategory.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                            Subcategory <span class="text-red-500">*</span>
+                        </label>
+                        <select name="{{ form.subcategory.html_name }}"
+                                id="{{ form.subcategory.id_for_label }}"
+                                x-model="subcategory"
+                                @change="loadAttributes($event.target.value)"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                                required>
+                            <template x-for="sub in subcategories" :key="sub.id">
+                                <option :value="sub.id" 
+                                        x-text="sub.name"
+                                        :selected="sub.id == subcategory"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dynamic Attributes -->
+            <div class="mb-8" x-show="attributes.length > 0">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Product Specifications</h2>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <template x-for="attr in attributes" :key="attr.id">
+                        <div>
+                            <label :for="'attr_' + attr.id" 
+                                   class="block text-sm font-semibold text-gray-900 mb-2"
+                                   x-text="attr.name + (attr.is_required ? ' *' : '')"></label>
+                            
+                            <!-- Text/Number Input -->
+                            <template x-if="attr.field_type === 'text' || attr.field_type === 'number'">
+                                <input :type="attr.field_type"
+                                       :name="'attr_' + attr.id"
+                                       :id="'attr_' + attr.id"
+                                       :value="attr.current_value || ''"
+                                       :required="attr.is_required"
+                                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue">
+                            </template>
+                            
+                            <!-- Dropdown -->
+                            <template x-if="attr.field_type === 'select'">
+                                <select :name="'attr_' + attr.id"
+                                        :id="'attr_' + attr.id"
+                                        :required="attr.is_required"
+                                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue">
+                                    <option value="">Select...</option>
+                                    <template x-for="option in (attr.choices || '').split(',')" :key="option">
+                                        <option :value="option.trim()" 
+                                                :selected="option.trim() === attr.current_value"
+                                                x-text="option.trim()"></option>
+                                    </template>
+                                </select>
+                            </template>
+                            
+                            <!-- Checkbox -->
+                            <template x-if="attr.field_type === 'checkbox'">
+                                <label class="flex items-center">
+                                    <input type="checkbox"
+                                           :name="'attr_' + attr.id"
+                                           :id="'attr_' + attr.id"
+                                           value="true"
+                                           :checked="attr.current_value === 'true' || attr.current_value === true"
+                                           class="w-4 h-4 text-soft-blue border-gray-300 rounded focus:ring-soft-blue">
+                                    <span class="ml-2 text-sm text-gray-700" x-text="attr.help_text || 'Yes'"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <!-- Pricing -->
+            <div class="mb-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Pricing & Inventory</h2>
+                
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div>
+                        <label for="{{ form.price.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                            Price (₦) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" 
+                               name="{{ form.price.html_name }}"
+                               id="{{ form.price.id_for_label }}"
+                               value="{{ form.price.value }}"
+                               step="0.01"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                               required>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.compare_at_price.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                            Compare Price (₦)
+                        </label>
+                        <input type="number" 
+                               name="{{ form.compare_at_price.html_name }}"
+                               id="{{ form.compare_at_price.id_for_label }}"
+                               value="{{ form.compare_at_price.value|default:'' }}"
+                               step="0.01"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.stock_quantity.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                            Stock <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" 
+                               name="{{ form.stock_quantity.html_name }}"
+                               id="{{ form.stock_quantity.id_for_label }}"
+                               value="{{ form.stock_quantity.value }}"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                               required>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Existing Images -->
+            {% if product.images.all %}
+            <div class="mb-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Current Images</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {% for image in product.images.all %}
+                    <div class="relative group">
+                        <img src="{{ image.image.url }}" 
+                             alt="{{ product.name }}"
+                             class="w-full aspect-square object-cover rounded-lg">
+                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded-lg flex items-center justify-center">
+                            <button type="button" 
+                                    onclick="if(confirm('Delete this image?')) { /* Add delete logic */ }"
+                                    class="opacity-0 group-hover:opacity-100 px-3 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Add New Images -->
+            <div class="mb-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Add New Images</h2>
+                {{ formset.management_form }}
+                <div class="grid md:grid-cols-3 gap-4">
+                    {% for form in formset %}
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
+                        {{ form.image }}
+                        {{ form.id }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Status -->
+            <div class="mb-8">
+                <label class="flex items-center">
+                    <input type="checkbox" 
+                           name="{{ form.is_active.html_name }}"
+                           {% if product.is_active %}checked{% endif %}
+                           class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary">
+                    <span class="ml-3 text-sm font-semibold text-gray-900">Product is active and visible</span>
+                </label>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex gap-4">
+                <button type="submit" 
+                        :disabled="submitting"
+                        class="flex-1 py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50">
+                    <span x-show="!submitting">Save Changes</span>
+                    <span x-show="submitting">Saving...</span>
+                </button>
+                <a href="{% url 'vendors:product_list' %}" 
+                   class="px-8 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

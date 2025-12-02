@@ -1,0 +1,249 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Student Verification - KasuMarketplace{% endblock %}
+
+{% block page_title %}Student Verification{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto">
+    
+    <!-- Back Button -->
+    <a href="{% url 'vendors:verification_center' %}" 
+       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Verification Center
+    </a>
+    
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-pink-accent/10 to-light-purple/5 rounded-xl p-8 mb-8 border border-pink-accent/20">
+        <div class="flex items-center mb-4">
+            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
+                <svg class="w-8 h-8 text-pink-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+                    <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <h1 class="text-2xl font-bold text-gray-900">Student Verification</h1>
+                <p class="text-gray-600">Step 4 of 5 • Optional Benefits</p>
+            </div>
+        </div>
+        <p class="text-gray-700">
+            Verify your student status to unlock special benefits, lower fees, and exclusive promotions!
+        </p>
+    </div>
+    
+    <!-- Benefits Card -->
+    <div class="bg-white rounded-xl shadow-lg border-2 border-pink-accent/20 p-8 mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <svg class="w-6 h-6 text-pink-accent mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd"/>
+            </svg>
+            Student Benefits
+        </h2>
+        
+        <div class="grid sm:grid-cols-2 gap-4 mb-6">
+            <div class="flex items-start bg-gradient-to-br from-pink-accent/5 to-transparent rounded-lg p-4">
+                <svg class="w-5 h-5 text-pink-accent mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <h3 class="font-semibold text-gray-900 text-sm">50% Lower Fees</h3>
+                    <p class="text-xs text-gray-600 mt-1">Pay only 2.5% instead of 5%</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start bg-gradient-to-br from-light-purple/5 to-transparent rounded-lg p-4">
+                <svg class="w-5 h-5 text-light-purple mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <h3 class="font-semibold text-gray-900 text-sm">Priority Support</h3>
+                    <p class="text-xs text-gray-600 mt-1">Faster response times</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start bg-gradient-to-br from-soft-blue/5 to-transparent rounded-lg p-4">
+                <svg class="w-5 h-5 text-soft-blue mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <h3 class="font-semibold text-gray-900 text-sm">Exclusive Promos</h3>
+                    <p class="text-xs text-gray-600 mt-1">Student-only marketing</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-4">
+                <svg class="w-5 h-5 text-primary mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <h3 class="font-semibold text-gray-900 text-sm">Badge Recognition</h3>
+                    <p class="text-xs text-gray-600 mt-1">"Student Seller" tag</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Form Card -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        
+        <form method="post" enctype="multipart/form-data" x-data="{ submitting: false, fileName: '' }">
+            {% csrf_token %}
+            
+            <!-- Institution Name -->
+            <div class="mb-6">
+                <label for="{{ form.institution.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Institution Name
+                    <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       name="{{ form.institution.html_name }}"
+                       id="{{ form.institution.id_for_label }}"
+                       placeholder="e.g., University of Lagos"
+                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-accent focus:border-pink-accent transition-all"
+                       required>
+                {% if form.institution.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.institution.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Student ID -->
+            <div class="mb-6">
+                <label for="{{ form.student_id.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Student ID / Matric Number
+                    <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       name="{{ form.student_id.html_name }}"
+                       id="{{ form.student_id.id_for_label }}"
+                       placeholder="e.g., 190401234"
+                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-accent focus:border-pink-accent transition-all"
+                       required>
+                {% if form.student_id.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.student_id.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Graduation Year -->
+            <div class="mb-6">
+                <label for="{{ form.graduation_year.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Expected Graduation Year
+                    <span class="text-red-500">*</span>
+                </label>
+                <select name="{{ form.graduation_year.html_name }}"
+                        id="{{ form.graduation_year.id_for_label }}"
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-accent focus:border-pink-accent transition-all"
+                        required>
+                    <option value="">Select year</option>
+                    {% for year in "2024,2025,2026,2027,2028,2029,2030"|split:"," %}
+                    <option value="{{ year }}">{{ year }}</option>
+                    {% endfor %}
+                </select>
+                {% if form.graduation_year.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.graduation_year.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- ID Card Upload -->
+            <div class="mb-6">
+                <label for="{{ form.id_card.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Student ID Card (Photo)
+                    <span class="text-red-500">*</span>
+                </label>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-pink-accent transition-colors">
+                    <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <label for="{{ form.id_card.id_for_label }}" class="cursor-pointer">
+                        <span class="text-pink-accent font-semibold hover:text-pink-accent/80">Upload ID card</span>
+                        <span class="text-gray-600"> or drag and drop</span>
+                    </label>
+                    <input type="file" 
+                           name="{{ form.id_card.html_name }}"
+                           id="{{ form.id_card.id_for_label }}"
+                           accept="image/*"
+                           class="hidden"
+                           required
+                           @change="fileName = $event.target.files[0]?.name || ''">
+                    <p class="text-xs text-gray-500 mt-2">PNG, JPG up to 5MB. Ensure text is clearly visible.</p>
+                    <p x-show="fileName" x-text="'Selected: ' + fileName" class="text-sm text-pink-accent mt-2"></p>
+                </div>
+                {% if form.id_card.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.id_card.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Info Box -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div>
+                        <h4 class="text-sm font-semibold text-blue-900 mb-1">Verification Process</h4>
+                        <ul class="text-xs text-blue-800 space-y-1">
+                            <li>• Admin will review your documents within 24-48 hours</li>
+                            <li>• You'll receive an email once approved</li>
+                            <li>• Student benefits activate immediately upon approval</li>
+                            <li>• Valid until graduation year + 1 year grace period</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="flex gap-4">
+                <button type="submit" 
+                        @click="submitting = true"
+                        :disabled="submitting"
+                        class="flex-1 py-4 bg-gradient-to-r from-pink-accent to-light-purple text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                    <span x-show="!submitting">Submit for Verification</span>
+                    <span x-show="submitting" class="flex items-center justify-center">
+                        <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Uploading...
+                    </span>
+                </button>
+                
+                <a href="{% url 'vendors:verification_center' %}" 
+                   class="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors">
+                    Skip for Now
+                </a>
+            </div>
+            
+        </form>
+        
+    </div>
+    
+    <!-- FAQ -->
+    <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="font-bold text-gray-900 mb-4">Common Questions</h3>
+        
+        <div class="space-y-3 text-sm">
+            <div>
+                <p class="font-semibold text-gray-900 mb-1">Can I apply if I graduated recently?</p>
+                <p class="text-gray-600">Yes! You have up to 1 year after graduation to enjoy student benefits.</p>
+            </div>
+            
+            <div class="pt-3 border-t border-gray-200">
+                <p class="font-semibold text-gray-900 mb-1">What if my ID card expired?</p>
+                <p class="text-gray-600">Upload it anyway along with an admission letter or course registration slip.</p>
+            </div>
+            
+            <div class="pt-3 border-t border-gray-200">
+                <p class="font-semibold text-gray-900 mb-1">Is this required to start selling?</p>
+                <p class="text-gray-600">No, it's optional. You can skip this and apply later from your profile settings.</p>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}

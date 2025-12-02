@@ -1,0 +1,161 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Delete Product - KasuMarketplace{% endblock %}
+
+{% block page_title %}Delete Product{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto">
+    
+    <!-- Back Button -->
+    <a href="{% url 'vendors:product_detail' product.id %}" 
+       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Cancel
+    </a>
+    
+    <!-- Warning Card -->
+    <div class="bg-white rounded-xl shadow-lg border-2 border-red-300 overflow-hidden">
+        
+        <!-- Header -->
+        <div class="bg-red-600 text-white p-6">
+            <div class="flex items-center">
+                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <h1 class="text-2xl font-bold">Delete Product?</h1>
+                    <p class="text-red-100 mt-1">This action cannot be undone</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Preview -->
+        <div class="p-6 border-b border-gray-200 bg-gray-50">
+            <div class="flex items-center space-x-4">
+                {% if product.images.first %}
+                <img src="{{ product.images.first.image.url }}" 
+                     alt="{{ product.name }}"
+                     class="w-20 h-20 object-cover rounded-lg">
+                {% else %}
+                <div class="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                {% endif %}
+                <div>
+                    <h2 class="font-bold text-gray-900 text-lg">{{ product.name }}</h2>
+                    <p class="text-gray-600 text-sm">₦{{ product.price|floatformat:2 }} • {{ product.stock_quantity }} in stock</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Consequences -->
+        <div class="p-6">
+            <h3 class="font-bold text-gray-900 mb-4">What will be deleted:</h3>
+            <ul class="space-y-3 mb-6">
+                <li class="flex items-start text-sm">
+                    <svg class="w-5 h-5 text-red-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="text-gray-700">
+                        <strong class="text-gray-900">Product listing</strong> will be permanently removed
+                    </span>
+                </li>
+                <li class="flex items-start text-sm">
+                    <svg class="w-5 h-5 text-red-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="text-gray-700">
+                        <strong class="text-gray-900">All {{ product.images.count }} product image{{ product.images.count|pluralize }}</strong> will be deleted
+                    </span>
+                </li>
+                <li class="flex items-start text-sm">
+                    <svg class="w-5 h-5 text-red-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="text-gray-700">
+                        <strong class="text-gray-900">Product specifications</strong> and attributes will be lost
+                    </span>
+                </li>
+                <li class="flex items-start text-sm">
+                    <svg class="w-5 h-5 text-red-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="text-gray-700">
+                        <strong class="text-gray-900">Sales history</strong> data will be preserved but product cannot be reactivated
+                    </span>
+                </li>
+            </ul>
+            
+            <!-- Alternative -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div>
+                        <h4 class="text-sm font-semibold text-yellow-900 mb-1">Consider deactivating instead</h4>
+                        <p class="text-xs text-yellow-800 mb-3">
+                            You can mark the product as inactive to hide it from customers without losing any data.
+                        </p>
+                        <a href="{% url 'vendors:product_edit' product.id %}" 
+                           class="text-xs font-semibold text-yellow-700 hover:text-yellow-900">
+                            Edit product settings →
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Confirmation Form -->
+            <form method="post" x-data="{ confirmed: false, deleting: false }">
+                {% csrf_token %}
+                
+                <!-- Confirmation Checkbox -->
+                <label class="flex items-start mb-6 cursor-pointer">
+                    <input type="checkbox" 
+                           x-model="confirmed"
+                           required
+                           class="mt-1 w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                    <span class="ml-3 text-sm text-gray-700">
+                        I understand this action is <strong class="text-red-600">permanent and cannot be undone</strong>. 
+                        All product data will be deleted forever.
+                    </span>
+                </label>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-4">
+                    <button type="submit" 
+                            :disabled="!confirmed || deleting"
+                            @click="deleting = true"
+                            class="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white text-lg font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span x-show="!deleting">Yes, Delete Product</span>
+                        <span x-show="deleting" class="flex items-center justify-center">
+                            <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Deleting...
+                        </span>
+                    </button>
+                    
+                    <a href="{% url 'vendors:product_detail' product.id %}" 
+                       class="flex-1 text-center py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+            
+        </div>
+        
+    </div>
+    
+</div>
+
+{% endblock %}

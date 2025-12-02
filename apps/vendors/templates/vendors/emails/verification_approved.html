@@ -1,0 +1,138 @@
+{% extends 'vendors/emails/base_email.html' %}
+
+{% block title %}Verification Approved - Start Selling! - KasuMarketplace{% endblock %}
+
+{% block email_title %}🎉 You're Approved!{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 20px 0;">
+    <div style="display: inline-block; width: 100px; height: 100px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+        <span style="font-size: 50px;">✓</span>
+    </div>
+</div>
+
+<h1 style="text-align: center; color: #10b981; font-size: 32px; margin-bottom: 10px;">
+    Congratulations, {{ vendor.user.first_name }}!
+</h1>
+
+<p style="text-align: center; font-size: 18px; color: #6b7280; margin-bottom: 30px;">
+    Your vendor account has been approved. You can now start selling on KasuMarketplace!
+</p>
+
+<div class="success-box">
+    <p style="margin: 0; font-weight: bold; color: #065f46;">
+        🚀 Your store is now LIVE and customers can discover your products!
+    </p>
+</div>
+
+<h2>What This Means</h2>
+<p>
+    You've successfully completed all verification requirements. Your vendor account is now 
+    <strong>fully activated</strong> and you have access to all selling features:
+</p>
+
+<div style="margin: 25px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 12px; background-color: #f0fdf4; border-radius: 8px 8px 0 0;">
+                <span style="font-size: 24px; margin-right: 10px;">✅</span>
+                <strong>Add Products</strong> - List unlimited items in your store
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 12px; background-color: #ecfdf5;">
+                <span style="font-size: 24px; margin-right: 10px;">✅</span>
+                <strong>Receive Orders</strong> - Start getting sales from customers
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 12px; background-color: #d1fae5;">
+                <span style="font-size: 24px; margin-right: 10px;">✅</span>
+                <strong>Manage Inventory</strong> - Track stock and update products
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 12px; background-color: #a7f3d0; border-radius: 0 0 8px 8px;">
+                <span style="font-size: 24px; margin-right: 10px;">✅</span>
+                <strong>Receive Payments</strong> - Earnings deposited to your wallet
+            </td>
+        </tr>
+    </table>
+</div>
+
+<h2>Your Store Information</h2>
+<div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Store Name:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">{{ vendor.store.name }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Category:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">{{ vendor.store.main_category.name }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Store URL:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right; word-break: break-all;">
+                <a href="{{ base_url }}/shop/{{ vendor.store.slug }}/" style="color: #6a3df5;">
+                    kasumarketplace.com/shop/{{ vendor.store.slug }}
+                </a>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<h2>Get Started in 3 Easy Steps</h2>
+<div style="margin: 25px 0;">
+    <div style="padding: 15px; border-left: 4px solid #6a3df5; background-color: #f5f3ff; margin-bottom: 15px; border-radius: 4px;">
+        <p style="margin: 0; font-weight: bold; color: #5b21b6;">Step 1: Add Your First Product</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Create compelling listings with great photos and detailed descriptions
+        </p>
+    </div>
+    <div style="padding: 15px; border-left: 4px solid #4b8bff; background-color: #eff6ff; margin-bottom: 15px; border-radius: 4px;">
+        <p style="margin: 0; font-weight: bold; color: #1e40af;">Step 2: Optimize Your Store</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Add a banner, write a compelling description, set competitive prices
+        </p>
+    </div>
+    <div style="padding: 15px; border-left: 4px solid #10b981; background-color: #f0fdf4; border-radius: 4px;">
+        <p style="margin: 0; font-weight: bold; color: #065f46;">Step 3: Start Selling!</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Share your store link and watch the orders come in
+        </p>
+    </div>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ base_url }}/vendors/products/create/" class="button" style="font-size: 18px; padding: 16px 32px;">
+        🚀 Add Your First Product
+    </a>
+</div>
+
+<div class="info-box">
+    <p style="margin: 0; font-size: 14px;">
+        <strong>💡 Pro Tip:</strong> Sellers who add at least 5 products in their first week 
+        get 3x more visibility and sales! Don't wait - start listing now.
+    </p>
+</div>
+
+<div class="divider"></div>
+
+<h2>Need Help Getting Started?</h2>
+<p>Our support team is here to help you succeed:</p>
+<ul style="padding-left: 20px; color: #374151;">
+    <li style="margin-bottom: 8px;">📚 <a href="{{ base_url }}/help/" style="color: #6a3df5;">Visit our Help Center</a></li>
+    <li style="margin-bottom: 8px;">📧 Email us at <a href="mailto:vendors@kasumarketplace.com" style="color: #6a3df5;">vendors@kasumarketplace.com</a></li>
+    <li style="margin-bottom: 8px;">💬 Chat with us via the dashboard</li>
+</ul>
+
+<p style="font-size: 18px; margin-top: 30px;">
+    We're excited to have you as part of the KasuMarketplace community!
+</p>
+
+<p>
+    Best of luck with your sales,<br>
+    <strong>The KasuMarketplace Team</strong>
+</p>
+{% endblock %}

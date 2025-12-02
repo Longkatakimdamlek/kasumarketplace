@@ -1,0 +1,232 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Profile - KasuMarketplace{% endblock %}
+
+{% block page_title %}Profile{% endblock %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto">
+    
+    <!-- Profile Header -->
+    <div class="bg-gradient-to-r from-primary to-soft-blue rounded-xl shadow-lg p-8 mb-8 text-white">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-4xl font-bold border-4 border-white/30">
+                    {{ vendor.user.first_name.0|upper|default:"V" }}{{ vendor.user.last_name.0|upper|default:"" }}
+                </div>
+                <div class="ml-6">
+                    <h1 class="text-3xl font-bold mb-2">{{ vendor.user.get_full_name|default:"Vendor" }}</h1>
+                    <p class="text-blue-100 mb-2">{{ vendor.user.email }}</p>
+                    <div class="flex items-center space-x-3">
+                        {% if vendor.can_sell %}
+                        <span class="inline-flex items-center px-3 py-1 bg-green-500 text-white text-sm font-bold rounded-full">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            Verified Seller
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-3 py-1 bg-yellow-500 text-white text-sm font-bold rounded-full">
+                            Verification Pending
+                        </span>
+                        {% endif %}
+                        {% if vendor.is_student %}
+                        <span class="inline-flex items-center px-3 py-1 bg-pink-accent text-white text-sm font-bold rounded-full">
+                            🎓 Student
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <a href="{% url 'vendors:profile_edit' %}" 
+               class="px-6 py-3 bg-white text-primary font-bold rounded-lg hover:shadow-xl transition-all">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Edit Profile
+            </a>
+        </div>
+    </div>
+    
+    <div class="grid lg:grid-cols-3 gap-8">
+        
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Personal Information -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-6">Personal Information</h2>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">First Name</p>
+                        <p class="font-semibold text-gray-900">{{ vendor.user.first_name|default:"—" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Last Name</p>
+                        <p class="font-semibold text-gray-900">{{ vendor.user.last_name|default:"—" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Email</p>
+                        <p class="font-semibold text-gray-900">{{ vendor.user.email }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Phone</p>
+                        <p class="font-semibold text-gray-900">{{ vendor.phone|default:"—" }}</p>
+                    </div>
+                    {% if vendor.date_of_birth %}
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Date of Birth</p>
+                        <p class="font-semibold text-gray-900">{{ vendor.date_of_birth|date:"M d, Y" }}</p>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Member Since</p>
+                        <p class="font-semibold text-gray-900">{{ vendor.created_at|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Verification Status -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-6">Verification Status</h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 {% if vendor.nin_verified %}text-green-600{% else %}text-gray-400{% endif %} mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <div>
+                                <p class="font-semibold text-gray-900">NIN Verification</p>
+                                <p class="text-xs text-gray-600">National Identification Number</p>
+                            </div>
+                        </div>
+                        {% if vendor.nin_verified %}
+                        {% include 'vendors/components/verification_badge.html' with status="completed" label="Verified" size="sm" show_icon=True %}
+                        {% else %}
+                        {% include 'vendors/components/verification_badge.html' with status="pending" label="Pending" size="sm" show_icon=True %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 {% if vendor.bvn_verified %}text-green-600{% else %}text-gray-400{% endif %} mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <div>
+                                <p class="font-semibold text-gray-900">BVN Verification</p>
+                                <p class="text-xs text-gray-600">Bank Verification Number</p>
+                            </div>
+                        </div>
+                        {% if vendor.bvn_verified %}
+                        {% include 'vendors/components/verification_badge.html' with status="completed" label="Verified" size="sm" show_icon=True %}
+                        {% else %}
+                        {% include 'vendors/components/verification_badge.html' with status="pending" label="Pending" size="sm" show_icon=True %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 {% if vendor.store %}text-green-600{% else %}text-gray-400{% endif %} mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <div>
+                                <p class="font-semibold text-gray-900">Store Setup</p>
+                                <p class="text-xs text-gray-600">Store configuration</p>
+                            </div>
+                        </div>
+                        {% if vendor.store %}
+                        {% include 'vendors/components/verification_badge.html' with status="completed" label="Complete" size="sm" show_icon=True %}
+                        {% else %}
+                        {% include 'vendors/components/verification_badge.html' with status="not_started" label="Not Started" size="sm" show_icon=True %}
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <a href="{% url 'vendors:verification_center' %}" 
+                   class="block mt-4 text-center px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors">
+                    View Verification Center
+                </a>
+            </div>
+            
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            
+            <!-- Quick Stats -->
+            <div class="bg-gradient-to-br from-primary/5 to-soft-blue/5 rounded-xl p-6 border border-primary/10">
+                <h3 class="font-bold text-gray-900 mb-4">Your Activity</h3>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600">Products</span>
+                            <span class="text-2xl font-bold text-primary">{{ vendor.store.products.count|default:0 }}</span>
+                        </div>
+                        {% include 'vendors/components/progress_bar.html' with percentage=75 color="purple" size="sm" %}
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600">Orders</span>
+                            <span class="text-2xl font-bold text-green-600">{{ vendor.total_orders|default:0 }}</span>
+                        </div>
+                        {% include 'vendors/components/progress_bar.html' with percentage=60 color="green" size="sm" %}
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600">Rating</span>
+                            <span class="text-2xl font-bold text-yellow-500">4.8 ⭐</span>
+                        </div>
+                        {% include 'vendors/components/progress_bar.html' with percentage=96 color="yellow" size="sm" %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Account Actions -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="font-bold text-gray-900 mb-4">Account Actions</h3>
+                <div class="space-y-3">
+                    <a href="{% url 'password_change' %}" 
+                       class="block px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 transition-colors">
+                        Change Password
+                    </a>
+                    <a href="{% url 'vendors:profile_edit' %}" 
+                       class="block px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 transition-colors">
+                        Update Information
+                    </a>
+                    <a href="{% url 'vendors:verification_center' %}" 
+                       class="block px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 transition-colors">
+                        Verification Status
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Account Info -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="font-bold text-gray-900 mb-4">Account Details</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Account ID</span>
+                        <span class="font-mono font-semibold text-gray-900">{{ vendor.id|slice:":8" }}...</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Join Date</span>
+                        <span class="font-semibold text-gray-900">{{ vendor.created_at|date:"M Y" }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Last Login</span>
+                        <span class="font-semibold text-gray-900">{{ vendor.user.last_login|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+    </div>
+    
+</div>
+
+{% endblock %}

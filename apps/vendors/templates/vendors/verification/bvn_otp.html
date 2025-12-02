@@ -1,0 +1,166 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Enter BVN OTP - KasuMarketplace{% endblock %}
+
+{% block page_title %}BVN OTP Verification{% endblock %}
+
+{% block content %}
+
+<div class="max-w-xl mx-auto">
+    
+    <!-- Back Button -->
+    <a href="{% url 'vendors:bvn_entry' %}" 
+       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back
+    </a>
+    
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <div class="w-20 h-20 bg-gradient-to-br from-soft-blue to-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Bank Verification Code</h1>
+        <p class="text-gray-600">
+            We've sent a 6-digit code to 
+            <span class="font-semibold text-gray-900">****{{ vendor.phone|slice:"-4:" }}</span>
+        </p>
+    </div>
+    
+    <!-- OTP Form Card -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        
+        <form method="post" 
+              x-data="{ 
+                  otp: ['', '', '', '', '', ''],
+                  submitting: false,
+                  timeLeft: 600
+              }"
+              x-init="
+                  setInterval(() => {
+                      if (timeLeft > 0) timeLeft--;
+                  }, 1000);
+                  $refs.input0.focus();
+              "
+              @submit="submitting = true">
+            {% csrf_token %}
+            
+            <!-- OTP Input Boxes -->
+            <div class="flex justify-center gap-3 mb-6">
+                {% for i in "012345" %}
+                <input type="text" 
+                       maxlength="1"
+                       x-ref="input{{ i }}"
+                       x-model="otp[{{ i }}]"
+                       @input="
+                           $event.target.value = $event.target.value.replace(/[^0-9]/g, '');
+                           if ($event.target.value && {{ i }} < 5) {
+                               $refs.input{{ i|add:'1' }}.focus();
+                           }
+                       "
+                       @keydown.backspace="
+                           if (!otp[{{ i }}] && {{ i }} > 0) {
+                               $refs.input{{ i|add:'-1' }}.focus();
+                           }
+                       "
+                       @paste.prevent="
+                           const pasteData = $event.clipboardData.getData('text').replace(/[^0-9]/g, '');
+                           const digits = pasteData.split('').slice(0, 6);
+                           digits.forEach((digit, idx) => {
+                               if (idx < 6) {
+                                   otp[idx] = digit;
+                                   if (idx === digits.length - 1 && idx < 5) {
+                                       $refs['input' + (idx + 1)].focus();
+                                   }
+                               }
+                           });
+                       "
+                       class="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue transition-all"
+                       required>
+                {% endfor %}
+            </div>
+            
+            <!-- Hidden field for backend -->
+            <input type="hidden" name="otp" :value="otp.join('')">
+            
+            {% if form.otp.errors %}
+            <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p class="text-sm text-red-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    {{ form.otp.errors.0 }}
+                </p>
+            </div>
+            {% endif %}
+            
+            <!-- Timer -->
+            <div class="text-center mb-6">
+                <p class="text-sm text-gray-600">
+                    Code expires in 
+                    <span class="font-bold text-soft-blue" x-text="Math.floor(timeLeft / 60) + ':' + (timeLeft % 60).toString().padStart(2, '0')"></span>
+                </p>
+                <div class="mt-2 w-full bg-gray-200 rounded-full h-1.5">
+                    <div class="bg-soft-blue h-1.5 rounded-full transition-all duration-1000" 
+                         :style="`width: ${(timeLeft / 600) * 100}%`"></div>
+                </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <button type="submit" 
+                    :disabled="otp.join('').length < 6 || submitting"
+                    class="w-full py-4 bg-gradient-to-r from-soft-blue to-primary text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                <span x-show="!submitting">Verify Bank Account</span>
+                <span x-show="submitting" class="flex items-center justify-center">
+                    <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Verifying...
+                </span>
+            </button>
+            
+        </form>
+        
+        <!-- Resend OTP -->
+        <div class="mt-6 pt-6 border-t border-gray-200 text-center">
+            <p class="text-sm text-gray-600 mb-3">Didn't receive the code?</p>
+            <form method="post" action="{% url 'vendors:bvn_resend_otp' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" 
+                        class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Resend Code
+                </button>
+            </form>
+        </div>
+        
+    </div>
+    
+    <!-- Tips -->
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex items-start">
+            <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+            <div>
+                <h4 class="text-sm font-semibold text-blue-900 mb-1">Tips</h4>
+                <ul class="text-xs text-blue-800 space-y-1">
+                    <li>• Check your SMS inbox and spam folder</li>
+                    <li>• The code is valid for 10 minutes</li>
+                    <li>• You can paste the code directly</li>
+                    <li>• Ensure you're using the phone number linked to your BVN</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}

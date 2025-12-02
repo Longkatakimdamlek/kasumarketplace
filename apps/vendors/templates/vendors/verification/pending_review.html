@@ -1,0 +1,240 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Under Review - KasuMarketplace{% endblock %}
+
+{% block page_title %}Verification Review{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+    
+    <!-- Header with Animation -->
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-32 h-32 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full shadow-2xl mb-6"
+             x-data="{ rotate: 0 }"
+             x-init="setInterval(() => rotate = (rotate + 1) % 360, 10)"
+             :style="`transform: rotate(${rotate}deg)`">
+            <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        
+        <h1 class="text-4xl font-bold text-gray-900 mb-3">Application Under Review</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+            Great work! You've completed all verification steps. Our team is reviewing your application.
+        </p>
+    </div>
+    
+    <!-- Timeline Card -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">What Happens Next?</h2>
+        
+        <div class="space-y-6">
+            <!-- Step 1 -->
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-4 flex-1">
+                    <h3 class="font-bold text-gray-900 mb-1">Application Submitted ✓</h3>
+                    <p class="text-sm text-gray-600">All your verification documents have been received</p>
+                    <p class="text-xs text-green-600 mt-1">Completed {{ vendor.verification_submitted_at|timesince }} ago</p>
+                </div>
+            </div>
+            
+            <div class="ml-6 border-l-2 border-dashed border-yellow-300 h-8"></div>
+            
+            <!-- Step 2 -->
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-yellow-500 text-white rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-4 flex-1">
+                    <h3 class="font-bold text-gray-900 mb-1">Admin Review in Progress</h3>
+                    <p class="text-sm text-gray-600">Our compliance team is verifying your documents</p>
+                    <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-yellow-800">Estimated time remaining</span>
+                            <span class="text-xs font-bold text-yellow-900">12-24 hours</span>
+                        </div>
+                        <div class="w-full bg-yellow-200 rounded-full h-2">
+                            <div class="bg-yellow-500 h-2 rounded-full animate-pulse" style="width: 60%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ml-6 border-l-2 border-dashed border-gray-300 h-8"></div>
+            
+            <!-- Step 3 -->
+            <div class="flex items-start opacity-50">
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 bg-gray-300 text-white rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-4 flex-1">
+                    <h3 class="font-bold text-gray-900 mb-1">Approval & Activation</h3>
+                    <p class="text-sm text-gray-600">You'll receive an email and can start selling immediately</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- What We're Checking -->
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center mb-4">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <h3 class="ml-3 font-bold text-gray-900">Identity Verified</h3>
+            </div>
+            <ul class="space-y-2 text-sm text-gray-600">
+                <li class="flex items-center">
+                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    NIN validation complete
+                </li>
+                <li class="flex items-center">
+                    <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    BVN verification successful
+                </li>
+            </ul>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center mb-4">
+                <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-yellow-600 animate-spin" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <h3 class="ml-3 font-bold text-gray-900">Being Reviewed</h3>
+            </div>
+            <ul class="space-y-2 text-sm text-gray-600">
+                <li class="flex items-center">
+                    <div class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Store information review
+                </li>
+                <li class="flex items-center">
+                    <div class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Product category verification
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Notification Preferences -->
+    <div class="bg-gradient-to-br from-soft-blue/10 to-primary/5 rounded-xl p-8 border border-soft-blue/20 mb-8">
+        <div class="flex items-start">
+            <svg class="w-6 h-6 text-soft-blue mt-0.5 mr-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+            </svg>
+            <div class="flex-1">
+                <h3 class="font-bold text-gray-900 mb-2">We'll Notify You</h3>
+                <p class="text-sm text-gray-700 mb-4">
+                    You'll receive notifications via email and SMS at 
+                    <span class="font-semibold">{{ vendor.user.email }}</span> and 
+                    <span class="font-semibold">{{ vendor.phone }}</span>
+                </p>
+                <div class="flex items-center space-x-4">
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" checked class="w-4 h-4 text-soft-blue rounded mr-2">
+                        <span>Email notifications</span>
+                    </label>
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" checked class="w-4 h-4 text-soft-blue rounded mr-2">
+                        <span>SMS alerts</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="grid sm:grid-cols-2 gap-4">
+        <a href="{% url 'vendors:verification_center' %}" 
+           class="inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+            View Verification Status
+        </a>
+        
+        <a href="{% url 'vendors:dashboard' %}" 
+           class="inline-flex items-center justify-center px-6 py-4 bg-white border-2 border-gray-300 text-gray-700 text-lg font-bold rounded-lg hover:bg-gray-50 transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            Go to Dashboard
+        </a>
+    </div>
+    
+    <!-- FAQ -->
+    <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
+        
+        <div class="space-y-4" x-data="{ openFaq: null }">
+            <div class="border-b border-gray-200 pb-4">
+                <button @click="openFaq = openFaq === 1 ? null : 1" 
+                        class="flex items-center justify-between w-full text-left">
+                    <span class="text-sm font-semibold text-gray-900">How long does review take?</span>
+                    <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 1 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="openFaq === 1" x-collapse class="mt-2 text-sm text-gray-600">
+                    Most applications are reviewed within 12-24 hours. Complex cases may take up to 48 hours. 
+                    You'll be notified immediately once approved.
+                </div>
+            </div>
+            
+            <div class="border-b border-gray-200 pb-4">
+                <button @click="openFaq = openFaq === 2 ? null : 2" 
+                        class="flex items-center justify-between w-full text-left">
+                    <span class="text-sm font-semibold text-gray-900">Can I start listing products now?</span>
+                    <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 2 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="openFaq === 2" x-collapse class="mt-2 text-sm text-gray-600">
+                    Not yet. You'll gain full access to add products and receive orders once your application is approved. 
+                    Use this time to plan your product catalog!
+                </div>
+            </div>
+            
+            <div class="pb-4">
+                <button @click="openFaq = openFaq === 3 ? null : 3" 
+                        class="flex items-center justify-between w-full text-left">
+                    <span class="text-sm font-semibold text-gray-900">What if my application is rejected?</span>
+                    <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 3 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="openFaq === 3" x-collapse class="mt-2 text-sm text-gray-600">
+                    We'll send you specific feedback on what needs to be corrected. You can resubmit your application 
+                    with the required changes. Don't worry, rejections are rare and usually easy to fix!
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}

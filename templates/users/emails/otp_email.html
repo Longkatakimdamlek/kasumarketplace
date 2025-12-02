@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Verify Your Email - KasuMarketplace</title>
+    <style>
+        /* Email Client Reset */
+        body, table, td, a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+        
+        /* General Styles */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f6f6f7;
+        }
+        
+        /* Container */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        
+        /* Header */
+        .email-header {
+            background: linear-gradient(135deg, #008060 0%, #006e52 100%);
+            padding: 40px 40px 30px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+        
+        /* Content */
+        .email-content {
+            padding: 50px 40px;
+            color: #202223;
+        }
+        
+        .email-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #202223;
+            margin: 0 0 16px;
+            line-height: 1.3;
+        }
+        
+        .email-text {
+            font-size: 16px;
+            color: #6d7175;
+            line-height: 1.6;
+            margin: 0 0 24px;
+        }
+        
+        /* OTP Code Box */
+        .otp-container {
+            background-color: #f6f6f7;
+            border: 2px dashed #e1e3e5;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            margin: 32px 0;
+        }
+        
+        .otp-label {
+            font-size: 14px;
+            color: #6d7175;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        .otp-code {
+            font-size: 42px;
+            font-weight: 700;
+            color: #008060;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            user-select: all;
+        }
+        
+        .otp-expiry {
+            font-size: 13px;
+            color: #bf0711;
+            margin-top: 16px;
+            font-weight: 500;
+        }
+        
+        /* Info Box */
+        .info-box {
+            background-color: #e3f5ff;
+            border-left: 4px solid #0084ff;
+            padding: 16px 20px;
+            margin: 24px 0;
+            border-radius: 8px;
+        }
+        
+        .info-box p {
+            margin: 0;
+            font-size: 14px;
+            color: #202223;
+            line-height: 1.5;
+        }
+        
+        .info-icon {
+            color: #0084ff;
+            font-weight: 700;
+            margin-right: 4px;
+        }
+        
+        /* Security Notice */
+        .security-notice {
+            background-color: #fff4e6;
+            border-left: 4px solid #ff9500;
+            padding: 16px 20px;
+            margin: 24px 0;
+            border-radius: 8px;
+        }
+        
+        .security-notice p {
+            margin: 0;
+            font-size: 14px;
+            color: #202223;
+            line-height: 1.5;
+        }
+        
+        .warning-icon {
+            color: #ff9500;
+            font-weight: 700;
+            margin-right: 4px;
+        }
+        
+        /* Footer */
+        .email-footer {
+            background-color: #f6f6f7;
+            padding: 32px 40px;
+            text-align: center;
+            color: #6d7175;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .email-footer a {
+            color: #008060;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .email-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .social-links {
+            margin: 20px 0 16px;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            margin: 0 8px;
+            color: #6d7175;
+            font-size: 20px;
+            text-decoration: none;
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: #e1e3e5;
+            margin: 24px 0;
+        }
+        
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-header,
+            .email-content,
+            .email-footer {
+                padding: 30px 24px !important;
+            }
+            
+            .email-title {
+                font-size: 22px !important;
+            }
+            
+            .otp-code {
+                font-size: 36px !important;
+                letter-spacing: 6px !important;
+            }
+            
+            .otp-container {
+                padding: 24px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f6f6f7; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <!-- Email Container -->
+                <table class="email-container" cellspacing="0" cellpadding="0" border="0" width="600">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td class="email-header">
+                            <a href="#" class="logo" style="color: #ffffff; text-decoration: none;">
+                                KasuMarketplace
+                            </a>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td class="email-content">
+                            <!-- Welcome Message -->
+                            <h1 class="email-title">Verify your email address</h1>
+                            <p class="email-text">
+                                Hi{% if user.username %} {{ user.username }}{% endif %},
+                            </p>
+                            <p class="email-text">
+                                Thank you for signing up with KasuMarketplace! To complete your registration and secure your account, please use the verification code below:
+                            </p>
+                            
+                            <!-- OTP Code Box -->
+                            <div class="otp-container">
+                                <div class="otp-label">Your Verification Code</div>
+                                <p class="otp-code">{{ otp }}</p>
+                                <div class="otp-expiry">
+                                    ⏱ This code will expire in {{ expiry_time }} minutes
+                                </div>
+                            </div>
+                            
+                            <!-- Info Box -->
+                            <div class="info-box">
+                                <p>
+                                    <span class="info-icon">ℹ️</span>
+                                    <strong>What to do next:</strong><br>
+                                    Enter this code on the verification page to activate your account and start using KasuMarketplace.
+                                </p>
+                            </div>
+                            
+                            <!-- Security Notice -->
+                            <div class="security-notice">
+                                <p>
+                                    <span class="warning-icon">⚠️</span>
+                                    <strong>Security reminder:</strong><br>
+                                    Never share this code with anyone. KasuMarketplace staff will never ask for your verification code. If you didn't request this code, please ignore this email or contact our support team.
+                                </p>
+                            </div>
+                            
+                            <!-- Additional Help -->
+                            <p class="email-text" style="margin-top: 32px;">
+                                If you're having trouble with the verification process, our support team is here to help. Simply reply to this email or visit our help center.
+                            </p>
+                            
+                            <p class="email-text" style="margin-bottom: 0;">
+                                Best regards,<br>
+                                <strong>The KasuMarketplace Team</strong>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td class="email-footer">
+                            <!-- Social Links -->
+                            <div class="social-links">
+                                <a href="#" title="Facebook">📘</a>
+                                <a href="#" title="Twitter">🐦</a>
+                                <a href="#" title="Instagram">📷</a>
+                                <a href="#" title="LinkedIn">💼</a>
+                            </div>
+                            
+                            <div class="divider"></div>
+                            
+                            <!-- Company Info -->
+                            <p style="margin: 0 0 8px;">
+                                <strong>KasuMarketplace</strong>
+                            </p>
+                            <p style="margin: 0 0 16px;">
+                                Your trusted online marketplace
+                            </p>
+                            
+                            <!-- Links -->
+                            <p style="margin: 0 0 8px;">
+                                <a href="#">Help Center</a> • 
+                                <a href="#">Contact Support</a> • 
+                                <a href="#">Privacy Policy</a>
+                            </p>
+                            
+                            <!-- Unsubscribe -->
+                            <p style="margin: 16px 0 0; font-size: 12px; color: #8c9196;">
+                                You received this email because you signed up for KasuMarketplace.<br>
+                                If you didn't create an account, you can safely ignore this email.
+                            </p>
+                            
+                            <!-- Copyright -->
+                            <p style="margin: 16px 0 0; font-size: 12px; color: #8c9196;">
+                                © 2025 KasuMarketplace. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

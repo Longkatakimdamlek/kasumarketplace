@@ -1,0 +1,94 @@
+{% extends 'vendors/emails/base_email.html' %}
+
+{% block title %}BVN Verified - Wallet Active - KasuMarketplace{% endblock %}
+
+{% block email_title %}💳 Bank Verified{% endblock %}
+
+{% block content %}
+<div class="success-box">
+    <p style="margin: 0; font-weight: bold; color: #065f46;">
+        ✅ Success! Your bank account has been verified and your wallet is now active.
+    </p>
+</div>
+
+<p>Hello {{ vendor.user.first_name|default:"Vendor" }},</p>
+
+<p>
+    Excellent news! Your Bank Verification Number (BVN) has been <strong>successfully verified</strong>, 
+    and your vendor wallet is now <strong>ready to receive payments</strong>.
+</p>
+
+<h2>Your Wallet is Active</h2>
+<div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; border-radius: 12px; margin: 25px 0; text-align: center; color: white;">
+    <p style="margin: 0 0 10px 0; font-size: 16px; opacity: 0.9;">Available Balance</p>
+    <p style="margin: 0; font-size: 42px; font-weight: bold;">₦0.00</p>
+    <p style="margin: 15px 0 0 0; font-size: 14px; opacity: 0.8;">Ready to receive your earnings!</p>
+</div>
+
+<h2>Verified Bank Details</h2>
+<div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Bank Name:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">{{ wallet.bank_account.bank_name|default:"Your Bank" }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Account Number:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace;">{{ wallet.bank_account.account_number|default:"**********" }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Account Name:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">{{ wallet.bank_account.account_name|default:"Your Name" }}</td>
+        </tr>
+    </table>
+</div>
+
+<h2>What You Can Do Now</h2>
+<div style="display: table; width: 100%; margin: 20px 0;">
+    <div style="background-color: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+        <p style="margin: 0; font-weight: bold; color: #1e40af;">💰 Receive Payments</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Earnings from sales will be credited to your wallet instantly
+        </p>
+    </div>
+    <div style="background-color: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+        <p style="margin: 0; font-weight: bold; color: #1e40af;">🏦 Request Payouts</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Withdraw your earnings anytime (minimum ₦5,000)
+        </p>
+    </div>
+    <div style="background-color: #eff6ff; padding: 15px; border-radius: 8px;">
+        <p style="margin: 0; font-weight: bold; color: #1e40af;">📊 Track Transactions</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            View detailed history of all wallet activities
+        </p>
+    </div>
+</div>
+
+<div style="text-align: center;">
+    <a href="{{ base_url }}/vendors/wallet/" class="button">
+        View Your Wallet →
+    </a>
+</div>
+
+<div class="info-box">
+    <p style="margin: 0; font-size: 14px;">
+        <strong>Payout Information:</strong><br>
+        • Processing time: 1-3 business days<br>
+        • Minimum withdrawal: ₦5,000<br>
+        • No hidden fees or charges
+    </p>
+</div>
+
+<div class="divider"></div>
+
+<p>
+    <strong>Next Steps:</strong><br>
+    Complete your store setup and start adding products to begin selling on KasuMarketplace!
+</p>
+
+<p>
+    Best regards,<br>
+    <strong>The KasuMarketplace Team</strong>
+</p>
+{% endblock %}

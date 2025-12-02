@@ -1,0 +1,145 @@
+<!-- Reusable Stats Card Component
+Usage in templates:
+{% include 'vendors/components/stats_card.html' with 
+   title="Total Sales" 
+   value="₦125,000" 
+   change="+12.5%" 
+   change_type="increase"
+   icon="chart"
+   color="purple"
+   url="/vendors/wallet/"
+%}
+-->
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow {% if url %}cursor-pointer{% endif %}"
+     {% if url %}onclick="window.location.href='{{ url }}'"{% endif %}>
+    
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex-1">
+            <p class="text-sm font-medium text-gray-600">{{ title }}</p>
+            <p class="text-3xl font-bold text-gray-900 mt-2">{{ value }}</p>
+        </div>
+        
+        <!-- Icon -->
+        <div class="flex-shrink-0">
+            {% if color == "purple" %}
+            <div class="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center">
+                {% if icon == "chart" %}
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                </svg>
+                {% elif icon == "package" %}
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                {% elif icon == "shopping" %}
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+                {% elif icon == "wallet" %}
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+                {% endif %}
+            </div>
+            
+            {% elif color == "blue" %}
+            <div class="w-12 h-12 bg-gradient-to-br from-soft-blue/10 to-soft-blue/5 rounded-lg flex items-center justify-center">
+                {% if icon == "chart" %}
+                <svg class="w-6 h-6 text-soft-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                </svg>
+                {% elif icon == "package" %}
+                <svg class="w-6 h-6 text-soft-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                {% elif icon == "shopping" %}
+                <svg class="w-6 h-6 text-soft-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+                {% elif icon == "wallet" %}
+                <svg class="w-6 h-6 text-soft-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+                {% endif %}
+            </div>
+            
+            {% elif color == "green" %}
+            <div class="w-12 h-12 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-lg flex items-center justify-center">
+                {% if icon == "chart" %}
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                </svg>
+                {% elif icon == "package" %}
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                {% elif icon == "shopping" %}
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+                {% elif icon == "wallet" %}
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+                {% endif %}
+            </div>
+            
+            {% elif color == "pink" %}
+            <div class="w-12 h-12 bg-gradient-to-br from-pink-accent/10 to-pink-accent/5 rounded-lg flex items-center justify-center">
+                {% if icon == "chart" %}
+                <svg class="w-6 h-6 text-pink-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                </svg>
+                {% elif icon == "package" %}
+                <svg class="w-6 h-6 text-pink-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                {% elif icon == "shopping" %}
+                <svg class="w-6 h-6 text-pink-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+                {% elif icon == "wallet" %}
+                <svg class="w-6 h-6 text-pink-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Change Indicator -->
+    {% if change %}
+    <div class="flex items-center">
+        {% if change_type == "increase" %}
+        <div class="flex items-center text-green-600">
+            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"/>
+            </svg>
+            <span class="text-sm font-semibold">{{ change }}</span>
+        </div>
+        {% elif change_type == "decrease" %}
+        <div class="flex items-center text-red-600">
+            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M12 13a1 1 0 100 2h5a1 1 0 001-1V9a1 1 0 10-2 0v2.586l-4.293-4.293a1 1 0 00-1.414 0L8 9.586 3.707 5.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0L11 9.414 14.586 13H12z" clip-rule="evenodd"/>
+            </svg>
+            <span class="text-sm font-semibold">{{ change }}</span>
+        </div>
+        {% else %}
+        <div class="flex items-center text-gray-600">
+            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <span class="text-sm font-semibold">{{ change }}</span>
+        </div>
+        {% endif %}
+        <span class="text-sm text-gray-500 ml-2">vs last month</span>
+    </div>
+    {% endif %}
+    
+    {% if description %}
+    <p class="text-xs text-gray-500 mt-2">{{ description }}</p>
+    {% endif %}
+    
+</div>
