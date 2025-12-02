@@ -1,0 +1,186 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Transactions - KasuMarketplace{% endblock %}
+
+{% block page_title %}Transaction History{% endblock %}
+
+{% block content %}
+
+<!-- Back Button -->
+<a href="{% url 'vendors:wallet_overview' %}" 
+   class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Back to Wallet
+</a>
+
+<!-- Header with Balance -->
+<div class="bg-gradient-to-r from-primary to-soft-blue rounded-xl p-8 mb-8 text-white shadow-lg">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-sm text-blue-100 mb-2">Available Balance</p>
+            <h1 class="text-4xl font-bold">₦{{ wallet.available_balance|floatformat:2 }}</h1>
+        </div>
+        <a href="{% url 'vendors:payout_request' %}" 
+           class="px-6 py-3 bg-white text-primary font-bold rounded-lg hover:shadow-xl transition-all">
+            Request Payout
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Transaction Type -->
+        <select name="type" 
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                onchange="this.form.submit()">
+            <option value="">All Transactions</option>
+            <option value="credit" {% if request.GET.type == 'credit' %}selected{% endif %}>Credits</option>
+            <option value="debit" {% if request.GET.type == 'debit' %}selected{% endif %}>Debits</option>
+            <option value="payout" {% if request.GET.type == 'payout' %}selected{% endif %}>Payouts</option>
+        </select>
+        
+        <!-- Status -->
+        <select name="status" 
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                onchange="this.form.submit()">
+            <option value="">All Status</option>
+            <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+            <option value="failed" {% if request.GET.status == 'failed' %}selected{% endif %}>Failed</option>
+        </select>
+        
+        <!-- Date Range -->
+        <select name="date_range" 
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                onchange="this.form.submit()">
+            <option value="">All Time</option>
+            <option value="today" {% if request.GET.date_range == 'today' %}selected{% endif %}>Today</option>
+            <option value="week" {% if request.GET.date_range == 'week' %}selected{% endif %}>This Week</option>
+            <option value="month" {% if request.GET.date_range == 'month' %}selected{% endif %}>This Month</option>
+            <option value="year" {% if request.GET.date_range == 'year' %}selected{% endif %}>This Year</option>
+        </select>
+    </form>
+</div>
+
+<!-- Transactions List -->
+{% if transactions %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for transaction in transactions %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <p class="text-sm font-medium text-gray-900">{{ transaction.created_at|date:"M d, Y" }}</p>
+                        <p class="text-xs text-gray-500">{{ transaction.created_at|time:"g:i A" }}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm font-semibold text-gray-900">{{ transaction.description }}</p>
+                        {% if transaction.reference %}
+                        <p class="text-xs text-gray-500 font-mono">Ref: {{ transaction.reference }}</p>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                                     {% if transaction.transaction_type == 'credit' %}bg-green-100 text-green-800
+                                     {% elif transaction.transaction_type == 'debit' %}bg-red-100 text-red-800
+                                     {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {% if transaction.transaction_type == 'credit' %}
+                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd"/>
+                            </svg>
+                            {% elif transaction.transaction_type == 'debit' %}
+                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd"/>
+                            </svg>
+                            {% endif %}
+                            {{ transaction.get_transaction_type_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <p class="text-lg font-bold 
+                                  {% if transaction.transaction_type == 'credit' %}text-green-600
+                                  {% elif transaction.transaction_type == 'debit' %}text-red-600
+                                  {% else %}text-gray-900{% endif %}">
+                            {% if transaction.transaction_type == 'credit' %}+{% elif transaction.transaction_type == 'debit' %}-{% endif %}₦{{ transaction.amount|floatformat:2 }}
+                        </p>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        {% if transaction.status == 'completed' %}
+                        {% include 'vendors/components/verification_badge.html' with status="completed" label="Completed" size="sm" show_icon=True %}
+                        {% elif transaction.status == 'pending' %}
+                        {% include 'vendors/components/verification_badge.html' with status="pending" label="Pending" size="sm" show_icon=True %}
+                        {% elif transaction.status == 'failed' %}
+                        {% include 'vendors/components/verification_badge.html' with status="failed" label="Failed" size="sm" show_icon=True %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+<div class="mt-8">
+    {% include 'vendors/components/pagination.html' with page_obj=transactions %}
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="bg-white rounded-xl shadow-sm border-2 border-dashed border-gray-300 p-12 text-center">
+    <svg class="w-24 h-24 mx-auto text-gray-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+    </svg>
+    <h3 class="text-2xl font-bold text-gray-900 mb-2">No transactions found</h3>
+    <p class="text-gray-600 mb-6">
+        {% if request.GET.type or request.GET.status or request.GET.date_range %}
+        Try adjusting your filters to see more results.
+        {% else %}
+        Your transaction history will appear here once you start receiving payments.
+        {% endif %}
+    </p>
+    {% if request.GET.type or request.GET.status or request.GET.date_range %}
+    <a href="{% url 'vendors:wallet_transactions' %}" 
+       class="inline-flex items-center px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors">
+        Clear Filters
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Summary Card -->
+<div class="mt-8 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+    <div class="grid md:grid-cols-4 gap-6">
+        <div class="text-center">
+            <p class="text-sm text-gray-600 mb-1">Total Credits</p>
+            <p class="text-2xl font-bold text-green-600">₦{{ total_credits|floatformat:2|default:"0.00" }}</p>
+        </div>
+        <div class="text-center">
+            <p class="text-sm text-gray-600 mb-1">Total Debits</p>
+            <p class="text-2xl font-bold text-red-600">₦{{ total_debits|floatformat:2|default:"0.00" }}</p>
+        </div>
+        <div class="text-center">
+            <p class="text-sm text-gray-600 mb-1">Net Balance</p>
+            <p class="text-2xl font-bold text-primary">₦{{ net_balance|floatformat:2|default:"0.00" }}</p>
+        </div>
+        <div class="text-center">
+            <p class="text-sm text-gray-600 mb-1">Transactions</p>
+            <p class="text-2xl font-bold text-gray-900">{{ total_transactions|default:0 }}</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,286 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Store Settings - KasuMarketplace{% endblock %}
+
+{% block page_title %}Store Settings{% endblock %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto">
+    
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Store Settings</h1>
+        <p class="text-gray-600">Manage your store information and preferences</p>
+    </div>
+    
+    <div class="grid lg:grid-cols-3 gap-8">
+        
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Basic Information -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-6">Basic Information</h2>
+                
+                <form method="post" enctype="multipart/form-data" x-data="{ submitting: false }">
+                    {% csrf_token %}
+                    
+                    <!-- Store Name -->
+                    <div class="mb-6">
+                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                            Store Name
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               name="{{ form.name.html_name }}"
+                               id="{{ form.name.id_for_label }}"
+                               value="{{ store.name }}"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                               required>
+                        {% if form.name.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-6">
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                            Description
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <textarea name="{{ form.description.html_name }}"
+                                  id="{{ form.description.id_for_label }}"
+                                  rows="5"
+                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                                  required>{{ store.description }}</textarea>
+                        {% if form.description.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Current Banner -->
+                    {% if store.banner %}
+                    <div class="mb-6">
+                        <p class="text-sm font-semibold text-gray-900 mb-2">Current Banner</p>
+                        <img src="{{ store.banner.url }}" 
+                             alt="{{ store.name }}"
+                             class="w-full h-48 object-cover rounded-lg">
+                    </div>
+                    {% endif %}
+                    
+                    <!-- New Banner Upload -->
+                    <div class="mb-6">
+                        <label for="{{ form.banner.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                            {% if store.banner %}Update{% else %}Upload{% endif %} Banner
+                        </label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors"
+                             x-data="{ fileName: '' }">
+                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <label for="{{ form.banner.id_for_label }}" class="cursor-pointer">
+                                <span class="text-primary font-semibold hover:text-primary/80">Upload a file</span>
+                                <span class="text-gray-600"> or drag and drop</span>
+                            </label>
+                            <input type="file" 
+                                   name="{{ form.banner.html_name }}"
+                                   id="{{ form.banner.id_for_label }}"
+                                   accept="image/*"
+                                   class="hidden"
+                                   @change="fileName = $event.target.files[0]?.name || ''">
+                            <p class="text-xs text-gray-500 mt-2">PNG, JPG up to 2MB. Recommended: 1200x400px</p>
+                            <p x-show="fileName" x-text="'Selected: ' + fileName" class="text-sm text-primary mt-2"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Information -->
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="{{ form.phone.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                                Store Phone
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <input type="tel" 
+                                   name="{{ form.phone.html_name }}"
+                                   id="{{ form.phone.id_for_label }}"
+                                   value="{{ store.phone }}"
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                                   required>
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.email.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                                Store Email
+                            </label>
+                            <input type="email" 
+                                   name="{{ form.email.html_name }}"
+                                   id="{{ form.email.id_for_label }}"
+                                   value="{{ store.email|default:'' }}"
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                    </div>
+                    
+                    <!-- Store Status -->
+                    <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                        <label class="flex items-center">
+                            <input type="checkbox" 
+                                   name="{{ form.is_active.html_name }}"
+                                   {% if store.is_active %}checked{% endif %}
+                                   class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary">
+                            <span class="ml-3 text-sm font-semibold text-gray-900">
+                                Store is active and visible to customers
+                            </span>
+                        </label>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button type="submit" 
+                            :disabled="submitting"
+                            @click="submitting = true"
+                            class="w-full py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                        <span x-show="!submitting">Save Changes</span>
+                        <span x-show="submitting" class="flex items-center justify-center">
+                            <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Saving...
+                        </span>
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Category Management -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-4">Category</h2>
+                
+                <!-- Category Lock Warning -->
+                {% if store.main_category_locked %}
+                <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 mb-6">
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                        </svg>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-yellow-900 mb-2">🔒 Category Locked</h3>
+                            <p class="text-sm text-yellow-800 mb-3">
+                                Your main category is <strong>{{ store.main_category.name }}</strong> and cannot be changed. 
+                                This maintains category integrity and prevents misuse.
+                            </p>
+                            <p class="text-sm text-yellow-800">
+                                Need to change? Contact support or request a category change below.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Main Category</p>
+                        <p class="text-lg font-bold text-gray-900">{{ store.main_category.name }}</p>
+                    </div>
+                    
+                    <a href="{% url 'vendors:category_change_request' %}" 
+                       class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                        </svg>
+                        Request Category Change
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            
+            <!-- Store Preview -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="font-bold text-gray-900 mb-4">Quick Actions</h3>
+                <div class="space-y-3">
+                    <a href="{% url 'vendors:store_preview' %}" 
+                       class="flex items-center p-4 bg-gradient-to-r from-soft-blue/10 to-primary/5 rounded-lg hover:shadow-md transition-all group">
+                        <div class="w-10 h-10 bg-soft-blue rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <p class="font-semibold text-gray-900">Preview Store</p>
+                            <p class="text-xs text-gray-600">See how it looks</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{% url 'shop:store_detail' store.slug %}" 
+                       target="_blank"
+                       class="flex items-center p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg hover:shadow-md transition-all group">
+                        <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <p class="font-semibold text-gray-900">View Live</p>
+                            <p class="text-xs text-gray-600">Public storefront</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Store Stats -->
+            <div class="bg-gradient-to-br from-primary/5 to-soft-blue/5 rounded-xl p-6 border border-primary/10">
+                <h3 class="font-bold text-gray-900 mb-4">Store Statistics</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Total Products</span>
+                        <span class="font-bold text-gray-900">{{ store.products.count }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Active Products</span>
+                        <span class="font-bold text-green-600">{{ store.products.filter.count }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Total Orders</span>
+                        <span class="font-bold text-gray-900">{{ store.total_orders|default:0 }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Store Views</span>
+                        <span class="font-bold text-primary">{{ store.views|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Store Info -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="font-bold text-gray-900 mb-4">Store Information</h3>
+                <div class="space-y-3 text-sm">
+                    <div>
+                        <p class="text-gray-600 mb-1">Store URL</p>
+                        <a href="{% url 'shop:store_detail' store.slug %}" 
+                           target="_blank"
+                           class="text-primary hover:text-primary/80 font-mono text-xs break-all">
+                            kasumarketplace.com/shop/{{ store.slug }}
+                        </a>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 mb-1">Created</p>
+                        <p class="font-semibold text-gray-900">{{ store.created_at|date:"M d, Y" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 mb-1">Last Updated</p>
+                        <p class="font-semibold text-gray-900">{{ store.updated_at|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+    </div>
+    
+</div>
+
+{% endblock %}

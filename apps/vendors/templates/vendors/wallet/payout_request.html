@@ -1,0 +1,217 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Request Payout - KasuMarketplace{% endblock %}
+
+{% block page_title %}Request Payout{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+    
+    <!-- Back Button -->
+    <a href="{% url 'vendors:wallet_overview' %}" 
+       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Wallet
+    </a>
+    
+    <!-- Available Balance Card -->
+    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-8 mb-8 text-white">
+        <div class="text-center">
+            <p class="text-sm font-medium text-green-100 mb-2">Available for Withdrawal</p>
+            <h1 class="text-5xl font-bold mb-3">₦{{ wallet.available_balance|floatformat:2 }}</h1>
+            <p class="text-sm text-green-100">Minimum withdrawal: ₦5,000</p>
+        </div>
+    </div>
+    
+    <!-- Payout Form -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Withdrawal Details</h2>
+        
+        <form method="post" x-data="{ 
+            amount: '', 
+            available: {{ wallet.available_balance }},
+            submitting: false,
+            
+            get isValid() {
+                const amt = parseFloat(this.amount) || 0;
+                return amt >= 5000 && amt <= this.available;
+            },
+            
+            setMaxAmount() {
+                this.amount = this.available.toFixed(2);
+            }
+        }">
+            {% csrf_token %}
+            
+            <!-- Amount Input -->
+            <div class="mb-6">
+                <label for="{{ form.amount.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Withdrawal Amount (₦)
+                    <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <input type="number" 
+                           name="{{ form.amount.html_name }}"
+                           id="{{ form.amount.id_for_label }}"
+                           x-model="amount"
+                           step="0.01"
+                           min="5000"
+                           :max="available"
+                           placeholder="Enter amount"
+                           class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           required>
+                    <button type="button" 
+                            @click="setMaxAmount"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1 bg-primary text-white text-xs font-semibold rounded hover:bg-primary/90">
+                        Max
+                    </button>
+                </div>
+                {% if form.amount.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.amount.errors.0 }}</p>
+                {% else %}
+                <div class="mt-2">
+                    <p x-show="amount && parseFloat(amount) < 5000" class="text-sm text-red-600">
+                        ⚠️ Minimum withdrawal is ₦5,000
+                    </p>
+                    <p x-show="amount && parseFloat(amount) > available" class="text-sm text-red-600">
+                        ⚠️ Amount exceeds available balance
+                    </p>
+                    <p x-show="isValid" class="text-sm text-green-600">
+                        ✓ Valid amount
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Bank Account Info -->
+            <div class="mb-6 p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                <h3 class="font-bold text-gray-900 mb-3 flex items-center">
+                    <svg class="w-5 h-5 text-soft-blue mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                    </svg>
+                    Payment Destination
+                </h3>
+                {% if wallet.bank_account %}
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Bank Name:</span>
+                        <span class="font-semibold text-gray-900">{{ wallet.bank_account.bank_name }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Account Number:</span>
+                        <span class="font-mono font-semibold text-gray-900">{{ wallet.bank_account.account_number }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Account Name:</span>
+                        <span class="font-semibold text-gray-900">{{ wallet.bank_account.account_name }}</span>
+                    </div>
+                </div>
+                <a href="{% url 'vendors:payment_method' %}" 
+                   class="inline-block mt-3 text-xs font-semibold text-soft-blue hover:text-soft-blue/80">
+                    Update bank details →
+                </a>
+                {% else %}
+                <p class="text-sm text-red-800 mb-3">⚠️ No bank account linked. Please add your bank details first.</p>
+                <a href="{% url 'vendors:payment_method' %}" 
+                   class="inline-block px-4 py-2 bg-soft-blue text-white font-semibold rounded-lg hover:bg-soft-blue/90">
+                    Add Bank Account
+                </a>
+                {% endif %}
+            </div>
+            
+            <!-- Payout Info -->
+            <div class="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div>
+                        <h4 class="text-sm font-semibold text-yellow-900 mb-1">Important Information</h4>
+                        <ul class="text-xs text-yellow-800 space-y-1">
+                            <li>• Processing time: 1-3 business days</li>
+                            <li>• No transaction fees or charges</li>
+                            <li>• You'll receive a confirmation email</li>
+                            <li>• Funds will be transferred to your registered bank account</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notes -->
+            <div class="mb-6">
+                <label for="{{ form.notes.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Notes (Optional)
+                </label>
+                <textarea name="{{ form.notes.html_name }}"
+                          id="{{ form.notes.id_for_label }}"
+                          rows="3"
+                          placeholder="Add any notes about this withdrawal..."
+                          class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
+            </div>
+            
+            <!-- Confirmation -->
+            <div class="mb-6">
+                <label class="flex items-start">
+                    <input type="checkbox" 
+                           name="confirm"
+                           required
+                           class="mt-1 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                    <span class="ml-3 text-sm text-gray-700">
+                        I confirm that the bank account details are correct and I want to withdraw 
+                        <strong x-text="'₦' + (parseFloat(amount) || 0).toFixed(2)"></strong> to my account.
+                        <span class="text-red-500">*</span>
+                    </span>
+                </label>
+            </div>
+            
+            <!-- Submit Buttons -->
+            <div class="flex gap-4">
+                <button type="submit" 
+                        :disabled="!isValid || submitting || !{{ wallet.bank_account|yesno:'true,false' }}"
+                        @click="submitting = true"
+                        class="flex-1 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                    <span x-show="!submitting">Request Payout</span>
+                    <span x-show="submitting" class="flex items-center justify-center">
+                        <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                    </span>
+                </button>
+                
+                <a href="{% url 'vendors:wallet_overview' %}" 
+                   class="px-8 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors">
+                    Cancel
+                </a>
+            </div>
+            
+        </form>
+        
+    </div>
+    
+    <!-- Recent Payouts -->
+    {% if recent_payouts %}
+    <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="font-bold text-gray-900 mb-4">Recent Payout Requests</h3>
+        <div class="space-y-3">
+            {% for payout in recent_payouts %}
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                    <p class="font-semibold text-gray-900">₦{{ payout.amount|floatformat:2 }}</p>
+                    <p class="text-xs text-gray-500">{{ payout.created_at|date:"M d, Y - g:i A" }}</p>
+                </div>
+                {% include 'vendors/components/verification_badge.html' with status=payout.status label=payout.get_status_display size="sm" %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+</div>
+
+{% endblock %}

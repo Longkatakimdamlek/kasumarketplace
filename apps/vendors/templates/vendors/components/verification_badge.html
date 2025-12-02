@@ -1,0 +1,98 @@
+<!-- Reusable Verification Badge Component
+Usage in templates:
+{% include 'vendors/components/verification_badge.html' with 
+   status="completed"
+   label="NIN Verified"
+   size="md"
+   show_icon=True
+%}
+
+Status options: completed, pending, failed, locked, not_started
+Sizes: sm, md, lg
+-->
+
+{% if status == "completed" %}
+<span class="inline-flex items-center 
+             {% if size == 'sm' %}px-2 py-0.5 text-xs
+             {% elif size == 'lg' %}px-4 py-2 text-base
+             {% else %}px-3 py-1 text-sm{% endif %}
+             font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
+    {% if show_icon %}
+    <svg class="{% if size == 'sm' %}w-3 h-3{% elif size == 'lg' %}w-5 h-5{% else %}w-4 h-4{% endif %} mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+    </svg>
+    {% endif %}
+    {{ label|default:"Completed" }}
+</span>
+
+{% elif status == "pending" %}
+<span class="inline-flex items-center 
+             {% if size == 'sm' %}px-2 py-0.5 text-xs
+             {% elif size == 'lg' %}px-4 py-2 text-base
+             {% else %}px-3 py-1 text-sm{% endif %}
+             font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">
+    {% if show_icon %}
+    <svg class="{% if size == 'sm' %}w-3 h-3{% elif size == 'lg' %}w-5 h-5{% else %}w-4 h-4{% endif %} mr-1.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+    </svg>
+    {% endif %}
+    {{ label|default:"Pending" }}
+</span>
+
+{% elif status == "failed" or status == "rejected" %}
+<span class="inline-flex items-center 
+             {% if size == 'sm' %}px-2 py-0.5 text-xs
+             {% elif size == 'lg' %}px-4 py-2 text-base
+             {% else %}px-3 py-1 text-sm{% endif %}
+             font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
+    {% if show_icon %}
+    <svg class="{% if size == 'sm' %}w-3 h-3{% elif size == 'lg' %}w-5 h-5{% else %}w-4 h-4{% endif %} mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+    </svg>
+    {% endif %}
+    {{ label|default:"Failed" }}
+</span>
+
+{% elif status == "locked" %}
+<span class="inline-flex items-center 
+             {% if size == 'sm' %}px-2 py-0.5 text-xs
+             {% elif size == 'lg' %}px-4 py-2 text-base
+             {% else %}px-3 py-1 text-sm{% endif %}
+             font-semibold rounded-full bg-gray-100 text-gray-600 border border-gray-300">
+    {% if show_icon %}
+    <svg class="{% if size == 'sm' %}w-3 h-3{% elif size == 'lg' %}w-5 h-5{% else %}w-4 h-4{% endif %} mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+    </svg>
+    {% endif %}
+    {{ label|default:"Locked" }}
+</span>
+
+{% elif status == "in_progress" %}
+<span class="inline-flex items-center 
+             {% if size == 'sm' %}px-2 py-0.5 text-xs
+             {% elif size == 'lg' %}px-4 py-2 text-base
+             {% else %}px-3 py-1 text-sm{% endif %}
+             font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+    {% if show_icon %}
+    <svg class="{% if size == 'sm' %}w-3 h-3{% elif size == 'lg' %}w-5 h-5{% else %}w-4 h-4{% endif %} mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+    </svg>
+    {% endif %}
+    {{ label|default:"In Progress" }}
+</span>
+
+{% else %}
+<!-- not_started or default -->
+<span class="inline-flex items-center 
+             {% if size == 'sm' %}px-2 py-0.5 text-xs
+             {% elif size == 'lg' %}px-4 py-2 text-base
+             {% else %}px-3 py-1 text-sm{% endif %}
+             font-medium rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+    {% if show_icon %}
+    <svg class="{% if size == 'sm' %}w-3 h-3{% elif size == 'lg' %}w-5 h-5{% else %}w-4 h-4{% endif %} mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+    </svg>
+    {% endif %}
+    {{ label|default:"Not Started" }}
+</span>
+{% endif %}

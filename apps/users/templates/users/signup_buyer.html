@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load socialaccount %}
+
+{% block title %}Sign Up as Buyer - KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Kasu Marketplace</h2>
+    <p class="subtitle">welcome to your shop</p>
+    
+    <!-- Social Login Buttons -->
+    <div class="social-icons">
+        <a href="{% provider_login_url 'facebook' %}" class="social-btn" aria-label="Facebook">
+            <i class="fab fa-facebook-f" style="color:#1877f2;"></i>
+        </a>
+        <a href="{% provider_login_url 'apple' %}" class="social-btn" aria-label="Apple">
+            <i class="fab fa-apple" style="color:#333;"></i>
+        </a>
+        <a href="{% provider_login_url 'google' process='signup' %}?next=/signup/" class="social-btn" aria-label="Google">
+            <i class="fab fa-google" style="color:#db4437;"></i>
+        </a>
+
+    </div>
+    
+    <div class="separator">or sign up with email</div>
+    
+    <!-- Error Messages -->
+    {% if form.non_field_errors %}
+        <div class="error-message">
+            {{ form.non_field_errors.0 }}
+        </div>
+    {% endif %}
+    
+    <!-- Signup Form -->
+    <form method="post" id="signupForm">
+        {% csrf_token %}
+        
+        <!-- Email Field -->
+        <label for="{{ form.email.id_for_label }}">Email address</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+            <div class="error-message">{{ form.email.errors.0 }}</div>
+        {% endif %}
+        
+        <!-- Password Field -->
+        <div class="form-group">
+            <label for="{{ form.password1.id_for_label }}">Password</label>
+            {{ form.password1 }}
+            <button type="button" class="toggle-password" onclick="togglePassword('{{ form.password1.id_for_label }}')">
+                <i id="toggleIcon1" class="fas fa-eye"></i>
+            </button>
+        </div>
+        {% if form.password1.errors %}
+            <div class="error-message">{{ form.password1.errors.0 }}</div>
+        {% else %}
+            <div class="help-text">Min. 8 characters with uppercase, lowercase, numbers & symbols</div>
+        {% endif %}
+        
+        <!-- Confirm Password Field -->
+        <div class="form-group">
+            <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+            {{ form.password2 }}
+            <button type="button" class="toggle-password" onclick="togglePassword('{{ form.password2.id_for_label }}')">
+                <i id="toggleIcon2" class="fas fa-eye"></i>
+            </button>
+        </div>
+        {% if form.password2.errors %}
+            <div class="error-message">{{ form.password2.errors.0 }}</div>
+        {% endif %}
+        
+        <!-- Terms Checkbox -->
+        <div class="terms">
+            <label>
+                <input type="checkbox" id="termsCheckbox" required />
+                I agree to the <a href="#">terms & policies</a>
+            </label>
+        </div>
+        
+        <!-- reCAPTCHA -->
+        <div class="recaptcha-container">
+            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}"></div>
+        </div>
+        
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary">Continue</button>
+    </form>
+    
+    <!-- Links -->
+    <div class="links">
+        <p>Already have an account? <a href="{% url 'users:login' %}">Login</a></p>
+        <p>Become a vendor <a href="{% url 'users:vendor_signup' %}">here</a></p>
+    </div>
+</div>
+
+<script>
+    function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const icon = field.parentElement.querySelector('i');
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            field.type = 'password';
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+</script>
+{% endblock %}

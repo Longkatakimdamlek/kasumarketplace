@@ -1,0 +1,199 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Orders - KasuMarketplace{% endblock %}
+
+{% block page_title %}Orders{% endblock %}
+
+{% block content %}
+
+<!-- Header with Stats -->
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Order Management</h1>
+    
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <p class="text-sm text-gray-600 mb-1">Total Orders</p>
+            <p class="text-2xl font-bold text-gray-900">{{ total_orders }}</p>
+        </div>
+        <div class="bg-yellow-50 rounded-lg shadow-sm border border-yellow-200 p-4">
+            <p class="text-sm text-yellow-700 mb-1">Pending</p>
+            <p class="text-2xl font-bold text-yellow-600">{{ pending_count }}</p>
+        </div>
+        <div class="bg-blue-50 rounded-lg shadow-sm border border-blue-200 p-4">
+            <p class="text-sm text-blue-700 mb-1">Processing</p>
+            <p class="text-2xl font-bold text-blue-600">{{ processing_count }}</p>
+        </div>
+        <div class="bg-green-50 rounded-lg shadow-sm border border-green-200 p-4">
+            <p class="text-sm text-green-700 mb-1">Completed</p>
+            <p class="text-2xl font-bold text-green-600">{{ completed_count }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Search -->
+        <div class="md:col-span-2">
+            <input type="text" 
+                   name="search"
+                   value="{{ request.GET.search }}"
+                   placeholder="Search by order number or customer..."
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+        </div>
+        
+        <!-- Status Filter -->
+        <select name="status" 
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                onchange="this.form.submit()">
+            <option value="">All Status</option>
+            <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="processing" {% if current_status == 'processing' %}selected{% endif %}>Processing</option>
+            <option value="shipped" {% if current_status == 'shipped' %}selected{% endif %}>Shipped</option>
+            <option value="delivered" {% if current_status == 'delivered' %}selected{% endif %}>Delivered</option>
+            <option value="cancelled" {% if current_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+        
+        <!-- Date Range -->
+        <select name="date_range" 
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                onchange="this.form.submit()">
+            <option value="">All Time</option>
+            <option value="today" {% if request.GET.date_range == 'today' %}selected{% endif %}>Today</option>
+            <option value="week" {% if request.GET.date_range == 'week' %}selected{% endif %}>This Week</option>
+            <option value="month" {% if request.GET.date_range == 'month' %}selected{% endif %}>This Month</option>
+        </select>
+    </form>
+</div>
+
+<!-- Orders List -->
+{% if orders %}
+<div class="space-y-4">
+    {% for order in orders %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+        <div class="p-6">
+            <!-- Order Header -->
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-primary/10 to-soft-blue/10 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900">Order #{{ order.order_number }}</h3>
+                        <p class="text-sm text-gray-500">{{ order.created_at|date:"M d, Y - g:i A" }}</p>
+                    </div>
+                </div>
+                
+                <!-- Status Badge -->
+                {% if order.status == 'pending' %}
+                {% include 'vendors/components/verification_badge.html' with status="pending" label="Pending" size="md" show_icon=True %}
+                {% elif order.status == 'processing' %}
+                {% include 'vendors/components/verification_badge.html' with status="in_progress" label="Processing" size="md" show_icon=True %}
+                {% elif order.status == 'shipped' %}
+                {% include 'vendors/components/verification_badge.html' with status="in_progress" label="Shipped" size="md" show_icon=True %}
+                {% elif order.status == 'delivered' %}
+                {% include 'vendors/components/verification_badge.html' with status="completed" label="Delivered" size="md" show_icon=True %}
+                {% elif order.status == 'cancelled' %}
+                {% include 'vendors/components/verification_badge.html' with status="failed" label="Cancelled" size="md" show_icon=True %}
+                {% endif %}
+            </div>
+            
+            <!-- Customer Info -->
+            <div class="grid md:grid-cols-2 gap-4 mb-4 pb-4 border-b border-gray-200">
+                <div>
+                    <p class="text-xs text-gray-500 mb-1">Customer</p>
+                    <p class="font-semibold text-gray-900">{{ order.customer.get_full_name }}</p>
+                    <p class="text-sm text-gray-600">{{ order.customer.email }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 mb-1">Delivery Address</p>
+                    <p class="text-sm text-gray-700">{{ order.delivery_address|truncatewords:10 }}</p>
+                </div>
+            </div>
+            
+            <!-- Order Items -->
+            <div class="space-y-3 mb-4">
+                {% for item in order.items.all|slice:":3" %}
+                <div class="flex items-center space-x-3">
+                    {% if item.product.images.first %}
+                    <img src="{{ item.product.images.first.image.url }}" 
+                         alt="{{ item.product.name }}"
+                         class="w-12 h-12 object-cover rounded">
+                    {% else %}
+                    <div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-900">{{ item.product.name }}</p>
+                        <p class="text-xs text-gray-500">Qty: {{ item.quantity }} × ₦{{ item.price|floatformat:2 }}</p>
+                    </div>
+                    <p class="text-sm font-bold text-gray-900">₦{{ item.total_price|floatformat:2 }}</p>
+                </div>
+                {% endfor %}
+                {% if order.items.count > 3 %}
+                <p class="text-xs text-gray-500 text-center">+ {{ order.items.count|add:"-3" }} more item{{ order.items.count|add:"-3"|pluralize }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Footer -->
+            <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div>
+                    <p class="text-sm text-gray-600">Total Amount</p>
+                    <p class="text-2xl font-bold text-primary">₦{{ order.total_amount|floatformat:2 }}</p>
+                </div>
+                <a href="{% url 'vendors:order_detail' order.id %}" 
+                   class="inline-flex items-center px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors">
+                    View Details
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+<div class="mt-8">
+    {% include 'vendors/components/pagination.html' with page_obj=orders %}
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="bg-white rounded-xl shadow-sm border-2 border-dashed border-gray-300 p-12 text-center">
+    <svg class="w-24 h-24 mx-auto text-gray-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+    </svg>
+    <h3 class="text-2xl font-bold text-gray-900 mb-2">No orders yet</h3>
+    <p class="text-gray-600 mb-6 max-w-md mx-auto">
+        {% if current_status %}
+        No {{ current_status }} orders found. Try changing your filters.
+        {% else %}
+        When customers start buying your products, their orders will appear here.
+        {% endif %}
+    </p>
+    {% if current_status %}
+    <a href="{% url 'vendors:order_list' %}" 
+       class="inline-flex items-center px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors">
+        Clear Filters
+    </a>
+    {% else %}
+    <a href="{% url 'vendors:product_list' %}" 
+       class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary to-soft-blue text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
+        Manage Products
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

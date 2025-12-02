@@ -1,0 +1,231 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Verification Center - KasuMarketplace{% endblock %}
+
+{% block page_title %}Verification Center{% endblock %}
+
+{% block content %}
+
+<!-- Header Section -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">Complete Your Verification</h2>
+            <p class="text-gray-600 mt-1">Follow these steps to start selling on KasuMarketplace</p>
+        </div>
+        {% if vendor.can_sell %}
+        <div class="flex items-center space-x-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+            <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <span class="text-sm font-semibold text-green-800">Fully Verified</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Progress Overview -->
+<div class="bg-gradient-to-br from-primary/5 to-soft-blue/5 rounded-xl p-6 mb-8 border border-primary/10">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Verification Progress</h3>
+        <span class="text-2xl font-bold text-primary">{{ completion_percentage }}%</span>
+    </div>
+    {% include 'vendors/components/progress_bar.html' with percentage=completion_percentage color="purple" size="lg" %}
+    <p class="text-sm text-gray-600 mt-3">
+        {% if vendor.can_sell %}
+            🎉 You're all set! Your store is ready to receive orders.
+        {% elif completion_percentage >= 80 %}
+            Almost there! Complete the remaining steps to start selling.
+        {% elif completion_percentage >= 50 %}
+            You're halfway there! Keep going to unlock your store.
+        {% else %}
+            Let's get started! Complete these steps to verify your account.
+        {% endif %}
+    </p>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-8">
+    
+    <!-- Vertical Stepper (Main Content) -->
+    <div class="lg:col-span-2">
+        <div class="space-y-6">
+            {% for step in steps %}
+            <div class="relative">
+                
+                <!-- Connection Line (not for last item) -->
+                {% if not forloop.last %}
+                <div class="absolute left-6 top-14 bottom-0 w-0.5 
+                            {% if step.status == 'completed' %}bg-green-500
+                            {% elif step.status == 'in_progress' %}bg-primary
+                            {% else %}bg-gray-300{% endif %} -mb-6"></div>
+                {% endif %}
+                
+                <!-- Step Card -->
+                <div class="relative bg-white rounded-xl shadow-sm border-2 
+                            {% if step.status == 'completed' %}border-green-200
+                            {% elif step.status == 'in_progress' %}border-primary
+                            {% elif step.status == 'locked' %}border-gray-200
+                            {% else %}border-gray-200 hover:border-primary/30{% endif %}
+                            transition-all duration-200
+                            {% if step.status == 'locked' %}opacity-60{% endif %}">
+                    
+                    <div class="p-6">
+                        <div class="flex items-start">
+                            
+                            <!-- Step Icon -->
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center
+                                            {% if step.status == 'completed' %}bg-green-500 text-white
+                                            {% elif step.status == 'in_progress' %}bg-primary text-white
+                                            {% elif step.status == 'locked' %}bg-gray-300 text-gray-600
+                                            {% else %}bg-gray-200 text-gray-600{% endif %}
+                                            shadow-lg">
+                                    {% if step.status == 'completed' %}
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                    </svg>
+                                    {% elif step.status == 'locked' %}
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                                    </svg>
+                                    {% else %}
+                                    {{ step.icon|safe }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Step Content -->
+                            <div class="ml-4 flex-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-lg font-bold text-gray-900">{{ step.title }}</h3>
+                                    {% include 'vendors/components/verification_badge.html' with status=step.status label=step.status_label size="sm" show_icon=True %}
+                                </div>
+                                
+                                <p class="text-gray-600 text-sm mb-4">{{ step.description }}</p>
+                                
+                                <!-- Action Button -->
+                                {% if step.status == 'completed' %}
+                                <div class="flex items-center text-green-600 text-sm font-medium">
+                                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Completed on {{ step.completed_at|date:"M d, Y" }}
+                                </div>
+                                
+                                {% elif step.status == 'in_progress' %}
+                                <a href="{{ step.url }}" 
+                                   class="inline-flex items-center px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                                    Continue
+                                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                                
+                                {% elif step.status == 'pending' %}
+                                <a href="{{ step.url }}" 
+                                   class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary to-soft-blue hover:shadow-lg text-white text-sm font-semibold rounded-lg transition-all duration-200 transform hover:scale-105">
+                                    Start Now
+                                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                    </svg>
+                                </a>
+                                
+                                {% elif step.status == 'locked' %}
+                                <div class="flex items-center text-gray-500 text-sm">
+                                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Complete previous steps to unlock
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Additional Info -->
+                                {% if step.note %}
+                                <div class="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                                    <p class="text-xs text-blue-800">
+                                        <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                        </svg>
+                                        {{ step.note }}
+                                    </p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Sidebar: Help & Info -->
+    <div class="lg:col-span-1 space-y-6">
+        
+        <!-- Why Verify Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center mb-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-primary/10 to-soft-blue/10 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="ml-3 text-lg font-bold text-gray-900">Why Verify?</h3>
+            </div>
+            <ul class="space-y-3 text-sm text-gray-600">
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    Build trust with customers
+                </li>
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    Secure faster payouts
+                </li>
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    Comply with regulations
+                </li>
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    Access premium features
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Time Estimate -->
+        <div class="bg-gradient-to-br from-soft-blue/10 to-primary/5 rounded-xl p-6 border border-soft-blue/20">
+            <div class="flex items-center mb-3">
+                <svg class="w-5 h-5 text-soft-blue mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                </svg>
+                <h4 class="font-semibold text-gray-900">Estimated Time</h4>
+            </div>
+            <p class="text-2xl font-bold text-primary mb-1">10-15 minutes</p>
+            <p class="text-sm text-gray-600">To complete all verification steps</p>
+        </div>
+        
+        <!-- Need Help -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="font-bold text-gray-900 mb-3">Need Help?</h3>
+            <p class="text-sm text-gray-600 mb-4">Our support team is here to assist you with verification.</p>
+            <a href="mailto:support@kasumarketplace.com" 
+               class="inline-flex items-center text-sm font-semibold text-primary hover:text-primary/80">
+                Contact Support
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                </svg>
+            </a>
+        </div>
+        
+    </div>
+</div>
+
+{% endblock %}

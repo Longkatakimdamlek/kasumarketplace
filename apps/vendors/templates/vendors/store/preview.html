@@ -1,0 +1,178 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Store Preview - {{ store.name }}{% endblock %}
+
+{% block page_title %}Store Preview{% endblock %}
+
+{% block content %}
+
+<!-- Back Button -->
+<a href="{% url 'vendors:store_settings' %}" 
+   class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Back to Settings
+</a>
+
+<!-- Preview Notice -->
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+    <div class="flex items-start">
+        <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+        <div>
+            <p class="text-sm font-semibold text-blue-900 mb-1">This is a preview</p>
+            <p class="text-sm text-blue-800">
+                This is how your store appears to customers. 
+                <a href="{% url 'shop:store_detail' store.slug %}" target="_blank" class="font-semibold underline">View live version →</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Store Banner -->
+{% if store.banner %}
+<div class="w-full h-64 md:h-96 rounded-xl overflow-hidden mb-8 shadow-lg">
+    <img src="{{ store.banner.url }}" 
+         alt="{{ store.name }}"
+         class="w-full h-full object-cover">
+</div>
+{% endif %}
+
+<!-- Store Header -->
+<div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mb-8">
+    <div class="flex items-start justify-between mb-6">
+        <div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-3">{{ store.name }}</h1>
+            <div class="flex items-center space-x-4 mb-4">
+                <span class="inline-flex items-center px-3 py-1 bg-primary/10 text-primary text-sm font-semibold rounded-full">
+                    {{ store.main_category.name }}
+                </span>
+                {% if store.is_active %}
+                {% include 'vendors/components/verification_badge.html' with status="completed" label="Active" size="sm" show_icon=True %}
+                {% else %}
+                {% include 'vendors/components/verification_badge.html.html' with status="pending" label="Inactive" size="sm" show_icon=True %}
+                {% endif %}
+            </div>
+            <p class="text-gray-700 leading-relaxed">{{ store.description }}</p>
+        </div>
+    </div>
+    
+    <!-- Store Stats -->
+    <div class="grid grid-cols-4 gap-4 pt-6 border-t border-gray-200">
+        <div class="text-center">
+            <p class="text-2xl font-bold text-gray-900">{{ store.products.count }}</p>
+            <p class="text-xs text-gray-500">Products</p>
+        </div>
+        <div class="text-center">
+            <p class="text-2xl font-bold text-gray-900">{{ store.total_orders|default:0 }}</p>
+            <p class="text-xs text-gray-500">Orders</p>
+        </div>
+        <div class="text-center">
+            <p class="text-2xl font-bold text-gray-900">4.8</p>
+            <p class="text-xs text-gray-500">Rating</p>
+        </div>
+        <div class="text-center">
+            <p class="text-2xl font-bold text-gray-900">{{ store.views|default:0 }}</p>
+            <p class="text-xs text-gray-500">Views</p>
+        </div>
+    </div>
+</div>
+
+<!-- Products Section -->
+<div class="mb-8">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">Products</h2>
+        <a href="{% url 'vendors:product_list' %}" 
+           class="text-sm font-semibold text-primary hover:text-primary/80">
+            Manage Products →
+        </a>
+    </div>
+    
+    {% if products %}
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% for product in products %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all group">
+            <div class="relative aspect-square overflow-hidden bg-gray-100">
+                {% if product.images.first %}
+                <img src="{{ product.images.first.image.url }}" 
+                     alt="{{ product.name }}"
+                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                </div>
+                {% endif %}
+                
+                {% if not product.is_active or product.stock_quantity == 0 %}
+                <div class="absolute top-3 left-3">
+                    <span class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+                        {% if not product.is_active %}Draft{% else %}Out of Stock{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="p-4">
+                <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2">{{ product.name }}</h3>
+                <div class="flex items-baseline space-x-2">
+                    <p class="text-xl font-bold text-primary">₦{{ product.price|floatformat:2 }}</p>
+                    {% if product.compare_at_price %}
+                    <p class="text-sm text-gray-500 line-through">₦{{ product.compare_at_price|floatformat:2 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 p-12 text-center">
+        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
+        <p class="text-gray-500 font-medium mb-2">No products yet</p>
+        <p class="text-sm text-gray-400 mb-4">Add products to display them here</p>
+        <a href="{% url 'vendors:product_create' %}" 
+           class="inline-flex items-center px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90">
+            Add First Product
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Contact Information -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-6">Contact Information</h2>
+    <div class="grid md:grid-cols-2 gap-6">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mr-4">
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 mb-1">Phone</p>
+                <p class="font-semibold text-gray-900">{{ store.phone }}</p>
+            </div>
+        </div>
+        
+        {% if store.email %}
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-soft-blue/10 rounded-lg flex items-center justify-center mr-4">
+                <svg class="w-6 h-6 text-soft-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 mb-1">Email</p>
+                <p class="font-semibold text-gray-900">{{ store.email }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

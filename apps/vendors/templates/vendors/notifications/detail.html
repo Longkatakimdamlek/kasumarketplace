@@ -1,0 +1,146 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}{{ notification.title }} - KasuMarketplace{% endblock %}
+
+{% block page_title %}Notification{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+    
+    <!-- Back Button -->
+    <a href="{% url 'vendors:notification_list' %}" 
+       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Notifications
+    </a>
+    
+    <!-- Notification Card -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        
+        <!-- Header -->
+        <div class="border-b border-gray-200 p-6 {% if notification.notification_type == 'order' %}bg-green-50{% elif notification.notification_type == 'payment' %}bg-purple-50{% elif notification.notification_type == 'product' %}bg-blue-50{% else %}bg-gray-50{% endif %}">
+            <div class="flex items-start">
+                <!-- Icon -->
+                <div class="flex-shrink-0 mr-4">
+                    {% if notification.notification_type == 'order' %}
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                        </svg>
+                    </div>
+                    {% elif notification.notification_type == 'payment' %}
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    {% elif notification.notification_type == 'product' %}
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                    </div>
+                    {% else %}
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Title & Meta -->
+                <div class="flex-1">
+                    <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ notification.title }}</h1>
+                    <div class="flex items-center space-x-4 text-sm text-gray-600">
+                        <span class="inline-flex items-center px-3 py-1 bg-white rounded-full font-semibold">
+                            {{ notification.get_notification_type_display }}
+                        </span>
+                        <span class="flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            {{ notification.created_at|date:"F d, Y - g:i A" }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Message Content -->
+        <div class="p-8">
+            <div class="prose max-w-none">
+                <p class="text-gray-700 leading-relaxed whitespace-pre-line text-lg">{{ notification.message }}</p>
+            </div>
+            
+            <!-- Action Button (if applicable) -->
+            {% if notification.action_url %}
+            <div class="mt-8">
+                <a href="{{ notification.action_url }}" 
+                   class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary to-soft-blue text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+                    {{ notification.action_label|default:"View Details" }}
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Footer Actions -->
+        <div class="border-t border-gray-200 bg-gray-50 px-8 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                {% if not notification.is_read %}
+                <form method="post" action="{% url 'vendors:notification_mark_read' notification.id %}">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="text-sm font-semibold text-primary hover:text-primary/80">
+                        Mark as Read
+                    </button>
+                </form>
+                {% endif %}
+                
+                <form method="post" action="{% url 'vendors:notification_delete' notification.id %}">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            onclick="return confirm('Delete this notification?')"
+                            class="text-sm font-semibold text-red-600 hover:text-red-700">
+                        Delete
+                    </button>
+                </form>
+            </div>
+            
+            <span class="text-xs text-gray-500">
+                {% if notification.is_read %}
+                Read {{ notification.read_at|timesince }} ago
+                {% else %}
+                Unread
+                {% endif %}
+            </span>
+        </div>
+        
+    </div>
+    
+    <!-- Related Notifications -->
+    {% if related_notifications %}
+    <div class="mt-8">
+        <h3 class="font-bold text-gray-900 mb-4">Related Notifications</h3>
+        <div class="space-y-3">
+            {% for related in related_notifications|slice:":3" %}
+            <a href="{% url 'vendors:notification_detail' related.id %}" 
+               class="block bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all">
+                <h4 class="font-semibold text-gray-900 mb-1">{{ related.title }}</h4>
+                <p class="text-sm text-gray-600 line-clamp-1">{{ related.message }}</p>
+                <p class="text-xs text-gray-500 mt-1">{{ related.created_at|timesince }} ago</p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+</div>
+
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'vendors/emails/base_email.html' %}
+
+{% block title %}NIN Verified Successfully - KasuMarketplace{% endblock %}
+
+{% block email_title %}✓ Identity Verified{% endblock %}
+
+{% block content %}
+<div class="success-box">
+    <p style="margin: 0; font-weight: bold; color: #065f46;">
+        🎉 Great news! Your NIN has been verified successfully.
+    </p>
+</div>
+
+<p>Hello {{ vendor.user.first_name|default:"Vendor" }},</p>
+
+<p>
+    We're pleased to inform you that your National Identification Number (NIN) has been 
+    <strong>successfully verified</strong> on KasuMarketplace.
+</p>
+
+<h2>Verified Information</h2>
+<div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Full Name:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">{{ vendor.full_name }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">NIN:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace;">{{ vendor.nin_masked }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Verified On:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">{{ vendor.nin_verified_at|date:"F d, Y" }}</td>
+        </tr>
+    </table>
+</div>
+
+<h2>What's Next?</h2>
+<p>Complete these remaining steps to start selling:</p>
+
+<ol style="padding-left: 20px; color: #374151;">
+    <li style="margin-bottom: 10px;"><strong>Verify Your Bank Account (BVN)</strong> - Link your bank for secure payouts</li>
+    <li style="margin-bottom: 10px;"><strong>Set Up Your Store</strong> - Choose your category and customize your storefront</li>
+    <li style="margin-bottom: 10px;"><strong>Student Verification</strong> (Optional) - Get special benefits if you're a student</li>
+    <li style="margin-bottom: 10px;"><strong>Admin Review</strong> - We'll review your application within 24 hours</li>
+</ol>
+
+<div style="text-align: center;">
+    <a href="{{ base_url }}/vendors/verification/" class="button">
+        Continue Verification →
+    </a>
+</div>
+
+<div class="info-box">
+    <p style="margin: 0; font-size: 14px;">
+        <strong>Security Note:</strong> Your NIN is encrypted and stored securely. 
+        We will never share your personal information with third parties.
+    </p>
+</div>
+
+<div class="divider"></div>
+
+<p class="text-muted">
+    If you did not initiate this verification, please contact our support team immediately.
+</p>
+
+<p>
+    Best regards,<br>
+    <strong>The KasuMarketplace Team</strong>
+</p>
+{% endblock %}

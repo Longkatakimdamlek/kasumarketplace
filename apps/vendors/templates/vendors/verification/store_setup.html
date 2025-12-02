@@ -1,0 +1,250 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Store Setup - KasuMarketplace{% endblock %}
+
+{% block page_title %}Store Setup{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+    
+    <!-- Back Button -->
+    <a href="{% url 'vendors:verification_center' %}" 
+       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Verification Center
+    </a>
+    
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-primary/5 to-soft-blue/5 rounded-xl p-8 mb-8 border border-primary/10">
+        <div class="flex items-center mb-4">
+            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
+                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <h1 class="text-2xl font-bold text-gray-900">Set Up Your Store</h1>
+                <p class="text-gray-600">Step 3 of 5 • Store Configuration</p>
+            </div>
+        </div>
+        <p class="text-gray-700">
+            Choose your product category and customize your store. This information helps customers find your products.
+        </p>
+    </div>
+    
+    <!-- Form Card -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        
+        <form method="post" enctype="multipart/form-data" x-data="{ submitting: false, categoryLocked: false }">
+            {% csrf_token %}
+            
+            <!-- Store Name -->
+            <div class="mb-6">
+                <label for="{{ form.name.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Store Name
+                    <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       name="{{ form.name.html_name }}"
+                       id="{{ form.name.id_for_label }}"
+                       value="{{ form.name.value|default:'' }}"
+                       placeholder="e.g., Tech Haven, Fashion Palace"
+                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                       required>
+                {% if form.name.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                {% else %}
+                <p class="mt-2 text-xs text-gray-500">This will be your store's display name</p>
+                {% endif %}
+            </div>
+            
+            <!-- Main Category -->
+            <div class="mb-6">
+                <label for="{{ form.main_category.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Main Product Category
+                    <span class="text-red-500">*</span>
+                </label>
+                <select name="{{ form.main_category.html_name }}"
+                        id="{{ form.main_category.id_for_label }}"
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                        required>
+                    <option value="">Select your category</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+                {% if form.main_category.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.main_category.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- ⚠️ CATEGORY LOCK WARNING -->
+            <div class="mb-8 bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6">
+                <div class="flex items-start">
+                    <svg class="w-6 h-6 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-yellow-900 mb-2">⚠️ Important: Category Will Be Locked</h3>
+                        <p class="text-sm text-yellow-800 mb-3">
+                            Once you submit this form, your main category <strong>cannot be changed</strong>. 
+                            You'll need to contact admin support to request a category change later.
+                        </p>
+                        <p class="text-sm text-yellow-800">
+                            <strong>Why?</strong> This prevents sellers from switching between unrelated products 
+                            and maintains category integrity for customers.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Store Description -->
+            <div class="mb-6">
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Store Description
+                    <span class="text-red-500">*</span>
+                </label>
+                <textarea name="{{ form.description.html_name }}"
+                          id="{{ form.description.id_for_label }}"
+                          rows="4"
+                          placeholder="Tell customers about your store and what makes it special..."
+                          class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                          required>{{ form.description.value|default:'' }}</textarea>
+                {% if form.description.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                {% else %}
+                <p class="mt-2 text-xs text-gray-500">Minimum 50 characters. Be descriptive and engaging!</p>
+                {% endif %}
+            </div>
+            
+            <!-- Store Banner Upload -->
+            <div class="mb-6">
+                <label for="{{ form.banner.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Store Banner (Optional)
+                </label>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors"
+                     x-data="{ fileName: '' }">
+                    <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <label for="{{ form.banner.id_for_label }}" class="cursor-pointer">
+                        <span class="text-primary font-semibold hover:text-primary/80">Upload a file</span>
+                        <span class="text-gray-600"> or drag and drop</span>
+                    </label>
+                    <input type="file" 
+                           name="{{ form.banner.html_name }}"
+                           id="{{ form.banner.id_for_label }}"
+                           accept="image/*"
+                           class="hidden"
+                           @change="fileName = $event.target.files[0]?.name || ''">
+                    <p class="text-xs text-gray-500 mt-2">PNG, JPG up to 2MB. Recommended: 1200x400px</p>
+                    <p x-show="fileName" x-text="'Selected: ' + fileName" class="text-sm text-primary mt-2"></p>
+                </div>
+                {% if form.banner.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.banner.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Contact Information -->
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="{{ form.phone.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                        Store Phone Number
+                        <span class="text-red-500">*</span>
+                    </label>
+                    <input type="tel" 
+                           name="{{ form.phone.html_name }}"
+                           id="{{ form.phone.id_for_label }}"
+                           value="{{ form.phone.value|default:vendor.phone }}"
+                           placeholder="080XXXXXXXX"
+                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                           required>
+                    {% if form.phone.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.phone.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                        Store Email (Optional)
+                    </label>
+                    <input type="email" 
+                           name="{{ form.email.html_name }}"
+                           id="{{ form.email.id_for_label }}"
+                           value="{{ form.email.value|default:vendor.user.email }}"
+                           placeholder="store@example.com"
+                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                    {% if form.email.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Confirmation Checkbox -->
+            <div class="mb-6 bg-gray-50 rounded-lg p-4">
+                <label class="flex items-start">
+                    <input type="checkbox" 
+                           name="confirm_category_lock"
+                           required
+                           @change="categoryLocked = $event.target.checked"
+                           class="mt-1 w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary">
+                    <span class="ml-3 text-sm text-gray-700">
+                        <strong class="text-gray-900">I understand and confirm</strong> that my selected category will be 
+                        <strong class="text-yellow-700">permanently locked</strong> after submission and cannot be changed without admin approval.
+                        <span class="text-red-600">*</span>
+                    </span>
+                </label>
+            </div>
+            
+            <!-- Submit Button -->
+            <button type="submit" 
+                    @click="submitting = true"
+                    :disabled="!categoryLocked || submitting"
+                    class="w-full py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                <span x-show="!submitting">Complete Store Setup</span>
+                <span x-show="submitting" class="flex items-center justify-center">
+                    <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating Store...
+                </span>
+            </button>
+            
+        </form>
+        
+    </div>
+    
+    <!-- Tips Section -->
+    <div class="mt-8 grid sm:grid-cols-2 gap-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-5">
+            <div class="flex items-start">
+                <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <h4 class="text-sm font-bold text-blue-900 mb-1">Choose Carefully</h4>
+                    <p class="text-xs text-blue-800">Your category determines which products you can sell and how customers find you.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-green-50 border border-green-200 rounded-lg p-5">
+            <div class="flex items-start">
+                <svg class="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <h4 class="text-sm font-bold text-green-900 mb-1">Be Descriptive</h4>
+                    <p class="text-xs text-green-800">A compelling store description helps build trust and attracts more customers.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}

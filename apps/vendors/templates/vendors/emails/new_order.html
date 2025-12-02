@@ -1,0 +1,143 @@
+{% extends 'vendors/emails/base_email.html' %}
+
+{% block title %}New Order Received - KasuMarketplace{% endblock %}
+
+{% block email_title %}🛍️ New Order!{% endblock %}
+
+{% block content %}
+<div class="success-box">
+    <p style="margin: 0; font-weight: bold; color: #065f46;">
+        🎉 Great news! You have a new order from {{ order.customer.get_full_name }}
+    </p>
+</div>
+
+<p>Hello {{ vendor.user.first_name|default:"Vendor" }},</p>
+
+<p>
+    You've received a new order on KasuMarketplace. Please review the details below and 
+    prepare the items for shipment.
+</p>
+
+<h2>Order Details</h2>
+<div style="background: linear-gradient(135deg, #6a3df5 0%, #4b8bff 100%); padding: 25px; border-radius: 12px; margin: 25px 0; color: white;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; opacity: 0.9;">Order Number:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace; font-size: 18px;">
+                #{{ order.order_number }}
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; opacity: 0.9;">Order Date:</td>
+            <td style="padding: 8px 0; font-weight: bold; text-align: right;">
+                {{ order.created_at|date:"F d, Y - g:i A" }}
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 15px 0 8px 0; font-size: 14px; opacity: 0.9;">Total Amount:</td>
+            <td style="padding: 15px 0 8px 0; font-weight: bold; text-align: right; font-size: 28px;">
+                ₦{{ order.total_amount|floatformat:2 }}
+            </td>
+        </tr>
+    </table>
+</div>
+
+<h2>Customer Information</h2>
+<div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280; width: 40%;">Name:</td>
+            <td style="padding: 8px 0; font-weight: bold;">{{ order.customer.get_full_name }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Email:</td>
+            <td style="padding: 8px 0; font-weight: bold;">{{ order.customer.email }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Phone:</td>
+            <td style="padding: 8px 0; font-weight: bold;">{{ order.customer_phone|default:"Not provided" }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280; vertical-align: top;">Delivery Address:</td>
+            <td style="padding: 8px 0; font-weight: bold;">{{ order.delivery_address }}</td>
+        </tr>
+    </table>
+</div>
+
+<h2>Order Items</h2>
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+    <thead>
+        <tr style="background-color: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+            <th style="padding: 12px; text-align: left; color: #6b7280; font-size: 12px; text-transform: uppercase;">Product</th>
+            <th style="padding: 12px; text-align: center; color: #6b7280; font-size: 12px; text-transform: uppercase;">Qty</th>
+            <th style="padding: 12px; text-align: right; color: #6b7280; font-size: 12px; text-transform: uppercase;">Price</th>
+            <th style="padding: 12px; text-align: right; color: #6b7280; font-size: 12px; text-transform: uppercase;">Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in order.items.all %}
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 15px 12px; font-weight: 600;">{{ item.product.name }}</td>
+            <td style="padding: 15px 12px; text-align: center;">{{ item.quantity }}</td>
+            <td style="padding: 15px 12px; text-align: right; font-family: monospace;">₦{{ item.price|floatformat:2 }}</td>
+            <td style="padding: 15px 12px; text-align: right; font-weight: bold; font-family: monospace;">₦{{ item.total_price|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr style="background-color: #f9fafb;">
+            <td colspan="3" style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 16px;">TOTAL:</td>
+            <td style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 18px; color: #6a3df5; font-family: monospace;">
+                ₦{{ order.total_amount|floatformat:2 }}
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+<h2>Next Steps</h2>
+<div style="margin: 25px 0;">
+    <div style="padding: 15px; border-left: 4px solid #10b981; background-color: #f0fdf4; margin-bottom: 12px; border-radius: 4px;">
+        <p style="margin: 0; font-weight: bold; color: #065f46;">✅ Confirm the Order</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Review the order details and update the status to "Processing"
+        </p>
+    </div>
+    <div style="padding: 15px; border-left: 4px solid #3b82f6; background-color: #eff6ff; margin-bottom: 12px; border-radius: 4px;">
+        <p style="margin: 0; font-weight: bold; color: #1e40af;">📦 Prepare for Shipping</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Pack the items securely and arrange delivery to the customer
+        </p>
+    </div>
+    <div style="padding: 15px; border-left: 4px solid #f59e0b; background-color: #fef3c7; border-radius: 4px;">
+        <p style="margin: 0; font-weight: bold; color: #92400e;">🚚 Update Tracking</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
+            Keep the customer informed by updating the order status
+        </p>
+    </div>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ base_url }}/vendors/orders/{{ order.id }}/" class="button" style="font-size: 16px;">
+        View Order Details →
+    </a>
+</div>
+
+<div class="info-box">
+    <p style="margin: 0; font-size: 14px;">
+        <strong>⏰ Response Time Matters!</strong><br>
+        Customers expect quick order processing. Aim to update the order status within 24 hours 
+        to maintain your seller rating and customer satisfaction.
+    </p>
+</div>
+
+<div class="divider"></div>
+
+<p class="text-muted">
+    Payment for this order has been received and will be credited to your wallet once the order is marked as delivered.
+</p>
+
+<p>
+    Happy selling!<br>
+    <strong>The KasuMarketplace Team</strong>
+</p>
+{% endblock %}

@@ -1,0 +1,66 @@
+<!-- Reusable Progress Bar Component
+Usage in templates:
+{% include 'vendors/components/progress_bar.html' with 
+   percentage=75 
+   color="purple"
+   label="Profile Completion"
+   show_label=True
+   size="md"
+%}
+
+Sizes: sm, md, lg
+Colors: purple, blue, green, pink, yellow, red
+-->
+
+{% if show_label %}
+<div class="flex items-center justify-between mb-2">
+    <span class="text-sm font-medium text-gray-700">{{ label|default:"Progress" }}</span>
+    <span class="text-sm font-semibold {% if color == 'purple' %}text-primary{% elif color == 'blue' %}text-soft-blue{% elif color == 'green' %}text-green-600{% elif color == 'pink' %}text-pink-accent{% elif color == 'yellow' %}text-yellow-600{% elif color == 'red' %}text-red-600{% else %}text-gray-600{% endif %}">
+        {{ percentage|default:0 }}%
+    </span>
+</div>
+{% endif %}
+
+<div class="w-full bg-gray-200 rounded-full overflow-hidden 
+            {% if size == 'sm' %}h-2
+            {% elif size == 'lg' %}h-4
+            {% else %}h-3{% endif %}">
+    <div class="h-full rounded-full transition-all duration-500 ease-out
+                {% if color == 'purple' %}bg-gradient-to-r from-primary to-light-purple
+                {% elif color == 'blue' %}bg-gradient-to-r from-soft-blue to-blue-400
+                {% elif color == 'green' %}bg-gradient-to-r from-green-500 to-green-400
+                {% elif color == 'pink' %}bg-gradient-to-r from-pink-accent to-pink-400
+                {% elif color == 'yellow' %}bg-gradient-to-r from-yellow-500 to-yellow-400
+                {% elif color == 'red' %}bg-gradient-to-r from-red-500 to-red-400
+                {% else %}bg-gradient-to-r from-gray-500 to-gray-400{% endif %}"
+         style="width: {{ percentage|default:0 }}%"
+         x-data="{ width: 0 }"
+         x-init="setTimeout(() => width = {{ percentage|default:0 }}, 100)"
+         :style="`width: ${width}%`">
+    </div>
+</div>
+
+{% if show_steps %}
+<!-- Step indicators below progress bar -->
+<div class="flex justify-between mt-2">
+    {% for step in steps %}
+    <div class="text-center" style="width: {{ 100|dividedby:steps|length }}%">
+        <div class="w-8 h-8 mx-auto rounded-full flex items-center justify-center text-xs font-semibold
+                    {% if forloop.counter0 < percentage|dividedby:100|multiply:steps|length %}
+                        {% if color == 'purple' %}bg-primary text-white
+                        {% elif color == 'blue' %}bg-soft-blue text-white
+                        {% elif color == 'green' %}bg-green-500 text-white
+                        {% elif color == 'pink' %}bg-pink-accent text-white
+                        {% elif color == 'yellow' %}bg-yellow-500 text-white
+                        {% elif color == 'red' %}bg-red-500 text-white
+                        {% else %}bg-gray-500 text-white{% endif %}
+                    {% else %}
+                        bg-gray-200 text-gray-500
+                    {% endif %}">
+            {{ forloop.counter }}
+        </div>
+        <p class="text-xs text-gray-600 mt-1">{{ step }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

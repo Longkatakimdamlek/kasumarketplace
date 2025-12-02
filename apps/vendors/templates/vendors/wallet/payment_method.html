@@ -1,0 +1,234 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Payment Method - KasuMarketplace{% endblock %}
+
+{% block page_title %}Payment Method{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+    
+    <!-- Back Button -->
+    <a href="{% url 'vendors:wallet_overview' %}" 
+       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Wallet
+    </a>
+    
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-soft-blue to-primary rounded-xl p-8 mb-8 text-white shadow-lg">
+        <div class="flex items-center">
+            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold mb-2">Bank Account Details</h1>
+                <p class="text-blue-100">Manage your payout destination</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Current Bank Account -->
+    {% if bank_account %}
+    <div class="bg-white rounded-xl shadow-lg border-2 border-green-200 p-8 mb-8">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                <svg class="w-6 h-6 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                Current Bank Account
+            </h2>
+            {% include 'vendors/components/verification_badge.html' with status="completed" label="Verified" size="md" show_icon=True %}
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+            <div>
+                <p class="text-sm text-gray-600 mb-1">Bank Name</p>
+                <p class="text-lg font-bold text-gray-900">{{ bank_account.bank_name }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600 mb-1">Account Number</p>
+                <p class="text-lg font-mono font-bold text-gray-900">{{ bank_account.account_number }}</p>
+            </div>
+            <div class="md:col-span-2">
+                <p class="text-sm text-gray-600 mb-1">Account Name</p>
+                <p class="text-lg font-bold text-gray-900">{{ bank_account.account_name }}</p>
+            </div>
+        </div>
+        
+        <div class="mt-6 pt-6 border-t border-gray-200">
+            <p class="text-sm text-gray-600 mb-1">Added on</p>
+            <p class="text-sm font-semibold text-gray-900">{{ bank_account.created_at|date:"F d, Y" }}</p>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Update/Add Form -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">
+            {% if bank_account %}Update{% else %}Add{% endif %} Bank Account
+        </h2>
+        
+        <form method="post" x-data="{ submitting: false, verifying: false }">
+            {% csrf_token %}
+            
+            <!-- Bank Name -->
+            <div class="mb-6">
+                <label for="{{ form.bank_name.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Bank Name
+                    <span class="text-red-500">*</span>
+                </label>
+                <select name="{{ form.bank_name.html_name }}"
+                        id="{{ form.bank_name.id_for_label }}"
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue"
+                        required>
+                    <option value="">Select your bank</option>
+                    <option value="Access Bank" {% if bank_account.bank_name == 'Access Bank' %}selected{% endif %}>Access Bank</option>
+                    <option value="GTBank" {% if bank_account.bank_name == 'GTBank' %}selected{% endif %}>GTBank</option>
+                    <option value="First Bank" {% if bank_account.bank_name == 'First Bank' %}selected{% endif %}>First Bank</option>
+                    <option value="UBA" {% if bank_account.bank_name == 'UBA' %}selected{% endif %}>UBA</option>
+                    <option value="Zenith Bank" {% if bank_account.bank_name == 'Zenith Bank' %}selected{% endif %}>Zenith Bank</option>
+                    <option value="Fidelity Bank" {% if bank_account.bank_name == 'Fidelity Bank' %}selected{% endif %}>Fidelity Bank</option>
+                    <option value="Union Bank" {% if bank_account.bank_name == 'Union Bank' %}selected{% endif %}>Union Bank</option>
+                    <option value="Sterling Bank" {% if bank_account.bank_name == 'Sterling Bank' %}selected{% endif %}>Sterling Bank</option>
+                    <option value="Wema Bank" {% if bank_account.bank_name == 'Wema Bank' %}selected{% endif %}>Wema Bank</option>
+                    <option value="Stanbic IBTC" {% if bank_account.bank_name == 'Stanbic IBTC' %}selected{% endif %}>Stanbic IBTC</option>
+                    <option value="Other">Other</option>
+                </select>
+                {% if form.bank_name.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.bank_name.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Account Number -->
+            <div class="mb-6">
+                <label for="{{ form.account_number.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Account Number
+                    <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       name="{{ form.account_number.html_name }}"
+                       id="{{ form.account_number.id_for_label }}"
+                       value="{{ bank_account.account_number|default:'' }}"
+                       placeholder="Enter 10-digit account number"
+                       maxlength="10"
+                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue font-mono"
+                       required
+                       x-data="{ value: '' }"
+                       x-model="value"
+                       @input="value = value.replace(/[^0-9]/g, '').slice(0, 10)">
+                {% if form.account_number.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.account_number.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Account Name -->
+            <div class="mb-6">
+                <label for="{{ form.account_name.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Account Name
+                    <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       name="{{ form.account_name.html_name }}"
+                       id="{{ form.account_name.id_for_label }}"
+                       value="{{ bank_account.account_name|default:'' }}"
+                       placeholder="Account holder's name"
+                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue"
+                       required>
+                {% if form.account_name.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.account_name.errors.0 }}</p>
+                {% else %}
+                <p class="mt-2 text-xs text-gray-500">Must match the name registered with your BVN</p>
+                {% endif %}
+            </div>
+            
+            <!-- Security Notice -->
+            <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div>
+                        <h4 class="text-sm font-semibold text-blue-900 mb-1">Security Notice</h4>
+                        <ul class="text-xs text-blue-800 space-y-1">
+                            <li>• Account will be verified via Paystack</li>
+                            <li>• Account name must match your registered BVN</li>
+                            <li>• Bank details are encrypted and secure</li>
+                            <li>• Changes may take 1-2 hours to take effect</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Confirmation -->
+            <div class="mb-6">
+                <label class="flex items-start">
+                    <input type="checkbox" 
+                           name="confirm"
+                           required
+                           class="mt-1 w-5 h-5 text-soft-blue border-gray-300 rounded focus:ring-soft-blue">
+                    <span class="ml-3 text-sm text-gray-700">
+                        I confirm that these bank account details are correct and belong to me. 
+                        I understand that incorrect details may delay or prevent payouts.
+                        <span class="text-red-500">*</span>
+                    </span>
+                </label>
+            </div>
+            
+            <!-- Submit Buttons -->
+            <div class="flex gap-4">
+                <button type="submit" 
+                        :disabled="submitting"
+                        @click="submitting = true"
+                        class="flex-1 py-4 bg-gradient-to-r from-soft-blue to-primary text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                    <span x-show="!submitting">{% if bank_account %}Update{% else %}Add{% endif %} Bank Account</span>
+                    <span x-show="submitting" class="flex items-center justify-center">
+                        <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Verifying...
+                    </span>
+                </button>
+                
+                <a href="{% url 'vendors:wallet_overview' %}" 
+                   class="px-8 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors">
+                    Cancel
+                </a>
+            </div>
+            
+        </form>
+    </div>
+    
+    <!-- Why We Need This -->
+    <div class="mt-8 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+        <h3 class="font-bold text-gray-900 mb-3">Why we need your bank details</h3>
+        <div class="space-y-2 text-sm text-gray-700">
+            <p class="flex items-start">
+                <svg class="w-5 h-5 text-primary mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span><strong>Secure payouts:</strong> Transfer your earnings directly to your bank account</span>
+            </p>
+            <p class="flex items-start">
+                <svg class="w-5 h-5 text-primary mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span><strong>Compliance:</strong> Required by financial regulations for vendor payments</span>
+            </p>
+            <p class="flex items-start">
+                <svg class="w-5 h-5 text-primary mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span><strong>Verification:</strong> Ensures payouts go to the rightful account owner</span>
+            </p>
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}
