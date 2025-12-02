@@ -55,7 +55,10 @@ INSTALLED_APPS = [
 
     # local apps
     'apps.users.apps.UsersConfig',
+<<<<<<< HEAD
     'apps.vendors',
+=======
+>>>>>>> fcc348e5a2c27b1bd240c5f05727e083445490bf
 ]
 
 MIDDLEWARE = [
@@ -113,6 +116,7 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+<<<<<<< HEAD
 # DATABASES = {
 #     'default': dj_database_url.config(
 #         default=os.getenv('DATABASE_URL'),
@@ -120,6 +124,15 @@ DATABASES = {
 #         ssl_require=True
 #     )
 # }
+=======
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
+>>>>>>> fcc348e5a2c27b1bd240c5f05727e083445490bf
 
 
 # Password validation
@@ -254,6 +267,7 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 
 
 # EMAIL CONFIGURATION
+<<<<<<< HEAD
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_HOST = 'smtp.gmail.com'
 # EMAIL_PORT = 587
@@ -275,6 +289,16 @@ SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
 
 # Admin emails
 ADMIN_EMAILS = os.getenv('ADMIN_EMAILS', 'admin@kasumarketplace.com').split(',')
+=======
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+>>>>>>> fcc348e5a2c27b1bd240c5f05727e083445490bf
 
 OTP_EXPIRY_TIME = 10
 OTP_LENGTH = 6
