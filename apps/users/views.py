@@ -427,6 +427,7 @@ def buyer_dashboard(request):
         'user': request.user,
     })
 
+<<<<<<< HEAD
 @login_required
 def vendor_dashboard(request):
     """
@@ -442,6 +443,20 @@ def vendor_dashboard(request):
         return redirect('users:vendor_dashboard')
     
     return redirect('vendors:dashboard')
+=======
+
+@login_required
+def vendor_dashboard(request):
+    """Vendor dashboard view."""
+    if not request.user.is_vendor:
+        messages.error(request, 'Access denied. Vendors only.')
+        return redirect('home')
+    
+    return render(request, 'users/vendor_dashboard.html', {
+        'user': request.user,
+    })
+
+>>>>>>> fcc348e5a2c27b1bd240c5f05727e083445490bf
 
 # ===========================
 # HOME VIEW (PLACEHOLDER)

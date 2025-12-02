@@ -17,6 +17,7 @@ Including another URLconf
 """
 Main URL configuration for KasuMarketplace project.
 """
+<<<<<<< HEAD
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -38,3 +39,21 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+=======
+from django.urls import path
+from django.contrib import admin
+from django.urls import path, include
+from apps.users import views as user_views
+
+urlpatterns = [
+    
+
+    path('admin/', admin.site.urls),
+    # Django Allauth URLs (for social authentication)
+    path('accounts/', include('allauth.urls')),
+    path('', include('apps.users.urls', namespace='users')),
+    path('', user_views.home, name='home'),
+    
+]
+
+>>>>>>> fcc348e5a2c27b1bd240c5f05727e083445490bf
