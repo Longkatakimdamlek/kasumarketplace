@@ -1,286 +1,1011 @@
 {% extends 'vendors/base.html' %}
 
 {% block title %}Store Settings - KasuMarketplace{% endblock %}
-
 {% block page_title %}Store Settings{% endblock %}
 
 {% block content %}
 
-<div class="max-w-4xl mx-auto">
+<div class="max-w-full sm:max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 py-3 xs:py-4 sm:py-6">
     
     <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Store Settings</h1>
-        <p class="text-gray-600">Manage your store information and preferences</p>
+    <div class="mb-4 xs:mb-5 sm:mb-6">
+        <div class="flex flex-col gap-3 xs:gap-4">
+            <div>
+                <h1 class="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 mb-1 xs:mb-2">Store Settings</h1>
+                <p class="text-xs xs:text-sm sm:text-base text-gray-600">Manage your store information and preferences</p>
+            </div>
+            <a href="{% url 'vendors:dashboard' %}" 
+               class="inline-flex items-center justify-center px-3 xs:px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors text-sm xs:text-base w-full xs:w-auto">
+                <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Back to Dashboard
+            </a>
+        </div>
     </div>
-    
-    <div class="grid lg:grid-cols-3 gap-8">
-        
-        <!-- Main Content -->
-        <div class="lg:col-span-2 space-y-6">
-            
-            <!-- Basic Information -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 class="text-lg font-bold text-gray-900 mb-6">Basic Information</h2>
-                
-                <form method="post" enctype="multipart/form-data" x-data="{ submitting: false }">
-                    {% csrf_token %}
-                    
-                    <!-- Store Name -->
-                    <div class="mb-6">
-                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                            Store Name
-                            <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" 
-                               name="{{ form.name.html_name }}"
-                               id="{{ form.name.id_for_label }}"
-                               value="{{ store.name }}"
-                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                               required>
-                        {% if form.name.errors %}
-                        <p class="mt-2 text-sm text-red-600">{{ form.name.errors.0 }}</p>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Description -->
-                    <div class="mb-6">
-                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                            Description
-                            <span class="text-red-500">*</span>
-                        </label>
-                        <textarea name="{{ form.description.html_name }}"
-                                  id="{{ form.description.id_for_label }}"
-                                  rows="5"
-                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                                  required>{{ store.description }}</textarea>
-                        {% if form.description.errors %}
-                        <p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Current Banner -->
-                    {% if store.banner %}
-                    <div class="mb-6">
-                        <p class="text-sm font-semibold text-gray-900 mb-2">Current Banner</p>
-                        <img src="{{ store.banner.url }}" 
-                             alt="{{ store.name }}"
-                             class="w-full h-48 object-cover rounded-lg">
-                    </div>
+
+    <!-- Success/Error Messages -->
+    {% if messages %}
+    <div class="mb-4 xs:mb-5 sm:mb-6 space-y-2 xs:space-y-3">
+        {% for message in messages %}
+        <div class="{% if message.tags == 'success' %}bg-green-50 border-green-400 text-green-800{% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-400 text-yellow-800{% else %}bg-red-50 border-red-400 text-red-800{% endif %} border-l-4 rounded-lg p-3 xs:p-4 shadow-sm">
+            <div class="flex items-start gap-2 xs:gap-3">
+                <svg class="w-5 h-5 mt-0.5 mr-2 xs:mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    {% if message.tags == 'success' %}
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    {% else %}
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
                     {% endif %}
-                    
-                    <!-- New Banner Upload -->
-                    <div class="mb-6">
-                        <label for="{{ form.banner.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                            {% if store.banner %}Update{% else %}Upload{% endif %} Banner
-                        </label>
-                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors"
-                             x-data="{ fileName: '' }">
-                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            <label for="{{ form.banner.id_for_label }}" class="cursor-pointer">
-                                <span class="text-primary font-semibold hover:text-primary/80">Upload a file</span>
-                                <span class="text-gray-600"> or drag and drop</span>
-                            </label>
-                            <input type="file" 
-                                   name="{{ form.banner.html_name }}"
-                                   id="{{ form.banner.id_for_label }}"
-                                   accept="image/*"
-                                   class="hidden"
-                                   @change="fileName = $event.target.files[0]?.name || ''">
-                            <p class="text-xs text-gray-500 mt-2">PNG, JPG up to 2MB. Recommended: 1200x400px</p>
-                            <p x-show="fileName" x-text="'Selected: ' + fileName" class="text-sm text-primary mt-2"></p>
-                        </div>
+                </svg>
+                <p class="text-xs xs:text-sm font-semibold flex-1">{{ message }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- SINGLE FORM WRAPPING ALL SECTIONS -->
+    <form method="post" enctype="multipart/form-data" id="settingsForm" class="space-y-4 xs:space-y-5 sm:space-y-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 xs:gap-5 sm:gap-6 lg:gap-8">
+            
+            <!-- Main Content Column -->
+            <div class="lg:col-span-2 space-y-4 xs:space-y-5 sm:space-y-6">
+                
+                
+                <!-- Basic Information -->
+                <div class="card-white">
+                    <div class="card-header">
+                        <h2 class="text-base xs:text-lg sm:text-xl font-bold text-gray-900">Basic Information</h2>
                     </div>
                     
-                    <!-- Contact Information -->
-                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div class="p-3 xs:p-4 sm:p-6 space-y-4 xs:space-y-5 sm:space-y-6">
+                        
+                        <!-- Store Name -->
                         <div>
-                            <label for="{{ form.phone.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                                Store Phone
+                            <label for="{{ form.store_name.id_for_label }}" class="form-label">
+                                <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/>
+                                </svg>
+                                Store Name
                                 <span class="text-red-500">*</span>
                             </label>
-                            <input type="tel" 
-                                   name="{{ form.phone.html_name }}"
-                                   id="{{ form.phone.id_for_label }}"
-                                   value="{{ store.phone }}"
-                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                                   required>
+                            {{ form.store_name }}
+                            {% if form.store_name.errors %}
+                            <p class="form-error">{{ form.store_name.errors.0 }}</p>
+                            {% endif %}
+                            {% if form.store_name.help_text %}
+                            <p class="form-help">{{ form.store_name.help_text|safe }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Main Category -->
+                        <div>
+                            <label for="{{ form.main_category.id_for_label }}" class="form-label">
+                                <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M7 3a1 1 0 000 2h6a1 1 0 000-2H7zM4 7a1 1 0 011-1h10a1 1 0 011 1v3a1 1 0 11-2 0V8H6v2a1 1 0 11-2 0V7zM2 13a1 1 0 011-1h14a1 1 0 011 1v3a1 1 0 11-2 0v-2H4v2a1 1 0 11-2 0v-3z"/>
+                                </svg>
+                                Main Category
+                                <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.main_category }}
+                            {% if form.main_category.errors %}
+                            <p class="form-error">{{ form.main_category.errors.0 }}</p>
+                            {% endif %}
+                            {% if form.main_category.help_text %}
+                            <p class="form-help">{{ form.main_category.help_text|safe }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tagline -->
+                        <div>
+                            <label for="{{ form.tagline.id_for_label }}" class="form-label">
+                                <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                </svg>
+                                Tagline
+                            </label>
+                            {{ form.tagline }}
+                            <p class="form-help">A catchy phrase that describes your store (max 150 characters)</p>
+                            {% if form.tagline.errors %}
+                            <p class="form-error">{{ form.tagline.errors.0 }}</p>
+                            {% endif %}
                         </div>
                         
+                        <!-- Description -->
                         <div>
-                            <label for="{{ form.email.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                                Store Email
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                                </svg>
+                                Store Description
+                                <span class="text-red-500">*</span>
                             </label>
-                            <input type="email" 
-                                   name="{{ form.email.html_name }}"
-                                   id="{{ form.email.id_for_label }}"
-                                   value="{{ store.email|default:'' }}"
-                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                            {{ form.description }}
+                            <div class="flex justify-between mt-1">
+                                <p class="form-help">Tell customers about your store and what makes it special</p>
+                                <p class="form-help">
+                                    <span id="descCount">{{ store.description|length|default:0 }}</span>/1000
+                                </p>
+                            </div>
+                            {% if form.description.errors %}
+                            <p class="form-error">{{ form.description.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Banner Upload -->
+                        <div>
+                            <label class="form-label">Store Banner</label>
+                            
+                            <div class="relative group">
+                                <!-- Preview/Upload Area -->
+                                <div class="upload-box-preview">
+                                    <img id="bannerPreview" 
+                                         src="{% if store.banner %}{{ store.banner.url }}{% else %}data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='currentColor' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'/%3E%3C/svg%3E{% endif %}"
+                                         alt="Banner Preview"
+                                         class="w-full h-24 xs:h-32 sm:h-48 object-cover rounded-lg border-2 border-gray-200{% if not store.banner %} bg-gray-100{% endif %}"
+                                         {% if not store.banner %}style="padding: 2rem; background-color: #f3f4f6; color: #9ca3af;"{% endif %}>
+                                    
+                                    <!-- Overlay on Hover -->
+                                    <div class="absolute inset-0 bg-black bg-opacity-40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 xs:gap-3">
+                                        <label class="cursor-pointer px-3 xs:px-4 py-2 bg-primary text-white rounded-lg text-xs xs:text-sm font-semibold hover:bg-primary-dark transition-colors">
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                            </svg>
+                                            Change
+                                            {{ form.banner }}
+                                        </label>
+                                        {% if store.banner %}
+                                        <button type="button" onclick="document.getElementById('banner-clear').click()" class="px-3 xs:px-4 py-2 bg-red-500 text-white rounded-lg text-xs xs:text-sm font-semibold hover:bg-red-600 transition-colors">
+                                            <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                            </svg>
+                                            Remove
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Hidden file input for change -->
+                                {{ form.banner }}
+                            </div>
+                            
+                            <p class="text-xs text-gray-500 mt-2 xs:mt-3">8MB • 1200x350px • Drag or click to change</p>
+                            {% if form.banner.errors %}
+                            <p class="form-error">{{ form.banner.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Logo Upload -->
+                        <div>
+                            <label class="form-label">Store Logo</label>
+                            
+                            <div class="relative group inline-block w-full">
+                                <!-- Preview/Upload Area -->
+                                <div class="upload-box-preview-logo">
+                                    <img id="logoPreview" 
+                                         src="{% if store.logo %}{{ store.logo.url }}{% else %}data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='currentColor' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'/%3E%3C/svg%3E{% endif %}"
+                                         alt="Logo Preview"
+                                         class="w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 object-cover rounded-lg border-2 border-gray-200{% if not store.logo %} bg-gray-100{% endif %}"
+                                         {% if not store.logo %}style="padding: 1rem; background-color: #f3f4f6; color: #9ca3af;"{% endif %}>
+                                    
+                                    <!-- Overlay on Hover -->
+                                    <div class="absolute inset-0 bg-black bg-opacity-40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 xs:gap-2">
+                                        <label class="cursor-pointer px-2 xs:px-3 py-1 xs:py-1.5 bg-primary text-white rounded text-xs font-semibold hover:bg-primary-dark transition-colors whitespace-nowrap">
+                                            <svg class="w-3 h-3 inline mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                            </svg>
+                                            Change
+                                            {{ form.logo }}
+                                        </label>
+                                        {% if store.logo %}
+                                        <button type="button" onclick="document.getElementById('logo-clear').click()" class="px-2 xs:px-3 py-1 xs:py-1.5 bg-red-500 text-white rounded text-xs font-semibold hover:bg-red-600 transition-colors whitespace-nowrap">
+                                            <svg class="w-3 h-3 inline mr-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                            </svg>
+                                            Remove
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Hidden file input for change -->
+                                {{ form.logo }}
+                            </div>
+                            
+                            <p class="text-xs text-gray-500 mt-2 xs:mt-3">5MB • 400x400px • Drag or click to change</p>
+                            {% if form.logo.errors %}
+                            <p class="form-error">{{ form.logo.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Contact Information -->
+                        <div class="grid sm:grid-cols-2 gap-4 sm:gap-6">
+                            <div>
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                    Store Phone <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                <p class="form-error">{{ form.phone.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.business_email.id_for_label }}" class="form-label">
+                                    Store Email
+                                </label>
+                                {{ form.business_email }}
+                                {% if form.business_email.errors %}
+                                <p class="form-error">{{ form.business_email.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- WhatsApp -->
+                        <div>
+                            <label for="{{ form.whatsapp.id_for_label }}" class="form-label">
+                                <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+                                </svg>
+                                WhatsApp Number
+                            </label>
+                            {{ form.whatsapp }}
+                            <p class="form-help">Customers can contact you via WhatsApp</p>
+                            {% if form.whatsapp.errors %}
+                            <p class="form-error">{{ form.whatsapp.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Address -->
+                        <div>
+                            <label for="{{ form.address.id_for_label }}" class="form-label">
+                                Pickup/Delivery Address
+                            </label>
+                            {{ form.address }}
+                            <p class="form-help">Where customers can pick up orders or your delivery location</p>
+                            {% if form.address.errors %}
+                            <p class="form-error">{{ form.address.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Store Status -->
+                        <div class="info-box">
+                            <label class="flex items-start cursor-pointer group">
+                                {{ form.is_published }}
+                                <div class="ml-3">
+                                    <span class="text-sm font-semibold text-gray-900 group-hover:text-primary transition-colors">
+                                        Make store visible to customers
+                                    </span>
+                                    <p class="text-xs text-gray-600 mt-1">
+                                        When checked, your store will appear in search results and be accessible to shoppers
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <!-- Branding & Social Media -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 xs:gap-5 sm:gap-6">
+                    
+                    <!-- Branding -->
+                    <div class="card-white">
+                        <div class="card-header-pink">
+                            <h2 class="text-base xs:text-lg font-bold text-gray-900">Store Branding</h2>
+                        </div>
+                        
+                        <div class="p-3 xs:p-4 sm:p-6 space-y-4 xs:space-y-5">
+                            <label for="{{ form.primary_color.id_for_label }}" class="form-label">
+                                <svg class="w-4 h-4 text-pink-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+                                </svg>
+                                Primary Brand Color
+                            </label>
+                            <div class="flex items-center gap-3">
+                                {{ form.primary_color }}
+                                {% if store.primary_color %}
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg border-2 border-gray-300 shadow-sm" {% if store.primary_color %}style="background-color: {{ store.primary_color }};"{% endif %}></div>
+                                    <span class="text-sm font-mono text-gray-700">{{ store.primary_color }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <p class="form-help">Used for buttons, links, and highlights throughout your store</p>
+                            {% if form.primary_color.errors %}
+                            <p class="form-error">{{ form.primary_color.errors.0 }}</p>
+                            {% endif %}
                         </div>
                     </div>
                     
-                    <!-- Store Status -->
-                    <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                        <label class="flex items-center">
-                            <input type="checkbox" 
-                                   name="{{ form.is_active.html_name }}"
-                                   {% if store.is_active %}checked{% endif %}
-                                   class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary">
-                            <span class="ml-3 text-sm font-semibold text-gray-900">
-                                Store is active and visible to customers
-                            </span>
-                        </label>
+                    <!-- Social Media -->
+                    <div class="card-white">
+                        <div class="card-header-blue">
+                            <h2 class="text-base xs:text-lg font-bold text-gray-900">Social Media</h2>
+                        </div>
+                        
+                        <div class="p-3 xs:p-4 sm:p-6 space-y-4 xs:space-y-5 sm:space-y-6">
+                            <div>
+                                <label for="{{ form.instagram.id_for_label }}" class="form-label">
+                                    <svg class="w-4 h-4 text-pink-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 3a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H3a1 1 0 01-1-1V3z"/>
+                                    </svg>
+                                    Instagram
+                                </label>
+                                {{ form.instagram }}
+                                {% if form.instagram.errors %}
+                                <p class="form-error">{{ form.instagram.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.facebook.id_for_label }}" class="form-label">
+                                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 3a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H3a1 1 0 01-1-1V3z"/>
+                                    </svg>
+                                    Facebook
+                                </label>
+                                {{ form.facebook }}
+                                {% if form.facebook.errors %}
+                                <p class="form-error">{{ form.facebook.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.twitter.id_for_label }}" class="form-label">
+                                    <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 3a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H3a1 1 0 01-1-1V3z"/>
+                                    </svg>
+                                    Twitter/X
+                                </label>
+                                {{ form.twitter }}
+                                {% if form.twitter.errors %}
+                                <p class="form-error">{{ form.twitter.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Store Policies -->
+                <div class="card-white">
+                    <div class="card-header-amber">
+                        <h2 class="text-base xs:text-lg sm:text-xl font-bold text-gray-900">Contact & Policies</h2>
                     </div>
                     
-                    <!-- Submit Button -->
-                    <button type="submit" 
-                            :disabled="submitting"
-                            @click="submitting = true"
-                            class="w-full py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                        <span x-show="!submitting">Save Changes</span>
-                        <span x-show="submitting" class="flex items-center justify-center">
-                            <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Saving...
-                        </span>
-                    </button>
-                </form>
+                    <div class="p-3 xs:p-4 sm:p-6 space-y-4 xs:space-y-5 sm:space-y-6">
+                        <div class="grid sm:grid-cols-2 gap-6">
+                            <div>
+                                <label for="{{ form.shipping_policy.id_for_label }}" class="form-label">
+                                    <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 3a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H3a1 1 0 01-1-1V3zm6 0a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H9a1 1 0 01-1-1V3zm6 0a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V3z"/>
+                                    </svg>
+                                    Shipping Policy
+                                </label>
+                                {{ form.shipping_policy }}
+                                <p class="form-help">Delivery methods, times, and costs</p>
+                                {% if form.shipping_policy.errors %}
+                                <p class="form-error">{{ form.shipping_policy.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.return_policy.id_for_label }}" class="form-label">
+                                    <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4z"/>
+                                    </svg>
+                                    Return Policy
+                                </label>
+                                {{ form.return_policy }}
+                                <p class="form-help">Return window, conditions, and refund process</p>
+                                {% if form.return_policy.errors %}
+                                <p class="form-error">{{ form.return_policy.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Reviews Setting -->
+                        <div class="info-box">
+                            <label class="flex items-start cursor-pointer group">
+                                {{ form.allow_reviews }}
+                                <div class="ml-3">
+                                    <span class="text-sm font-semibold text-gray-900 group-hover:text-primary transition-colors">
+                                        Allow customers to leave reviews
+                                    </span>
+                                    <p class="text-xs text-gray-600 mt-1">
+                                        Enable customer reviews and ratings. This helps build trust and provides valuable feedback.
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
             
-            <!-- Category Management -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 class="text-lg font-bold text-gray-900 mb-4">Category</h2>
+            <!-- Sidebar -->
+            <div class="space-y-6">
                 
-                <!-- Category Lock Warning -->
-                {% if store.main_category_locked %}
-                <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 mb-6">
-                    <div class="flex items-start">
-                        <svg class="w-6 h-6 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
-                        </svg>
-                        <div class="flex-1">
-                            <h3 class="text-lg font-bold text-yellow-900 mb-2">🔒 Category Locked</h3>
-                            <p class="text-sm text-yellow-800 mb-3">
-                                Your main category is <strong>{{ store.main_category.name }}</strong> and cannot be changed. 
-                                This maintains category integrity and prevents misuse.
-                            </p>
-                            <p class="text-sm text-yellow-800">
-                                Need to change? Contact support or request a category change below.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                <div class="space-y-4">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Main Category</p>
-                        <p class="text-lg font-bold text-gray-900">{{ store.main_category.name }}</p>
-                    </div>
-                    
-                    <a href="{% url 'vendors:category_change_request' %}" 
-                       class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                        </svg>
-                        Request Category Change
-                    </a>
-                </div>
             </div>
             
         </div>
         
-        <!-- Sidebar -->
-        <div class="space-y-6">
-            
-            <!-- Store Preview -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="font-bold text-gray-900 mb-4">Quick Actions</h3>
-                <div class="space-y-3">
-                    <a href="{% url 'vendors:store_preview' %}" 
-                       class="flex items-center p-4 bg-gradient-to-r from-soft-blue/10 to-primary/5 rounded-lg hover:shadow-md transition-all group">
-                        <div class="w-10 h-10 bg-soft-blue rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                            </svg>
-                        </div>
-                        <div class="ml-3 flex-1">
-                            <p class="font-semibold text-gray-900">Preview Store</p>
-                            <p class="text-xs text-gray-600">See how it looks</p>
-                        </div>
-                    </a>
-                    
-                    <a href="{% url 'shop:store_detail' store.slug %}" 
-                       target="_blank"
-                       class="flex items-center p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg hover:shadow-md transition-all group">
-                        <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                            </svg>
-                        </div>
-                        <div class="ml-3 flex-1">
-                            <p class="font-semibold text-gray-900">View Live</p>
-                            <p class="text-xs text-gray-600">Public storefront</p>
-                        </div>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Store Stats -->
-            <div class="bg-gradient-to-br from-primary/5 to-soft-blue/5 rounded-xl p-6 border border-primary/10">
-                <h3 class="font-bold text-gray-900 mb-4">Store Statistics</h3>
-                <div class="space-y-3">
-                    <div class="flex justify-between">
-                        <span class="text-sm text-gray-600">Total Products</span>
-                        <span class="font-bold text-gray-900">{{ store.products.count }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-sm text-gray-600">Active Products</span>
-                        <span class="font-bold text-green-600">{{ store.products.filter.count }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-sm text-gray-600">Total Orders</span>
-                        <span class="font-bold text-gray-900">{{ store.total_orders|default:0 }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-sm text-gray-600">Store Views</span>
-                        <span class="font-bold text-primary">{{ store.views|default:0 }}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Store Info -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="font-bold text-gray-900 mb-4">Store Information</h3>
-                <div class="space-y-3 text-sm">
-                    <div>
-                        <p class="text-gray-600 mb-1">Store URL</p>
-                        <a href="{% url 'shop:store_detail' store.slug %}" 
-                           target="_blank"
-                           class="text-primary hover:text-primary/80 font-mono text-xs break-all">
-                            kasumarketplace.com/shop/{{ store.slug }}
-                        </a>
-                    </div>
-                    <div>
-                        <p class="text-gray-600 mb-1">Created</p>
-                        <p class="font-semibold text-gray-900">{{ store.created_at|date:"M d, Y" }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600 mb-1">Last Updated</p>
-                        <p class="font-semibold text-gray-900">{{ store.updated_at|date:"M d, Y" }}</p>
-                    </div>
-                </div>
-            </div>
-            
+        <!-- Submit Button (Sticky on Mobile) -->
+        <div class="sticky bottom-0 bg-white border-t-2 border-gray-200 p-3 xs:p-4 sm:p-6 -mx-3 xs:-mx-4 sm:mx-0 sm:relative sm:border-0 sm:bg-transparent">
+            <button type="submit" id="saveBtn"
+                    class="btn-primary w-full min-h-[44px] text-sm xs:text-base">
+                <svg class="w-4 xs:w-5 h-4 xs:h-5 inline mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                <span>Save All Settings</span>
+            </button>
         </div>
         
-    </div>
-    
+    </form>
+
 </div>
+
+<!-- Styles -->
+<style>
+    /* Mobile-first responsive design */
+    :root {
+        --touch-target-size: 44px; /* Minimum touch target size */
+    }
+    
+    * {
+        box-sizing: border-box;
+    }
+    
+    /* Ultra-small screen optimization (< 360px) */
+    @media (max-width: 359px) {
+        body {
+            font-size: 14px;
+        }
+    }
+    
+    /* Small screen optimization (360px - 480px) */
+    @media (min-width: 360px) {
+        body {
+            font-size: 14px;
+        }
+    }
+    
+    /* Extra small screen optimization */
+    @media (max-width: 374px) {
+        .px-4 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+        .py-4 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+    }
+    
+    /* Form input touch-friendly sizes */
+    input[type="text"],
+    input[type="email"],
+    input[type="url"],
+    input[type="tel"],
+    input[type="number"],
+    textarea,
+    select {
+        min-height: var(--touch-target-size);
+        padding: 0.625rem 0.75rem;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    @media (min-width: 640px) {
+        input[type="text"],
+        input[type="email"],
+        input[type="url"],
+        input[type="tel"],
+        input[type="number"],
+        textarea,
+        select {
+            padding: 0.75rem 1rem;
+        }
+    }
+    
+    /* Image Preview Upload Boxes */
+    .upload-box-preview,
+    .upload-box-preview-logo {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+    
+    .upload-box-preview img,
+    .upload-box-preview-logo img {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+    
+    /* File input styling - hide default input */
+    input[type="file"] {
+        display: none;
+    }
+    
+    /* Link label as file input trigger */
+    input[type="file"] + label {
+        display: inline-block;
+        cursor: pointer;
+    }
+    
+</style>
+<style>
+    /* Form Elements */
+    input:disabled,
+    textarea:disabled,
+    select:disabled {
+        background-color: #f9fafb;
+        cursor: not-allowed;
+        color: #6b7280;
+        opacity: 0.6;
+        border-color: #d1d5db !important;
+    }
+    
+    input:disabled:focus,
+    textarea:disabled:focus,
+    select:disabled:focus {
+        outline: none;
+        box-shadow: none;
+        border-color: #d1d5db !important;
+    }
+    
+    /* Utility Classes */
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+    
+    @media (min-width: 475px) {
+        .form-label {
+            font-size: 0.875rem;
+        }
+    }
+    
+    .form-error {
+        margin-top: 0.5rem;
+        font-size: 0.75rem;
+        color: #dc2626;
+        background-color: #fef2f2;
+        border-left: 4px solid #ef4444;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+    }
+    
+    @media (min-width: 360px) {
+        .form-error {
+            padding: 0.5rem 0.75rem;
+        }
+    }
+    
+    .form-help {
+        font-size: 0.7rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+        line-height: 1.4;
+    }
+    
+    @media (min-width: 360px) {
+        .form-help {
+            font-size: 0.75rem;
+        }
+    }
+    
+    .badge-locked {
+        padding: 0.25rem 0.5rem;
+        background-color: #fed7aa;
+        color: #92400e;
+        font-size: 0.75rem;
+        font-weight: 700;
+        border-radius: 0.25rem;
+    }
+    
+    .badge-success {
+        background-color: #dcfce7;
+        color: #166534;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    
+    .badge-gray {
+        background-color: #e5e7eb;
+        color: #374151;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    
+    /* Cards */
+    .card-white {
+        background-color: #ffffff;
+        border-radius: 0.375rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 2px solid #f3f4f6;
+        overflow: hidden;
+    }
+    
+    @media (min-width: 360px) {
+        .card-white {
+            border-radius: 0.5rem;
+        }
+    }
+    
+    @media (min-width: 640px) {
+        .card-white {
+            border-radius: 0.75rem;
+        }
+    }
+    
+    .card-header {
+        background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(191, 219, 254, 0.1));
+        padding: 0.75rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    @media (min-width: 360px) {
+        .card-header {
+            padding: 1rem;
+        }
+    }
+    
+    @media (min-width: 640px) {
+        .card-header {
+            padding: 1.5rem;
+        }
+    }
+    
+    .card-header-purple {
+        background: linear-gradient(to right, #faf5ff, #fdf2f8);
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    @media (min-width: 640px) {
+        .card-header-purple {
+            padding: 1.5rem;
+        }
+    }
+    
+    .card-header-pink {
+        background: linear-gradient(to right, #fdf2f8, #ffe4e6);
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    @media (min-width: 640px) {
+        .card-header-pink {
+            padding: 1.5rem;
+        }
+    }
+    
+    .card-header-blue {
+        background: linear-gradient(to right, #f0f9ff, #ecf0fe);
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    @media (min-width: 640px) {
+        .card-header-blue {
+            padding: 1.5rem;
+        }
+    }
+    
+    .card-header-amber {
+        background: linear-gradient(to right, #fffbeb, #fef3c7);
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    @media (min-width: 640px) {
+        .card-header-amber {
+            padding: 1.5rem;
+        }
+    }
+    
+    .card-gradient {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(191, 219, 254, 0.05), #f3f4f6);
+        border-radius: 0.5rem;
+        padding: 0;
+        border: 2px solid rgba(59, 130, 246, 0.2);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    @media (min-width: 640px) {
+        .card-gradient {
+            border-radius: 0.75rem;
+        }
+    }
+    
+    /* Warning Boxes */
+    .warning-box {
+        background: linear-gradient(to right, #faf5eb, #fee2e2);
+        border: 2px solid #fed7aa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+    
+    @media (min-width: 640px) {
+        .warning-box {
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+    }
+    
+    .warning-box-yellow {
+        background-color: #fffacd;
+        border-left: 4px solid #fbbf24;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+    
+    .info-box {
+        background: linear-gradient(to right, #f9fafb, #eff6ff);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        border: 2px solid #e5e7eb;
+    }
+    
+    @media (min-width: 640px) {
+        .info-box {
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+    }
+    
+    /* Upload Box */
+    .upload-box {
+        border: 2px dashed #d1d5db;
+        border-radius: 0.375rem;
+        padding: 0.75rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .upload-box:hover {
+        border-color: #3b82f6;
+        background-color: rgba(59, 130, 246, 0.05);
+    }
+    
+    @media (min-width: 360px) {
+        .upload-box {
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+    }
+    
+    @media (min-width: 640px) {
+        .upload-box {
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+    }
+    
+    /* Action Cards */
+    .action-card {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .action-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    @media (min-width: 640px) {
+        .action-card {
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 0.75rem;
+        }
+    }
+    
+    .action-card-blue {
+        background: linear-gradient(to right, rgba(191, 219, 254, 0.1), rgba(59, 130, 246, 0.05));
+    }
+    
+    .action-card-green {
+        background: linear-gradient(to right, #f0fdf4, #ecfdf5);
+    }
+    
+    .action-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+    }
+    
+    .action-card:hover .action-icon {
+        transform: scale(1.1);
+    }
+    
+    @media (min-width: 640px) {
+        .action-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 0.75rem;
+        }
+    }
+    
+    /* Stats */
+    .stat-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem;
+        background-color: rgba(255, 255, 255, 0.6);
+        border-radius: 0.5rem;
+    }
+    
+    .info-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem;
+        background-color: #f3f4f6;
+        border-radius: 0.5rem;
+    }
+    
+    /* Button */
+    .btn-primary {
+        padding: 0.75rem;
+        background: linear-gradient(to right, #3b82f6, #bfdbfe);
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 700;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: none;
+        transform-origin: center;
+    }
+    
+    .btn-primary:hover {
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        transform: scale(1.02);
+    }
+    
+    .btn-primary:active {
+        transform: scale(0.98);
+    }
+    
+    @media (min-width: 640px) {
+        .btn-primary {
+            padding: 1rem;
+            font-size: 1.125rem;
+            border-radius: 0.75rem;
+        }
+    }
+</style>
+
+<!-- Scripts -->
+<script>
+    // Character counter for description
+    const descTextarea = document.querySelector('#{{ form.description.id_for_label }}');
+    const descCount = document.getElementById('descCount');
+    
+    if (descTextarea && descCount) {
+        descTextarea.addEventListener('input', function() {
+            descCount.textContent = this.value.length;
+        });
+    }
+    
+    // Drag and drop for file uploads
+    const uploadBoxes = document.querySelectorAll('.upload-box');
+    uploadBoxes.forEach(box => {
+        const input = box.querySelector('input[type="file"]');
+        if (!input) return;
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            box.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            box.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            box.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight(e) {
+            box.style.borderColor = '#3B82F6';
+            box.style.backgroundColor = 'rgba(59, 130, 246, 0.05)';
+        }
+        
+        function unhighlight(e) {
+            box.style.borderColor = '#d1d5db';
+            box.style.backgroundColor = 'transparent';
+        }
+        
+        box.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                input.files = files;
+                const event = new Event('change', { bubbles: true });
+                input.dispatchEvent(event);
+            }
+        }
+        
+        box.addEventListener('click', () => input.click());
+        
+        // Image preview functionality
+        function setupImagePreview(fileInputId, previewImageId) {
+            const fileInput = document.getElementById(fileInputId);
+            const previewImg = document.getElementById(previewImageId);
+            
+            if (!fileInput || !previewImg) return;
+            
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        previewImg.src = event.target.result;
+                        // Show the placeholder styling for uploaded images
+                        previewImg.style.padding = '0';
+                        previewImg.style.backgroundColor = 'transparent';
+                        previewImg.style.color = 'inherit';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // Setup preview for banner
+        setupImagePreview('id_banner', 'bannerPreview');
+        
+        // Setup preview for logo
+        setupImagePreview('id_logo', 'logoPreview');
+    });
+    
+    // Unsaved changes warning
+    let formChanged = false;
+    const form = document.getElementById('settingsForm');
+    
+    if (form) {
+        form.addEventListener('change', function() {
+            formChanged = true;
+        });
+        
+        form.addEventListener('submit', function() {
+            formChanged = false;
+        });
+        
+        window.addEventListener('beforeunload', function(e) {
+            if (formChanged) {
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            }
+        });
+    }
+</script>
 
 {% endblock %}
