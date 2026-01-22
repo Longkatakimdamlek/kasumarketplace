@@ -62,6 +62,7 @@ def assign_role_on_social_signup(request, sociallogin, **kwargs):
 
     # Some social flows may not provide a request object; handle defensively
     if request is None:
+        # Nothing we can inspect — default to buyer to be safe
         user.role = getattr(user, 'role', 'buyer') or 'buyer'
         user.save()
         print(f"No request available for social signup; left role as '{user.role}' for {getattr(user,'email',repr(user))}")

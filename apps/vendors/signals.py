@@ -11,10 +11,26 @@ from django.db.models import Sum, Avg, F
 
 from .models import (
     VendorProfile, Wallet, Store, Product, Order, OrderItem,
-    Transaction, Notification, RefundRequest
+    Transaction, Notification, RefundRequest, CategoryChangeRequest
 )
 
 User = get_user_model()
+
+
+# ==========================================
+# USER SIGNALS (CREATE VENDORPROFILE)
+# ==========================================
+
+@receiver(post_save, sender=User)
+def create_vendor_profile_for_vendor_users(sender, instance, created, **kwargs):
+    """
+    Automatically create VendorProfile when a vendor User is created
+    This runs AFTER the user is saved to the database
+    """
+    if created and hasattr(instance, 'role') and instance.role == 'vendor':
+        # Create VendorProfile
+        vendor_profile = VendorProfile.objects.create(user=instance)
+        print(f"✅ VendorProfile created for vendor: {instance.email}")
 
 
 # ==========================================
@@ -340,30 +356,43 @@ def update_product_sales_count(sender, instance, created, **kwargs):
         product.save(update_fields=['sales_count'])
 
 
+
 @receiver(post_save, sender=OrderItem)
 def reduce_product_quantity(sender, instance, created, **kwargs):
-    """
-    Reduce product quantity when order is placed
-    """
+    """Reduce product stock when order is placed"""
     if created:
         product = instance.product
-        if product.quantity >= instance.quantity:
-            product.quantity -= instance.quantity
-            product.save(update_fields=['quantity'])
-            
-            # If out of stock, change status
-            if product.quantity == 0:
-                product.status = 'out_of_stock'
-                product.save(update_fields=['status'])
+        
+        # ✅ ONLY REDUCE IF TRACKING INVENTORY
+        if product.track_inventory:
+            if product.stock_quantity >= instance.quantity:
+                product.stock_quantity -= instance.quantity
+                product.save(update_fields=['stock_quantity'])
                 
-                # Notify vendor
-                Notification.objects.create(
-                    vendor=product.vendor,
-                    notification_type='system',
-                    title='Product Out of Stock ⚠️',
-                    message=f'Your product "{product.title}" is now out of stock. Please restock to continue selling.',
-                    link=f'/vendors/products/{product.slug}/edit/'
-                )
+                # ✅ CHECK: Low stock alert
+                if product.is_low_stock:
+                    Notification.objects.create(
+                        vendor=product.vendor,
+                        notification_type='system',
+                        title=f'Low Stock Alert: {product.title}',
+                        message=f'Only {product.stock_quantity} units left! Restock soon.',
+                        link=f'/vendors/products/{product.slug}/edit/'
+                    )
+                
+                if product.stock_quantity == 0:
+                    product.status = 'out_of_stock'
+                    product.save(update_fields=['status'])
+                    
+                    Notification.objects.create(
+                        vendor=product.vendor,
+                        notification_type='system',
+                        title=f'Out of Stock: {product.title}',
+                        message=f'Your product is now out of stock. Update inventory to continue selling.',
+                        link=f'/vendors/products/{product.slug}/edit/'
+                    )
+            else:
+                print(f"âš ï¸ WARNING: Insufficient stock for {product.title}")
+
 
 
 # ==========================================
@@ -524,3 +553,33 @@ def recalculate_wallet_balances(wallet):
     
     wallet.save()
     print(f"✓ Wallet balances recalculated for: {wallet.vendor.full_name}")
+
+
+# ==========================================
+# ADMIN MESSAGE SIGNALS
+# ==========================================
+
+@receiver(post_save, sender=CategoryChangeRequest)
+def notify_vendor_of_admin_message(sender, instance, created, **kwargs):
+    """
+    Create notification when admin sends message to vendor via CategoryChangeRequest
+    """
+    if not created and instance.admin_comment:
+        # Check if we already sent a notification for this comment
+        last_notification = Notification.objects.filter(
+            vendor=instance.store.vendor,
+            notification_type='admin_message',
+            title__icontains='Category Change Request'
+        ).order_by('-created_at').first()
+        
+        # Only create new notification if admin_comment has changed or is new
+        if not last_notification or last_notification.message != instance.admin_comment:
+            Notification.objects.create(
+                vendor=instance.store.vendor,
+                notification_type='admin_message',
+                title=f'📧 Admin Update - Category Change Request #{instance.id}',
+                message=instance.admin_comment,
+                link=f'/vendors/store/category-change-request/{instance.id}/'
+            )
+            
+            print(f"✓ Admin message notification sent to: {instance.store.vendor.full_name}")

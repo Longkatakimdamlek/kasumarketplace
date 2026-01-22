@@ -7,7 +7,7 @@
 {% block content %}
 
 <!-- Welcome Banner -->
-<div class="bg-gradient-to-r from-primary via-soft-blue to-light-purple rounded-xl p-8 mb-8 text-white shadow-lg">
+<div class="bg-gradient-to-r from-primary to-soft-blue rounded-xl p-8 mb-8 text-white shadow-lg">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold mb-2">Welcome back, {{ vendor.user.first_name|default:"Vendor" }}! 👋</h1>
@@ -46,7 +46,7 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                 <h2 class="text-lg font-bold text-gray-900">Recent Orders</h2>
-                <a href="{% url 'vendors:order_list' %}" 
+                <a href="{% url 'vendors:orders_list' %}" 
                    class="text-sm font-semibold text-primary hover:text-primary/80">
                     View all →
                 </a>
@@ -182,7 +182,7 @@
                     </svg>
                 </a>
                 
-                <a href="{% url 'vendors:order_list' %}" 
+                <a href="{% url 'vendors:orders_list' %}" 
                    class="flex items-center p-4 bg-gradient-to-r from-soft-blue/5 to-primary/5 rounded-lg hover:shadow-md transition-all group">
                     <div class="w-10 h-10 bg-soft-blue rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

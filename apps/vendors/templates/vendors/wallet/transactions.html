@@ -22,7 +22,7 @@
             <p class="text-sm text-blue-100 mb-2">Available Balance</p>
             <h1 class="text-4xl font-bold">₦{{ wallet.available_balance|floatformat:2 }}</h1>
         </div>
-        <a href="{% url 'vendors:payout_request' %}" 
+        <a href="{% url 'vendors:request_payout' %}" 
            class="px-6 py-3 bg-white text-primary font-bold rounded-lg hover:shadow-xl transition-all">
             Request Payout
         </a>

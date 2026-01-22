@@ -37,7 +37,7 @@ def vendor_required(view_func):
         # Check if user has vendor profile
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor to access this page.')
-            return redirect('users:profile')  # Or wherever you want to redirect
+            return redirect('home')  # Or wherever you want to redirect
         
         # User is authenticated and has vendor profile
         return view_func(request, *args, **kwargs)
@@ -64,7 +64,7 @@ def vendor_verified_required(view_func):
         
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor.')
-            return redirect('users:profile')
+            return redirect('home')
         
         vendor = request.user.vendorprofile
         
@@ -101,7 +101,7 @@ def vendor_approved_required(view_func):
         
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor.')
-            return redirect('users:profile')
+            return redirect('home')
         
         vendor = request.user.vendorprofile
         
@@ -146,7 +146,7 @@ def store_setup_required(view_func):
         
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor.')
-            return redirect('users:profile')
+            return redirect('home')
         
         vendor = request.user.vendorprofile
         
@@ -396,7 +396,7 @@ class VendorRequiredMixin:
         # Check vendor profile
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor.')
-            return redirect('users:profile')
+            return redirect('home')
         
         return super().dispatch(request, *args, **kwargs)
 
@@ -419,7 +419,7 @@ class VendorVerifiedRequiredMixin:
         # Check vendor profile
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor.')
-            return redirect('users:profile')
+            return redirect('home')
         
         # Check verification
         vendor = request.user.vendorprofile

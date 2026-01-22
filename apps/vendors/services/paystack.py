@@ -6,7 +6,6 @@ Documentation: https://paystack.com/docs/api/
 Environment Variables Required:
 - PAYSTACK_SECRET_KEY
 - PAYSTACK_PUBLIC_KEY
-- USE_MOCK_PAYSTACK (set to 'True' for testing without real API)
 """
 
 import os
@@ -34,11 +33,9 @@ class PaystackService:
         self.secret_key = os.getenv('PAYSTACK_SECRET_KEY', '')
         self.public_key = os.getenv('PAYSTACK_PUBLIC_KEY', '')
         self.base_url = 'https://api.paystack.co'
-        self.use_mock = os.getenv('USE_MOCK_PAYSTACK', 'True').lower() == 'true'
         
-        if not self.use_mock and not self.secret_key:
-            logger.warning('Paystack API key not configured. Using mock mode.')
-            self.use_mock = True
+        if not self.secret_key:
+            raise ValueError('Paystack API key (PAYSTACK_SECRET_KEY) must be configured.')
     
     def _get_headers(self) -> Dict[str, str]:
         """Get headers for API requests"""
@@ -160,10 +157,6 @@ class PaystackService:
                 'reference': 'ref_12345'
             }
         """
-        
-        if self.use_mock:
-            return self._mock_initialize_payment(email, amount, reference)
-        
         try:
             payload = {
                 'email': email,
@@ -217,10 +210,6 @@ class PaystackService:
                 'metadata': {...}
             }
         """
-        
-        if self.use_mock:
-            return self._mock_verify_payment(reference)
-        
         try:
             response = self._make_request('GET', f'/transaction/verify/{reference}')
             
@@ -287,10 +276,6 @@ class PaystackService:
                 'bank_name': 'Guaranty Trust Bank'
             }
         """
-        
-        if self.use_mock:
-            return self._mock_create_transfer_recipient(account_number, bank_code, name)
-        
         try:
             response = self._make_request(
                 'POST',
@@ -346,10 +331,6 @@ class PaystackService:
                 'bank_id': 1
             }
         """
-        
-        if self.use_mock:
-            return self._mock_verify_account_number(account_number, bank_code)
-        
         try:
             response = self._make_request(
                 'GET',
@@ -408,10 +389,6 @@ class PaystackService:
                 'transferred_at': '2024-01-01T10:00:00'
             }
         """
-        
-        if self.use_mock:
-            return self._mock_initiate_transfer(recipient_code, amount, reason, reference)
-        
         try:
             payload = {
                 'source': 'balance',
@@ -454,10 +431,6 @@ class PaystackService:
         Returns:
             Tuple of (success: bool, data: dict)
         """
-        
-        if self.use_mock:
-            return self._mock_verify_transfer(reference)
-        
         try:
             response = self._make_request('GET', f'/transfer/verify/{reference}')
             
@@ -495,10 +468,6 @@ class PaystackService:
                 ...
             ]
         """
-        
-        if self.use_mock:
-            return self._mock_get_banks()
-        
         try:
             response = self._make_request('GET', '/bank')
             
@@ -520,103 +489,6 @@ class PaystackService:
         except PaystackAPIError as e:
             logger.error(f'Get banks error: {str(e)}')
             return False, []
-    
-    # ==========================================
-    # MOCK METHODS (FOR TESTING)
-    # ==========================================
-    
-    def _mock_initialize_payment(self, email: str, amount: Decimal, reference: Optional[str]) -> Tuple[bool, Dict]:
-        """Mock payment initialization"""
-        logger.info(f'[MOCK] Payment initialized: ₦{amount} for {email}')
-        
-        ref = reference or f'mock_ref_{int(amount)}'
-        
-        return True, {
-            'authorization_url': f'https://mock-paystack.com/pay/{ref}',
-            'access_code': f'mock_access_{ref}',
-            'reference': ref,
-            'mock': True
-        }
-    
-    def _mock_verify_payment(self, reference: str) -> Tuple[bool, Dict]:
-        """Mock payment verification - always returns success"""
-        logger.info(f'[MOCK] Payment verified: {reference}')
-        
-        return True, {
-            'status': 'success',
-            'amount': Decimal('10000.00'),
-            'paid_at': '2024-01-01T10:00:00',
-            'customer': {'email': 'customer@example.com'},
-            'metadata': {},
-            'channel': 'card',
-            'currency': 'NGN',
-            'mock': True
-        }
-    
-    def _mock_create_transfer_recipient(self, account_number: str, bank_code: str, name: str) -> Tuple[bool, Dict]:
-        """Mock transfer recipient creation"""
-        logger.info(f'[MOCK] Recipient created: {name} - {account_number}')
-        
-        return True, {
-            'recipient_code': f'RCP_mock_{account_number[-4:]}',
-            'type': 'nuban',
-            'name': name,
-            'account_number': account_number,
-            'bank_name': 'Mock Bank',
-            'bank_code': bank_code,
-            'mock': True
-        }
-    
-    def _mock_verify_account_number(self, account_number: str, bank_code: str) -> Tuple[bool, Dict]:
-        """Mock account verification"""
-        logger.info(f'[MOCK] Account verified: {account_number}')
-        
-        return True, {
-            'account_number': account_number,
-            'account_name': 'John Doe',
-            'bank_id': 1,
-            'mock': True
-        }
-    
-    def _mock_initiate_transfer(self, recipient_code: str, amount: Decimal, reason: str, reference: Optional[str]) -> Tuple[bool, Dict]:
-        """Mock transfer initiation"""
-        logger.info(f'[MOCK] Transfer initiated: ₦{amount} - {reason}')
-        
-        ref = reference or f'mock_transfer_{int(amount)}'
-        
-        return True, {
-            'transfer_code': f'TRF_mock_{ref[-4:]}',
-            'reference': ref,
-            'amount': amount,
-            'status': 'success',
-            'transferred_at': '2024-01-01T10:00:00',
-            'recipient': recipient_code,
-            'mock': True
-        }
-    
-    def _mock_verify_transfer(self, reference: str) -> Tuple[bool, Dict]:
-        """Mock transfer verification"""
-        logger.info(f'[MOCK] Transfer verified: {reference}')
-        
-        return True, {
-            'status': 'success',
-            'amount': Decimal('5000.00'),
-            'transferred_at': '2024-01-01T10:00:00',
-            'recipient': 'RCP_mock_1234',
-            'mock': True
-        }
-    
-    def _mock_get_banks(self) -> Tuple[bool, list]:
-        """Mock get banks"""
-        logger.info('[MOCK] Retrieved banks list')
-        
-        return True, [
-            {'name': 'Access Bank', 'code': '044', 'slug': 'access-bank'},
-            {'name': 'GTBank', 'code': '058', 'slug': 'guaranty-trust-bank'},
-            {'name': 'Zenith Bank', 'code': '057', 'slug': 'zenith-bank'},
-            {'name': 'First Bank', 'code': '011', 'slug': 'first-bank-of-nigeria'},
-            {'name': 'UBA', 'code': '033', 'slug': 'united-bank-for-africa'}
-        ]
 
 
 # Singleton instance

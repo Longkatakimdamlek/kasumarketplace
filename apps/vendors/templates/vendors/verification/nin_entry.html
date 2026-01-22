@@ -39,18 +39,18 @@
     <!-- Form Card -->
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
         
-        <form method="post" x-data="{ submitting: false }">
+        <form method="POST" action="{% url 'vendors:nin_entry' %}" x-data="{ submitting: false }" @submit="submitting = true">
             {% csrf_token %}
             
             <!-- NIN Input -->
             <div class="mb-6">
-                <label for="{{ form.nin.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                <label for="{{ form.nin_number.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
                     National Identification Number (NIN)
                     <span class="text-red-500">*</span>
                 </label>
                 <input type="text" 
-                       name="{{ form.nin.html_name }}"
-                       id="{{ form.nin.id_for_label }}"
+                       name="{{ form.nin_number.html_name }}"
+                       id="{{ form.nin_number.id_for_label }}"
                        maxlength="11"
                        placeholder="Enter your 11-digit NIN"
                        class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
@@ -59,12 +59,12 @@
                        x-model="value"
                        @input="value = value.replace(/[^0-9]/g, '').slice(0, 11)">
                 
-                {% if form.nin.errors %}
+                {% if form.nin_number.errors %}
                 <p class="mt-2 text-sm text-red-600 flex items-center">
                     <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                     </svg>
-                    {{ form.nin.errors.0 }}
+                    {{ form.nin_number.errors.0 }}
                 </p>
                 {% else %}
                 <p class="mt-2 text-xs text-gray-500">Your NIN is an 11-digit number on your National ID card</p>
@@ -80,9 +80,9 @@
                     <div>
                         <h4 class="text-sm font-semibold text-blue-900 mb-1">What happens next?</h4>
                         <ul class="text-xs text-blue-800 space-y-1">
-                            <li>• We'll send an OTP to your registered phone number</li>
-                            <li>• Enter the OTP to confirm your identity</li>
-                            <li>• Your information will be verified instantly</li>
+                            <li>• We'll verify your NIN with NIMC database</li>
+                            <li>• Your information will be validated instantly</li>
+                            <li>• Next step: BVN verification for payments</li>
                         </ul>
                     </div>
                 </div>
@@ -106,10 +106,9 @@
             
             <!-- Submit Button -->
             <button type="submit" 
-                    @click="submitting = true"
                     :disabled="submitting"
                     class="w-full py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                <span x-show="!submitting">Continue to OTP Verification</span>
+                <span x-show="!submitting">Continue to Verification</span>
                 <span x-show="submitting" class="flex items-center justify-center">
                     <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -143,6 +142,7 @@
             <!-- FAQ 1 -->
             <div class="border-b border-gray-200 pb-4">
                 <button @click="openFaq = openFaq === 1 ? null : 1" 
+                        type="button"
                         class="flex items-center justify-between w-full text-left">
                     <span class="text-sm font-semibold text-gray-900">Why do you need my NIN?</span>
                     <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 1 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,6 +158,7 @@
             <!-- FAQ 2 -->
             <div class="border-b border-gray-200 pb-4">
                 <button @click="openFaq = openFaq === 2 ? null : 2" 
+                        type="button"
                         class="flex items-center justify-between w-full text-left">
                     <span class="text-sm font-semibold text-gray-900">Is my data safe?</span>
                     <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 2 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,6 +174,7 @@
             <!-- FAQ 3 -->
             <div class="pb-4">
                 <button @click="openFaq = openFaq === 3 ? null : 3" 
+                        type="button"
                         class="flex items-center justify-between w-full text-left">
                     <span class="text-sm font-semibold text-gray-900">What if verification fails?</span>
                     <svg class="w-5 h-5 text-gray-400 transition-transform" :class="{ 'rotate-180': openFaq === 3 }" fill="none" stroke="currentColor" viewBox="0 0 24 24">

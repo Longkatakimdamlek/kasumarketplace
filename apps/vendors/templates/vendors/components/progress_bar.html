@@ -44,9 +44,9 @@ Colors: purple, blue, green, pink, yellow, red
 <!-- Step indicators below progress bar -->
 <div class="flex justify-between mt-2">
     {% for step in steps %}
-    <div class="text-center" style="width: {{ 100|dividedby:steps|length }}%">
+    <div class="text-center flex-1">
         <div class="w-8 h-8 mx-auto rounded-full flex items-center justify-center text-xs font-semibold
-                    {% if forloop.counter0 < percentage|dividedby:100|multiply:steps|length %}
+                    {% if forloop.counter0 < percentage %}
                         {% if color == 'purple' %}bg-primary text-white
                         {% elif color == 'blue' %}bg-soft-blue text-white
                         {% elif color == 'green' %}bg-green-500 text-white

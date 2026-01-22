@@ -21,7 +21,7 @@
         <div class="flex items-center space-x-3 sm:space-x-4">
             
             <!-- Verification Status Badge -->
-            {% if not vendor.can_sell %}
+            {% if not vendor.can_sell and not hide_verification_badge|default:False %}
             <a href="{% url 'vendors:verification_center' %}" 
                class="hidden sm:flex items-center px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors">
                 <svg class="w-4 h-4 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -133,7 +133,7 @@
                     
                     <!-- Footer -->
                     <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                        <a href="{% url 'vendors:notification_list' %}" 
+                        <a href="{% url 'vendors:notifications_list' %}" 
                            class="text-sm font-medium text-primary hover:text-primary/80">
                             View all notifications →
                         </a>
@@ -193,7 +193,7 @@
                     </div>
                     
                     <div class="border-t border-gray-200">
-                        <form method="post" action="{% url 'accounts:logout' %}">
+                        <form method="post" action="{% url 'account_logout' %}">
                             {% csrf_token %}
                             <button type="submit" 
                                     class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">

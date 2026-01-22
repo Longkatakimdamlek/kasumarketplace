@@ -1,23 +1,6 @@
 """
-URL configuration for KasuMarketplace project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-"""
 Main URL configuration for KasuMarketplace project.
 """
-<<<<<<< HEAD
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -30,30 +13,24 @@ from apps.vendors import views as vendor_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', user_views.home, name='home'),
-    path('', include('apps.users.urls')),  # ✅ Correct path with namespace
-    path('vendors/', include('apps.vendors.urls')),  # ✅ Correct path
+    path('', include(('apps.users.urls', 'users'), namespace='users')),
+    path('vendors/', include(('apps.vendors.urls', 'vendors'), namespace='vendors')),
+    
+    # ==========================================
+    # PUBLIC STORE & PRODUCT ROUTES
+    # ==========================================
+    # Public store page
     path('shop/<slug:slug>/', vendor_views.store_public, name='store_public'),
+    
+    # ✅ NEW: Public product detail (store-scoped)
+    path('shop/<slug:store_slug>/products/<slug:product_slug>/', 
+         vendor_views.product_detail_public, 
+         name='product_detail_public'),
+    
     path('accounts/', include('allauth.urls')),
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-=======
-from django.urls import path
-from django.contrib import admin
-from django.urls import path, include
-from apps.users import views as user_views
-
-urlpatterns = [
     
-
-    path('admin/', admin.site.urls),
-    # Django Allauth URLs (for social authentication)
-    path('accounts/', include('allauth.urls')),
-    path('', include('apps.users.urls', namespace='users')),
-    path('', user_views.home, name='home'),
-    
-]
-
->>>>>>> fcc348e5a2c27b1bd240c5f05727e083445490bf
