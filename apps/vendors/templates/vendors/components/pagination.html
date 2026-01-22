@@ -1,11 +1,10 @@
-<!-- Reusable Pagination Component
-Usage in templates:
-{% include 'vendors/components/pagination.html' with page_obj=products %}
+{# Reusable Pagination Component
+Usage in templates (example): include this file with a `page_obj` variable
 
 Requires Django Paginator page_obj context variable
 Shows: Previous, page numbers, Next
 Mobile-friendly with simplified view on small screens
--->
+#}
 
 {% if page_obj.has_other_pages %}
 <nav class="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-8 pt-4">

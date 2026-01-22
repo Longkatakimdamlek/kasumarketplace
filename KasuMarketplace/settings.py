@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-@i6_g+-rzinhvesqkch+5y(+8e#)xk)$ej7&tuxhb632af9&s)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*', ".railway.app"]
+ALLOWED_HOSTS = ['*']
 
 
 INSTALLED_APPS = [
@@ -55,10 +55,8 @@ INSTALLED_APPS = [
 
     # local apps
     'apps.users.apps.UsersConfig',
-<<<<<<< HEAD
-    'apps.vendors',
-=======
->>>>>>> fcc348e5a2c27b1bd240c5f05727e083445490bf
+    'apps.vendors.apps.VendorsConfig',
+
 ]
 
 MIDDLEWARE = [
@@ -116,7 +114,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-<<<<<<< HEAD
 # DATABASES = {
 #     'default': dj_database_url.config(
 #         default=os.getenv('DATABASE_URL'),
@@ -124,15 +121,23 @@ DATABASES = {
 #         ssl_require=True
 #     )
 # }
-=======
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
->>>>>>> fcc348e5a2c27b1bd240c5f05727e083445490bf
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    # Fallback to local SQLite for development when DATABASE_URL is not provided
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -171,6 +176,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
@@ -267,7 +273,6 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 
 
 # EMAIL CONFIGURATION
-<<<<<<< HEAD
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_HOST = 'smtp.gmail.com'
 # EMAIL_PORT = 587
@@ -282,14 +287,13 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@kasumarketplace.com')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@kasumarketplace.com.ng')
 
 # Site configuration
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
 
 # Admin emails
-ADMIN_EMAILS = os.getenv('ADMIN_EMAILS', 'admin@kasumarketplace.com').split(',')
-=======
+ADMIN_EMAILS = os.getenv('ADMIN_EMAILS', 'admin@kasumarketplace.com.ng').split(',')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -297,9 +301,6 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-
->>>>>>> fcc348e5a2c27b1bd240c5f05727e083445490bf
-
 OTP_EXPIRY_TIME = 10
 OTP_LENGTH = 6
 
@@ -324,6 +325,16 @@ REST_FRAMEWORK = {
     ],
 }
 
+# ===========================
+# DOJAH CONFIGURATION
+# ===========================
+
+DOJAH_PUBLIC_KEY = os.getenv("DOJAH_PUBLIC_KEY")
+DOJAH_SECRET_KEY = os.getenv("DOJAH_SECRET_KEY")
+DOJAH_APP_ID = os.getenv("DOJAH_APP_ID")
+DOJAH_BASE_URL = os.getenv("DOJAH_BASE_URL", "https://sandbox.dojah.io")
+DOJAH_ENV = os.getenv("DOJAH_ENV")
+
 
 # ===========================
 # CORS CONFIGURATION
@@ -337,9 +348,9 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Site Configuration
 # SITE_NAME = 'KasuMarketplace'
-# SITE_URL = 'https://kasumarketplace.com'
-# SUPPORT_EMAIL = 'support@kasumarketplace.com'
-# CONTACT_EMAIL = 'contact@kasumarketplace.com'
+# SITE_URL = 'https://kasumarketplace.com.ng'
+# SUPPORT_EMAIL = 'support@kasumarketplace.com.ng'
+# CONTACT_EMAIL = 'contact@kasumarketplace.com.ng'
 
 # # Social Media
 # FACEBOOK_URL = 'https://facebook.com/kasumarketplace'

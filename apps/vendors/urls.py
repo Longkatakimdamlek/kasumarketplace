@@ -28,7 +28,7 @@ urlpatterns = [
     path('verification/pending-review/', views.pending_review, name='pending_review'),
     
     # ==========================================
-    # PRODUCTS
+    # PRODUCTS (VENDOR DASHBOARD - PRIVATE)
     # ==========================================
     path('products/', views.products_list, name='products_list'),
     path('products/create/', views.product_create, name='product_create'),
@@ -54,15 +54,20 @@ urlpatterns = [
     # ==========================================
     # STORE MANAGEMENT
     # ==========================================
+    # Specific store management routes must come before the public slug route
     path('store/settings/', views.store_settings, name='store_settings'),
     path('store/preview/', views.store_public_preview, name='store_preview'),
     path('store/category-change/', views.category_change_request, name='category_change_request'),
-    # NOTE: Public storefront URL moved to main urls.py (see below)
+    # Public storefront (catch-all slug) should be last to avoid matching 'settings' etc.
+    path('store/<slug:slug>/', views.store_public, name='store_public'),
     
     # ==========================================
     # NOTIFICATIONS
     # ==========================================
     path('notifications/', views.notifications_list, name='notifications_list'),
+    path('notifications/mark-all-read/', views.notifications_mark_all_read, name='notifications_mark_all_read'),
+    path('notifications/<int:notification_id>/mark-read/', views.notification_mark_read, name='notification_mark_read'),
+    path('notifications/<int:notification_id>/delete/', views.notification_delete, name='notification_delete'),
     path('notifications/<int:notification_id>/', views.notification_detail, name='notification_detail'),
     
     # ==========================================
@@ -74,6 +79,6 @@ urlpatterns = [
     # ==========================================
     # AJAX ENDPOINTS
     # ==========================================
-    path('ajax/subcategories/', views.get_subcategories_ajax, name='get_subcategories_ajax'),
-    path('ajax/attributes/', views.get_category_attributes_ajax, name='get_attributes_ajax'),
+    path('ajax/subcategories/', views.ajax_get_subcategories, name='ajax_subcategories'),
+    path('ajax/attributes/', views.ajax_get_attributes, name='ajax_attributes'),
 ]

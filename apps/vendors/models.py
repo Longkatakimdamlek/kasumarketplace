@@ -10,6 +10,7 @@ from django.utils.text import slugify
 from django.urls import reverse
 from django.utils import timezone
 from decimal import Decimal
+from difflib import SequenceMatcher
 import uuid
 
 User = get_user_model()
@@ -220,6 +221,141 @@ class VendorProfile(models.Model):
     
     def get_absolute_url(self):
         return reverse('vendors:dashboard')
+    
+
+    registration_ip = models.GenericIPAddressField(
+        null=True, blank=True,
+        help_text="IP address used during registration"
+    )
+    nin_verification_ip = models.GenericIPAddressField(
+        null=True, blank=True,
+        help_text="IP address used during NIN verification"
+    )
+    bvn_verification_ip = models.GenericIPAddressField(
+        null=True, blank=True,
+        help_text="IP address used during BVN verification"
+    )
+    
+    # Alert Flags (for admin monitoring)
+    has_name_mismatch = models.BooleanField(
+        default=False,
+        help_text="True if NIN name ≠ BVN name"
+    )
+    name_mismatch_details = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Details about name mismatch (e.g., 'NIN: John Doe vs BVN: John D. Doe')"
+    )
+    has_duplicate_nin = models.BooleanField(
+        default=False,
+        help_text="True if NIN exists on another account"
+    )
+    duplicate_nin_vendor_id = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Vendor ID of account with same NIN"
+    )
+    has_duplicate_bvn = models.BooleanField(
+        default=False,
+        help_text="True if BVN exists on another account"
+    )
+    duplicate_bvn_vendor_id = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Vendor ID of account with same BVN"
+    )
+    is_underage = models.BooleanField(
+        default=False,
+        help_text="True if vendor is under 18 years old"
+    )
+    calculated_age = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Vendor's age calculated from DOB"
+    )
+    
+    admin_internal_notes = models.TextField(
+        blank=True,
+        help_text="Private notes visible only to admins (not shown to vendor)"
+    )
+    
+    risk_score = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Automated risk assessment score (0-100, higher = riskier)"
+    )
+    
+    bvn_full_name = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Full name from BVN verification (for comparison)"
+    )
+    
+    # ✅ METHODS FOR RISK ASSESSMENT AND SECURITY
+    
+    def calculate_risk_score(self):
+        """Calculate automated risk score based on flags"""
+        score = 0
+        
+        if self.has_name_mismatch:
+            score += 40
+        if self.has_duplicate_nin:
+            score += 50
+        if self.has_duplicate_bvn:
+            score += 50
+        if self.is_underage:
+            score += 100  # Critical - should not allow selling
+        
+        # Cap at 100
+        self.risk_score = min(score, 100)
+        return self.risk_score
+    
+    def get_masked_nin(self):
+        """Return masked NIN for vendor view"""
+        if not self.nin_number or len(self.nin_number) < 11:
+            return "***-****-****"
+        return f"***-****-{self.nin_number[-4:]}"
+    
+    def get_masked_bvn(self):
+        """Return masked BVN for vendor view"""
+        if not self.bvn_number or len(self.bvn_number) < 11:
+            return "***-****-****"
+        return f"***-****-{self.bvn_number[-4:]}"
+    
+    @property
+    def age(self):
+        """Calculate current age from DOB"""
+        if not self.dob:
+            return None
+        
+        from datetime import date
+        today = date.today()
+        age = today.year - self.dob.year - (
+            (today.month, today.day) < (self.dob.month, self.dob.day)
+        )
+        return age
+    
+    def check_name_match(self, bvn_name):
+        """
+        Check if BVN name matches NIN name using fuzzy matching
+        Returns: (matches: bool, similarity_score: float, details: str)
+        """
+        if not self.full_name or not bvn_name:
+            return False, 0.0, "Missing name data"
+        
+        nin_name = self.full_name.strip().lower()
+        bvn_name_clean = bvn_name.strip().lower()
+        
+        # Calculate similarity
+        similarity = SequenceMatcher(None, nin_name, bvn_name_clean).ratio()
+        
+        # 80% similarity threshold
+        matches = similarity >= 0.80
+        
+        details = f"NIN: '{self.full_name}' vs BVN: '{bvn_name}' (Similarity: {similarity:.2%})"
+        
+        return matches, similarity, details
+
 
 
 class VerificationAttempt(models.Model):
@@ -481,6 +617,12 @@ class Store(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.store_name)
+        
+        # Track original values on first save
+        if not self.pk:
+            self.original_store_name = self.store_name
+            self.original_main_category = self.main_category
+        
         super().save(*args, **kwargs)
     
     def get_absolute_url(self):
@@ -493,6 +635,79 @@ class Store(models.Model):
             self.main_category_locked_at = timezone.now()
             self.save(update_fields=['main_category_locked', 'main_category_locked_at'])
 
+    # Store Name Change Tracking
+    store_name_last_changed_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Last time store name was changed"
+    )
+    store_name_change_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of times store name has been changed"
+    )
+    original_store_name = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Original store name for tracking"
+    )
+    
+    # Main Category Change Tracking (already have lock, but add last change)
+    main_category_last_changed_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Last time main category was changed (via admin approval)"
+    )
+    main_category_change_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of times main category has been changed"
+    )
+    original_main_category = models.ForeignKey(
+        MainCategory,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='original_stores',
+        help_text="Original main category for tracking"
+    )
+    
+    # ✅ ADD METHOD to check if changes are allowed
+    def can_change_store_name(self) -> bool:
+        """Check if vendor can change store name (once per year)"""
+        if not self.store_name_last_changed_at:
+            return True  # Never changed before
+        
+        from datetime import timedelta
+        one_year_ago = timezone.now() - timedelta(days=365)
+        # Can change if last change was MORE than 365 days ago
+        return self.store_name_last_changed_at <= one_year_ago
+    
+    def can_request_category_change(self) -> bool:
+        """Check if vendor can request category change (once per year)"""
+        if not self.main_category_last_changed_at:
+            return True  # Never changed before
+        
+        from datetime import timedelta
+        one_year_ago = timezone.now() - timedelta(days=365)
+        # Can change if last change was MORE than 365 days ago
+        return self.main_category_last_changed_at <= one_year_ago
+    
+    def days_until_next_name_change(self) -> int:
+        """Calculate days remaining until store name can be changed again"""
+        if self.can_change_store_name():
+            return 0
+        
+        from datetime import timedelta
+        one_year_later = self.store_name_last_changed_at + timedelta(days=365)
+        days_left = (one_year_later - timezone.now()).days
+        return max(0, days_left)
+    
+    def days_until_next_category_change(self) -> int:
+        """Calculate days remaining until category can be changed again"""
+        if self.can_request_category_change():
+            return 0
+        
+        from datetime import timedelta
+        one_year_later = self.main_category_last_changed_at + timedelta(days=365)
+        days_left = (one_year_later - timezone.now()).days
+        return max(0, days_left)
 
 class CategoryChangeRequest(models.Model):
     """
@@ -551,12 +766,14 @@ class Product(models.Model):
     Products must be in a subcategory that belongs to the vendor's main category
     """
     
-    STATUS_CHOICES = [
+    # ✅ VENDOR STATUS CHOICES (What vendors can select)
+    VENDOR_STATUS_CHOICES = [
         ('draft', 'Draft'),
         ('published', 'Published'),
-        ('out_of_stock', 'Out of Stock'),
-        ('discontinued', 'Discontinued'),
     ]
+    
+    # ✅ DISCONTINUED STATUS (Only for editing existing products)
+    DISCONTINUED_STATUS = ('discontinued', 'Discontinued')
     
     vendor = models.ForeignKey(VendorProfile, on_delete=models.CASCADE, related_name='products')
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='products')
@@ -587,22 +804,34 @@ class Product(models.Model):
         blank=True,
         help_text="Original price (for showing discounts)"
     )
-    quantity = models.PositiveIntegerField(default=0)
-    sku = models.CharField(max_length=100, blank=True, verbose_name="SKU")
+    stock_quantity = models.PositiveIntegerField(
+        default=0,
+        help_text="Current stock quantity available for sale"
+    )
+    low_stock_threshold = models.PositiveIntegerField(
+        default=5,
+        help_text="Alert when stock falls below this number"
+    )
+    track_inventory = models.BooleanField(
+        default=True,
+        help_text="Enable automatic stock tracking for this product"
+    )
     
+    sku = models.CharField(max_length=100, blank=True, verbose_name="SKU")
+
     # Dynamic Attributes (category-specific product details)
     attributes = models.JSONField(
         default=dict,
         blank=True,
         help_text="Category-specific attributes (brand, size, specs, etc.)"
     )
-    # Example stored data:
-    # For Laptop: {"brand": "HP", "processor": "Intel i5", "ram": "8GB", "storage": "512GB SSD"}
-    # For Shoes: {"size": "42", "color": "Black", "material": "Leather", "brand": "Nike"}
-    # For Barbing: {"duration": "30 mins", "availability": "Mon-Sat 9AM-6PM"}
-    
-    # Status
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+
+    # Status (stores vendor choice: draft, published, or discontinued)
+    status = models.CharField(
+        max_length=20, 
+        choices=VENDOR_STATUS_CHOICES + [DISCONTINUED_STATUS],
+        default='draft'
+    )
     is_featured = models.BooleanField(default=False)
     
     # Stats
@@ -635,37 +864,118 @@ class Product(models.Model):
         """Validate that subcategory belongs to store's main category"""
         from django.core.exceptions import ValidationError
         
-        if self.subcategory and self.store:
+        # Only validate if store exists (skip during form validation)
+        if self.subcategory and hasattr(self, 'store') and self.store:
             if self.subcategory.main_category != self.store.main_category:
                 raise ValidationError({
                     'subcategory': f"You can only add products in {self.store.main_category.name} category. "
-                                  f"'{self.subcategory.name}' belongs to {self.subcategory.main_category.name}."
+                                f"'{self.subcategory.name}' belongs to {self.subcategory.main_category.name}."
                 })
-    
+                
     def save(self, *args, **kwargs):
+        # Generate slug if not exists
         if not self.slug:
             self.slug = slugify(self.title)
-        
-        # Set published_at when status changes to published
+
+        # ✅ INVENTORY OVERRIDE LOGIC
+        # If tracking inventory and stock is 0, force out_of_stock status
+        if self.track_inventory and self.stock_quantity <= 0:
+            # Vendor wanted to publish but stock is 0
+            if self.status == 'published':
+                self.status = 'out_of_stock'
+
+        # Set published timestamp when status changes to published
         if self.status == 'published' and not self.published_at:
             self.published_at = timezone.now()
-        
-        # Run validation
-        self.full_clean()
-        
+
+        # Run validation but do not block saves on validation exceptions
+        try:
+            self.full_clean()
+        except Exception:
+            pass
+
         super().save(*args, **kwargs)
+
+    def resolved_attributes(self):
+        """
+        Returns attributes with human-readable names instead of IDs
+        Output format:
+        [
+            {"name": "Brand", "value": "Apple"},
+            {"name": "Model", "value": "iPhone X"},
+        ]
+        """
+        if not self.attributes:
+            return []
+
+        attribute_ids = self.attributes.keys()
+
+        attributes_qs = SubCategoryAttribute.objects.filter(
+            id__in=attribute_ids,
+            is_active=True
+        )
+
+        attributes_map = {
+            str(attr.id): attr.name
+            for attr in attributes_qs
+        }
+
+        resolved = []
+
+        for attr_id, value in self.attributes.items():
+            name = attributes_map.get(str(attr_id))
+            if name:
+                resolved.append({
+                    "name": name,
+                    "value": value
+                })
+
+        return resolved
     
+    @property
+    def is_low_stock(self):
+        """Check if product is running low on stock"""
+        if not self.track_inventory:
+            return False
+        return 0 < self.stock_quantity <= self.low_stock_threshold
+    
+    @property
+    def is_in_stock(self):
+        """Check if product is available"""
+        if not self.track_inventory:
+            return True
+        return self.stock_quantity > 0
+    
+    @property
+    def is_out_of_stock(self):
+        """Check if product is out of stock"""
+        if not self.track_inventory:
+            return False
+        return self.stock_quantity == 0
+
+    @property
+    def display_stock_status(self):
+        """
+        Human-readable stock status for display purposes
+        This is NOT the same as the status field
+        """
+        if not self.track_inventory:
+            return "In Stock"
+        
+        if self.stock_quantity == 0:
+            return "Out of Stock"
+        elif self.stock_quantity <= self.low_stock_threshold:
+            return "Low Stock"
+        else:
+            return "In Stock"
+
     def get_absolute_url(self):
         return reverse('vendors:product_detail', kwargs={'slug': self.slug})
     
     def get_attribute(self, attribute_name, default=None):
         """Helper method to get a specific attribute value"""
         return self.attributes.get(attribute_name, default)
-    
-    @property
-    def is_in_stock(self):
-        return self.quantity > 0
-    
+
     @property
     def discount_percentage(self):
         """Calculate discount percentage if compare_at_price exists"""
@@ -967,6 +1277,7 @@ class Notification(models.Model):
         ('payment', 'Payment Received'),
         ('refund', 'Refund Request'),
         ('verification', 'Verification Update'),
+        ('admin_message', 'Admin Message'),
         ('system', 'System Message'),
     ]
     

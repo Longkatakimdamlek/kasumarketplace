@@ -199,7 +199,7 @@ class VendorSignupView(View):
     def get(self, request):
         """Display vendor signup form."""
         if request.user.is_authenticated:
-            return redirect('users:vendor_dashboard')
+            return redirect('vendors:dashboard')
         
         form = self.form_class()
         return render(request, self.template_name, {'form': form})
@@ -246,7 +246,7 @@ class LoginView(View):
         if request.user.is_authenticated:
             # Redirect based on user role
             if request.user.is_vendor:
-                return redirect('users:vendor_dashboard')
+                return redirect('vendors:dashboard')
             return redirect('users:buyer_dashboard')
         
         form = self.form_class()
@@ -270,7 +270,7 @@ class LoginView(View):
             
             # Redirect based on user role
             if user.is_vendor:
-                return redirect('users:vendor_dashboard')
+                return redirect('vendors:dashboard')
             elif user.is_buyer:
                 return redirect('users:buyer_dashboard')
             else:
@@ -335,7 +335,7 @@ class OTPVerificationView(View):
                     
                     # Redirect based on role
                     if user.is_vendor:
-                        return redirect('users:vendor_dashboard')
+                        return redirect('vendors:dashboard')
                     return redirect('users:buyer_dashboard')
                 else:
                     messages.error(
@@ -427,45 +427,39 @@ def buyer_dashboard(request):
         'user': request.user,
     })
 
-<<<<<<< HEAD
 @login_required
 def vendor_dashboard(request):
     """
-    Vendor dashboard redirect.
-    The real vendor dashboard is in the vendors app at /vendors/
+    This view ONLY redirects vendors to the REAL vendor dashboard
+    inside the vendors app.
     """
     if not request.user.is_vendor:
-        messages.error(request, 'Access denied. Vendors only.')
-        return redirect('users:vendor_dashboard')
-    
+        messages.error(request, "Access denied. Vendors only.")
+        return redirect('users:buyer_dashboard')
+
+    # Ensure vendor profile exists
     if not hasattr(request.user, 'vendorprofile'):
-        messages.warning(request, 'Please complete vendor registration first.')
-        return redirect('users:vendor_dashboard')
-    
+        messages.warning(request, "Please complete vendor registration first.")
+        return redirect('vendors:dashboard')
+
+    # Correct redirect to actual vendor dashboard
     return redirect('vendors:dashboard')
-=======
-
-@login_required
-def vendor_dashboard(request):
-    """Vendor dashboard view."""
-    if not request.user.is_vendor:
-        messages.error(request, 'Access denied. Vendors only.')
-        return redirect('home')
     
-    return render(request, 'users/vendor_dashboard.html', {
-        'user': request.user,
-    })
-
->>>>>>> fcc348e5a2c27b1bd240c5f05727e083445490bf
-
 # ===========================
 # HOME VIEW (PLACEHOLDER)
 # ===========================
 
 def home(request):
-    """Homepage view."""
-    return render(request, 'home.html')
-
+    """Homepage - redirect authenticated users to dashboard."""
+    if request.user.is_authenticated:
+        if request.user.is_vendor:
+            return redirect('vendors:dashboard')
+        elif request.user.is_buyer:
+            return redirect('users:buyer_dashboard')
+    
+    # For now, redirect to login
+    # TODO: Create proper landing page later
+    return redirect('users:login')
 
 # ============================================
 # FILE 2: apps/users/views.py (ADD THESE VIEWS)

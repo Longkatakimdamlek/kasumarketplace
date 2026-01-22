@@ -17,8 +17,7 @@ Environment Variables:
 - EMAIL_BACKEND (default: django.core.mail.backends.smtp.EmailBackend)
 - EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
 - RESEND_API_KEY (optional)
-- TERMII_API_KEY (optional)
-- USE_MOCK_NOTIFICATIONS (set to 'True' for testing)
+- TERMII_API_KEY (required for SMS)
 """
 
 import os
@@ -43,7 +42,6 @@ class EmailService:
     """
     
     def __init__(self):
-        self.use_mock = os.getenv('USE_MOCK_NOTIFICATIONS', 'True').lower() == 'true'
         self.from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@kasumarketplace.com')
         self.resend_api_key = os.getenv('RESEND_API_KEY', '')
     
@@ -68,10 +66,6 @@ class EmailService:
         Returns:
             True if sent successfully, False otherwise
         """
-        
-        if self.use_mock:
-            return self._mock_send_email(to_email, subject, message)
-        
         try:
             from_email = from_email or self.from_email
             
@@ -122,10 +116,6 @@ class EmailService:
         Returns:
             True if sent successfully
         """
-        
-        if self.use_mock:
-            return self._mock_send_email(to_email, subject, f"Template: {template_name}")
-        
         try:
             # Render HTML template
             html_message = render_to_string(template_name, context)
@@ -143,12 +133,6 @@ class EmailService:
         except Exception as e:
             logger.error(f'Template email error: {str(e)}')
             return False
-    
-    def _mock_send_email(self, to_email: str, subject: str, message: str) -> bool:
-        """Mock email sending for testing"""
-        logger.info(f'[MOCK EMAIL] To: {to_email} | Subject: {subject}')
-        logger.info(f'[MOCK EMAIL] Message: {message[:100]}...')
-        return True
 
 
 class SMSService:
@@ -157,9 +141,11 @@ class SMSService:
     """
     
     def __init__(self):
-        self.use_mock = os.getenv('USE_MOCK_NOTIFICATIONS', 'True').lower() == 'true'
         self.termii_api_key = os.getenv('TERMII_API_KEY', '')
         self.termii_sender_id = os.getenv('TERMII_SENDER_ID', 'KasuMarket')
+        
+        if not self.termii_api_key:
+            logger.warning('Termii API key not configured. SMS functionality will be disabled.')
     
     def send_sms(
         self,
@@ -176,16 +162,12 @@ class SMSService:
         Returns:
             True if sent successfully
         """
-        
-        if self.use_mock:
-            return self._mock_send_sms(phone, message)
-        
         # Normalize phone number
         phone = self._normalize_phone(phone)
         
         if not self.termii_api_key:
-            logger.warning('Termii API key not configured. Using mock mode.')
-            return self._mock_send_sms(phone, message)
+            logger.error('Termii API key not configured. Cannot send SMS.')
+            return False
         
         try:
             import requests
@@ -236,11 +218,6 @@ class SMSService:
             phone = '234' + phone
         
         return phone
-    
-    def _mock_send_sms(self, phone: str, message: str) -> bool:
-        """Mock SMS sending for testing"""
-        logger.info(f'[MOCK SMS] To: {phone} | Message: {message}')
-        return True
 
 
 class NotificationService:

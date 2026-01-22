@@ -10,19 +10,25 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
+from django.db.models import F
 from django.core.paginator import Paginator
+from django.urls import reverse
 from decimal import Decimal
+from datetime import datetime, date
+import logging
 
 from .models import (
     VendorProfile, Store, Product, ProductImage, 
     Order, OrderItem, Wallet, Transaction,
-    MainCategory, SubCategory, CategoryChangeRequest,
+    MainCategory, SubCategory, SubCategoryAttribute, CategoryChangeRequest,
     Notification
 )
+from .forms import VendorProfileEditForm
 from .forms import (
     NINEntryForm, NINOTPForm, BVNEntryForm, BVNOTPForm,
-    StudentVerificationForm, StoreSetupForm, ProductForm,
-    ProductImageFormSet, OrderStatusUpdateForm, CategoryChangeRequestForm
+    StudentVerificationForm, StoreSetupForm, StoreSettingsForm,
+    ProductForm, ProductImageFormSet, OrderStatusUpdateForm, 
+    CategoryChangeRequestForm
 )
 from .decorators import (
     vendor_required, vendor_verified_required, 
@@ -32,9 +38,84 @@ from .decorators import (
 from .services import dojah_service, paystack_service, notification_service
 from .services.utils import generate_reference, calculate_commission
 
-import logging
+
 
 logger = logging.getLogger(__name__)
+
+
+# ==========================================
+# PROFILE
+# ==========================================
+
+@vendor_required
+def profile_view(request):
+    """
+    View vendor profile (read-only display)
+    Shows auto-filled NIN/BVN data with masked sensitive info
+    """
+    vendor = request.user.vendorprofile
+    
+    context = {
+        'vendor': vendor,
+        'hide_verification_badge': True,
+    }
+    
+    return render(request, 'vendors/profile/view.html', context)
+
+
+@vendor_required
+def profile_edit(request):
+    """
+    Edit vendor profile - LIMITED FIELDS ONLY
+    Can only edit: alternative phone, WhatsApp
+    Verified info (NIN, BVN, Email, Legal Name) is READ-ONLY
+    """
+    vendor = request.user.vendorprofile
+    
+    if request.method == 'POST':
+        form = VendorProfileEditForm(request.POST, instance=vendor)
+        
+        if form.is_valid():
+            # Save editable fields only
+            alternative_phone = form.cleaned_data.get('alternative_phone')
+            whatsapp = form.cleaned_data.get('whatsapp')
+            
+            # Update vendor profile
+            # Note: Store these in a custom field or use existing phone field
+            # For now, we'll assume you have these fields in VendorProfile
+            # If not, you might want to add them to the model
+            
+            # Example: Store in a JSON field or separate columns
+            # vendor.alternative_phone = alternative_phone
+            # vendor.whatsapp = whatsapp
+            # vendor.save()
+            
+            # Temporary: Update phone if alternative_phone provided
+            if alternative_phone:
+                vendor.phone = alternative_phone
+            
+            vendor.save()
+            
+            logger.info(f"✅ Profile updated for vendor: {vendor.full_name}")
+            messages.success(request, '✅ Contact information updated successfully!')
+            return redirect('vendors:profile_view')
+        else:
+            messages.error(request, '❌ Please correct the errors below.')
+    else:
+        # Pre-populate form with existing data
+        initial_data = {
+            'alternative_phone': vendor.phone,
+            # 'whatsapp': vendor.whatsapp if hasattr(vendor, 'whatsapp') else '',
+        }
+        form = VendorProfileEditForm(initial=initial_data)
+    
+    context = {
+        'form': form,
+        'vendor': vendor,
+        'hide_verification_badge': True,
+    }
+    
+    return render(request, 'vendors/profile/edit.html', context)
 
 
 # ==========================================
@@ -62,7 +143,8 @@ def dashboard(request):
         # Low stock products
         'low_stock_products': vendor.products.filter(
             status='published',
-            quantity__lte=5
+            track_inventory=True,
+            stock_quantity__lte=5
         )[:5],
         
         # Unread notifications
@@ -76,6 +158,7 @@ def dashboard(request):
             f'Complete verification to start selling. Progress: {vendor.completion_percentage}%'
         )
     
+    context['hide_verification_badge'] = True
     return render(request, 'vendors/dashboard.html', context)
 
 
@@ -97,57 +180,67 @@ def verification_center(request):
     
     # Calculate step status
     steps = [
-        {
-            'number': 1,
-            'name': 'Identity (NIN)',
-            'status': vendor.identity_status,
-            'completed': vendor.identity_status == 'nin_verified',
-            'url': 'vendors:nin_entry',
-            'icon': 'user-check'
-        },
-        {
-            'number': 2,
-            'name': 'Banking (BVN)',
-            'status': vendor.bank_status,
-            'completed': vendor.bank_status == 'bvn_verified',
-            'url': 'vendors:bvn_entry',
-            'icon': 'credit-card',
-            'locked': vendor.identity_status != 'nin_verified'
-        },
-        {
-            'number': 3,
-            'name': 'Store Setup',
-            'status': 'completed' if vendor.store_setup_completed else 'pending',
-            'completed': vendor.store_setup_completed,
-            'url': 'vendors:store_setup',
-            'icon': 'store',
-            'skippable': True,
-            'locked': vendor.bank_status != 'bvn_verified'
-        },
-        {
-            'number': 4,
-            'name': 'Student Verification (Optional)',
-            'status': vendor.student_status,
-            'completed': vendor.student_status == 'verified',
-            'url': 'vendors:student_verification',
-            'icon': 'graduation-cap',
-            'optional': True
-        },
-        {
-            'number': 5,
-            'name': 'Admin Review',
-            'status': vendor.verification_status,
-            'completed': vendor.verification_status == 'approved',
-            'icon': 'shield-check'
-        }
-    ]
+    {
+        'number': 1,
+        'name': 'Identity (NIN)',
+        'status': vendor.identity_status,
+        'completed': vendor.identity_status == 'nin_verified',
+        'url': 'vendors:nin_entry',
+        'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                   </svg>'''
+    },
+    {
+        'number': 2,
+        'name': 'Banking (BVN)',
+        'status': vendor.bank_status,
+        'completed': vendor.bank_status == 'bvn_verified',
+        'url': 'vendors:bvn_entry',
+        'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                   </svg>'''
+    },
+    {
+        'number': 3,
+        'name': 'Store Setup',
+        'status': 'completed' if vendor.store_setup_completed else 'pending',
+        'completed': vendor.store_setup_completed,
+        'url': 'vendors:store_setup',
+        'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                   </svg>'''
+    },
+    {
+        'number': 4,
+        'name': 'Student Verification (Optional)',
+        'status': vendor.student_status,
+        'completed': vendor.student_status == 'verified',
+        'url': 'vendors:student_verification',
+        'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+                     <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/>
+                   </svg>'''
+    },
+    {
+        'number': 5,
+        'name': 'Admin Review',
+        'status': vendor.verification_status,
+        'completed': vendor.verification_status == 'approved',
+        'url': 'vendors:pending_review',
+        'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                   </svg>'''
+    }
+]
     
     context = {
         'vendor': vendor,
         'steps': steps,
         'completion_percentage': vendor.completion_percentage,
         'current_step': vendor.current_step,
-        'can_sell': vendor.can_sell
+        'can_sell': vendor.can_sell,
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/verification/center.html', context)
@@ -156,12 +249,9 @@ def verification_center(request):
 @vendor_required
 @rate_limit_verification
 def nin_entry(request):
-    """
-    Step 1: NIN Entry
-    """
+    """Step 1: NIN Entry with security checks"""
     vendor = request.user.vendorprofile
     
-    # If already verified, redirect
     if vendor.identity_status == 'nin_verified':
         messages.info(request, 'NIN already verified')
         return redirect('vendors:verification_center')
@@ -172,51 +262,108 @@ def nin_entry(request):
         if form.is_valid():
             nin_number = form.cleaned_data['nin_number']
             
+            # ✅ CHECK FOR DUPLICATE NIN BEFORE API CALL
+            duplicate_vendor = VendorProfile.objects.filter(
+                nin_number=nin_number
+            ).exclude(id=vendor.id).first()
+            
+            if duplicate_vendor:
+                vendor.has_duplicate_nin = True
+                vendor.duplicate_nin_vendor_id = str(duplicate_vendor.vendor_id)
+                vendor.save()
+                logger.warning(f"⚠️ Duplicate NIN detected: {nin_number} (Vendor: {duplicate_vendor.vendor_id})")
+                messages.error(
+                    request,
+                    "⚠️ This NIN is already registered. If this is your NIN, please contact support."
+                )
+                return render(request, 'vendors/verification/nin_entry.html', {'form': form})
+            
             # Call Dojah API
             success, data = dojah_service.verify_nin(nin_number)
             
             if success:
-                # Update vendor profile
+                # Store NIN data
                 vendor.nin_number = nin_number
-                vendor.full_name = f"{data.get('firstname')} {data.get('surname')}"
-                vendor.phone = data.get('phone', vendor.phone)
-                vendor.dob = data.get('birthdate')
-                vendor.gender = data.get('gender', '').lower()
-                vendor.address = data.get('residence_address')
-                vendor.state = data.get('residence_state')
-                vendor.lga = data.get('residence_lga')
-                # TODO: Download and save photo
-                vendor.identity_status = 'nin_verified'
-                vendor.nin_verified_at = timezone.now()
+                vendor.full_name = f"{data.get('firstname', '')} {data.get('surname', '')}".strip()
+                
+                phone_from_dojah = data.get('phone', '') or data.get('telephoneno', '')
+                if phone_from_dojah:
+                    vendor.phone = phone_from_dojah
+                
+                # ✅ HANDLE DOB WITH AGE CHECK
+                birthdate = data.get('birthdate') or data.get('dateofbirth')
+                if birthdate and birthdate.strip():
+                    try:
+                        parsed_date = datetime.strptime(birthdate, '%Y-%m-%d')
+                        vendor.dob = parsed_date.date()
+                        
+                        # Calculate age
+                        today = date.today()
+                        age = today.year - vendor.dob.year - (
+                            (today.month, today.day) < (vendor.dob.month, vendor.dob.day)
+                        )
+                        vendor.calculated_age = age
+                        
+                        # Check if underage
+                        if age < 18:
+                            vendor.is_underage = True
+                            logger.warning(f"⚠️ Underage vendor detected: {age} years old")
+                        
+                    except (ValueError, AttributeError) as e:
+                        logger.warning(f"Invalid birthdate format from Dojah: {birthdate}")
+                        vendor.dob = None
+                else:
+                    vendor.dob = None
+                
+                vendor.gender = (data.get('gender', '') or '').lower()
+                vendor.address = data.get('residence_address') or data.get('address') or ''
+                vendor.state = data.get('residence_state') or data.get('state') or ''
+                vendor.lga = data.get('residence_lga') or data.get('lga') or ''
+                
+                # ✅ CAPTURE IP ADDRESS
+                vendor.nin_verification_ip = request.META.get('REMOTE_ADDR')
+                
+                vendor.identity_status = 'nin_otp_sent'
                 vendor.save()
                 
-                # Send notification
-                notification_service.send_nin_verified(vendor)
+                # Calculate initial risk score
+                vendor.calculate_risk_score()
+                vendor.save()
                 
-                messages.success(request, 'NIN verified successfully! ✅')
-                return redirect('vendors:bvn_entry')
+                # Send OTP
+                otp_success, otp_data = dojah_service.send_nin_otp(nin_number)
+                
+                if otp_success:
+                    messages.success(request, f"OTP sent to {otp_data.get('phone', 'your phone')}! ✅")
+                    return redirect('vendors:nin_otp')
+                else:
+                    messages.warning(request, 'Could not send OTP. Please contact support.')
+                    vendor.identity_status = 'nin_verified'
+                    vendor.nin_verified_at = timezone.now()
+                    vendor.save()
+                    return redirect('vendors:bvn_entry')
             else:
                 messages.error(request, f"NIN verification failed: {data.get('error')}")
     else:
         form = NINEntryForm()
     
-    return render(request, 'vendors/verification/nin_entry.html', {'form': form})
+    return render(request, 'vendors/verification/nin_entry.html', {
+        'form': form,
+        'hide_verification_badge': True
+    })
 
 
+    
 @vendor_required
 @rate_limit_verification
 def bvn_entry(request):
-    """
-    Step 2: BVN Entry
-    """
+    """Step 2: BVN Entry with name matching"""
     vendor = request.user.vendorprofile
     
-    # Check NIN verified first
     if vendor.identity_status != 'nin_verified':
         messages.warning(request, 'Please verify NIN first')
         return redirect('vendors:nin_entry')
     
-    # If already verified
     if vendor.bank_status == 'bvn_verified':
         messages.info(request, 'BVN already verified')
         return redirect('vendors:verification_center')
@@ -228,14 +375,55 @@ def bvn_entry(request):
             bvn_number = form.cleaned_data['bvn_number']
             bank_name = form.cleaned_data['bank_name']
             
+            # ✅ CHECK FOR DUPLICATE BVN
+            duplicate_vendor = VendorProfile.objects.filter(
+                bvn_number=bvn_number
+            ).exclude(id=vendor.id).first()
+            
+            if duplicate_vendor:
+                vendor.has_duplicate_bvn = True
+                vendor.duplicate_bvn_vendor_id = str(duplicate_vendor.vendor_id)
+                vendor.save()
+                logger.warning(f"⚠️ Duplicate BVN detected: {bvn_number}")
+                messages.error(
+                    request,
+                    "⚠️ This BVN is already registered. If this is your BVN, please contact support."
+                )
+                return render(request, 'vendors/verification/bvn_entry.html', {
+                    'form': form,
+                    'vendor': vendor
+                })
+            
             # Call Dojah API
             success, data = dojah_service.verify_bvn(bvn_number)
             
             if success:
+                # Extract BVN name
+                bvn_first = data.get('firstname', data.get('first_name', ''))
+                bvn_last = data.get('lastname', data.get('last_name', data.get('surname', '')))
+                bvn_full_name = f"{bvn_first} {bvn_last}".strip()
+                
+                vendor.bvn_full_name = bvn_full_name
+                
+                # ✅ CHECK NAME MATCH
+                matches, similarity, details = vendor.check_name_match(bvn_full_name)
+                
+                if not matches:
+                    vendor.has_name_mismatch = True
+                    vendor.name_mismatch_details = details
+                    logger.warning(f"⚠️ {details}")
+                else:
+                    vendor.has_name_mismatch = False
+                    vendor.name_mismatch_details = ""
+                
                 # Update vendor
                 vendor.bvn_number = bvn_number
                 vendor.bank_status = 'bvn_verified'
                 vendor.bvn_verified_at = timezone.now()
+                
+                # ✅ CAPTURE IP ADDRESS
+                vendor.bvn_verification_ip = request.META.get('REMOTE_ADDR')
+                
                 vendor.save()
                 
                 # Update wallet
@@ -247,6 +435,10 @@ def bvn_entry(request):
                 wallet.verified_at = timezone.now()
                 wallet.save()
                 
+                # Calculate risk score
+                vendor.calculate_risk_score()
+                vendor.save()
+                
                 # Send notification
                 notification_service.send_bvn_verified(vendor)
                 
@@ -257,7 +449,11 @@ def bvn_entry(request):
     else:
         form = BVNEntryForm()
     
-    return render(request, 'vendors/verification/bvn_entry.html', {'form': form, 'vendor': vendor})
+    return render(request, 'vendors/verification/bvn_entry.html', {
+        'form': form,
+        'vendor': vendor,
+        'hide_verification_badge': True
+    })
 
 
 @vendor_required
@@ -267,8 +463,8 @@ def store_setup(request):
     """
     vendor = request.user.vendorprofile
     
-    # Check prerequisites
-    if not vendor.can_sell:
+    # Check prerequisites - must have NIN and BVN verified
+    if vendor.identity_status != 'nin_verified' or vendor.bank_status != 'bvn_verified':
         messages.warning(request, 'Please complete NIN and BVN verification first')
         return redirect('vendors:verification_center')
     
@@ -300,37 +496,61 @@ def store_setup(request):
     else:
         form = StoreSetupForm(instance=store, vendor=vendor)
     
+    # ✅ FIX: Pass categories and vendor to template
     context = {
         'form': form,
         'vendor': vendor,
+        'graduation_years': range(2024, 2031),
         'is_new': is_new,
-        'categories': MainCategory.objects.filter(is_active=True)
+        'categories': MainCategory.objects.filter(is_active=True).order_by('sort_order'),
+        'store': store,  # In case we're editing
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/verification/store_setup.html', context)
-
+    
 
 @vendor_required
 def student_verification(request):
     """
-    Step 4: Student Verification (Optional)
+    Step 4: Student & Alumni Verification (Optional)
+    Exclusive for Kaduna State University (KASU) community
     """
     vendor = request.user.vendorprofile
+    current_year = datetime.now().year
     
     if request.method == 'POST':
         form = StudentVerificationForm(request.POST, request.FILES, instance=vendor)
         
         if form.is_valid():
             vendor = form.save(commit=False)
+            
+            # ✅ Force KASU as institution (hardcoded)
+            vendor.institution = "Kaduna State University (KASU)"
+            
+            # Set status to pending for admin review
             vendor.student_status = 'pending'
+            
             vendor.save()
             
-            messages.success(request, 'Student verification submitted! Waiting for admin review.')
+            messages.success(
+                request, 
+                '✅ Student/Alumni verification submitted! We\'ll review your documents within 24-48 hours and notify you via email.'
+            )
             return redirect('vendors:verification_center')
+        else:
+            messages.error(request, '❌ Please correct the errors below.')
     else:
         form = StudentVerificationForm(instance=vendor)
     
-    return render(request, 'vendors/verification/student_verification.html', {'form': form})
+    context = {
+        'form': form,
+        'vendor': vendor,
+        'graduation_years': range(current_year - 5, current_year + 8),  # ✅ 2021-2033 (5 years alumni + 7 years future)
+        'hide_verification_badge': True,
+    }
+    
+    return render(request, 'vendors/verification/student_verification.html', context)
 
 @vendor_required
 @rate_limit_verification
@@ -359,6 +579,32 @@ def nin_otp(request):
             if success:
                 vendor.identity_status = 'nin_verified'
                 vendor.nin_verified_at = timezone.now()
+                
+                # ✅ CHECK FOR DUPLICATE NIN
+                duplicate_nin = VendorProfile.objects.filter(
+                    nin_number=vendor.nin_number
+                ).exclude(id=vendor.id).exists()
+                
+                if duplicate_nin:
+                    vendor.has_duplicate_nin = True
+                    logger.warning(f"⚠️ Duplicate NIN detected: {vendor.nin_number}")
+                    # Don't block, but flag for admin review
+                
+                # ✅ CHECK AGE (must be 18+)
+                if vendor.dob:
+                    today = date.today()
+                    age = today.year - vendor.dob.year - (
+                        (today.month, today.day) < (vendor.dob.month, vendor.dob.day)
+                    )
+                    
+                    if age < 18:
+                        vendor.is_underage = True
+                        logger.warning(f"⚠️ Underage vendor detected: {age} years old")
+                        # Flag for admin review
+                
+                # ✅ CAPTURE IP ADDRESS
+                vendor.nin_verification_ip = request.META.get('REMOTE_ADDR')
+                
                 vendor.save()
                 
                 messages.success(request, 'NIN verified successfully!')
@@ -372,7 +618,8 @@ def nin_otp(request):
     context = {
         'form': form,
         'vendor': vendor,
-        'phone_last_4': vendor.phone[-4:] if vendor.phone else '****'
+        'phone_last_4': vendor.phone[-4:] if vendor.phone else '****',
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/verification/nin_otp.html', context)
@@ -388,7 +635,7 @@ def nin_success(request):
     if vendor.identity_status != 'nin_verified':
         return redirect('vendors:nin_entry')
     
-    return render(request, 'vendors/verification/nin_success.html', {'vendor': vendor})
+    return render(request, 'vendors/verification/nin_success.html', {'vendor': vendor, 'hide_verification_badge': True})
 
 
 @vendor_required
@@ -434,7 +681,8 @@ def bvn_otp(request):
     context = {
         'form': form,
         'vendor': vendor,
-        'phone_last_4': vendor.phone[-4:] if vendor.phone else '****'
+        'phone_last_4': vendor.phone[-4:] if vendor.phone else '****',
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/verification/bvn_otp.html', context)
@@ -450,7 +698,7 @@ def bvn_success(request):
     if vendor.bank_status != 'bvn_verified':
         return redirect('vendors:bvn_entry')
     
-    return render(request, 'vendors/verification/bvn_success.html', {'vendor': vendor})
+    return render(request, 'vendors/verification/bvn_success.html', {'vendor': vendor, 'hide_verification_badge': True})
 
 @vendor_required
 def pending_review(request):
@@ -473,7 +721,8 @@ def pending_review(request):
     context = {
         'vendor': vendor,
         'submitted_at': vendor.bvn_verified_at or vendor.nin_verified_at,
-        'estimated_review_time': '24-48 hours'
+        'estimated_review_time': '24-48 hours',
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/verification/pending_review.html', context)
@@ -485,43 +734,62 @@ def pending_review(request):
 
 @vendor_verified_required
 def products_list(request):
-    """
-    List all vendor products with filters
-    """
+    """List all vendor products with filters and stock status"""
     vendor = request.user.vendorprofile
     
-    # Get filter parameters
+    # Filters
     status = request.GET.get('status', '')
+    stock_filter = request.GET.get('stock', '')
     search = request.GET.get('search', '')
-    
-    # Base queryset
+
     products = vendor.products.all()
     
     # Apply filters
     if status:
         products = products.filter(status=status)
     
+    # ✅ NEW: Stock filter
+    if stock_filter == 'low_stock':
+        products = products.filter(
+            track_inventory=True,
+            stock_quantity__gt=0,
+            stock_quantity__lte=F('low_stock_threshold')
+        )
+    elif stock_filter == 'out_of_stock':
+        products = products.filter(track_inventory=True, stock_quantity=0)
+    
     if search:
         products = products.filter(
             Q(title__icontains=search) | 
-            Q(description__icontains=search)
+            Q(description__icontains=search) |
+            Q(sku__icontains=search)
         )
-    
-    # Order by newest first
+
     products = products.order_by('-created_at')
     
     # Pagination
-    paginator = Paginator(products, 20)  # 20 per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    paginator = Paginator(products, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
     
+    # ✅ STATS
     context = {
         'products': page_obj,
         'total_products': vendor.products.count(),
         'published_count': vendor.products.filter(status='published').count(),
         'draft_count': vendor.products.filter(status='draft').count(),
+        'low_stock_count': vendor.products.filter(
+            track_inventory=True,
+            stock_quantity__gt=0,
+            stock_quantity__lte=F('low_stock_threshold')
+        ).count(),
+        'out_of_stock_count': vendor.products.filter(
+            track_inventory=True, 
+            stock_quantity=0
+        ).count(),
         'current_status': status,
-        'search_query': search
+        'stock_filter': stock_filter,
+        'search_query': search,
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/products/list.html', context)
@@ -529,42 +797,70 @@ def products_list(request):
 
 @vendor_verified_required
 def product_create(request):
-    """
-    Create new product with dynamic attributes
-    """
+    """Create new product with dynamic attributes and images"""
     vendor = request.user.vendorprofile
-    
-    # Check if store setup is complete
+
     if not hasattr(vendor, 'store'):
         messages.warning(request, 'Please complete store setup first')
         return redirect('vendors:store_setup')
     
     if request.method == 'POST':
-        form = ProductForm(request.POST, vendor=vendor)
-        formset = ProductImageFormSet(request.POST, request.FILES)
+        subcategory_id = request.POST.get('subcategory')
+        form = ProductForm(
+            request.POST,
+            vendor=vendor,
+            subcategory_id=subcategory_id,
+            is_editing=False  # ✅ Explicitly mark as creation
+        )
+        # Provide a temporary Product instance so the inline formset can bind correctly
+        temp_product = Product()
+        formset = ProductImageFormSet(request.POST, request.FILES, instance=temp_product)
+        
+        # ✅ SERVER-SIDE VALIDATION: Block discontinued on create
+        if 'status' in request.POST and request.POST['status'] == 'discontinued':
+            messages.error(request, '❌ You cannot set a new product as discontinued.')
+            form.add_error('status', 'Products can only be discontinued after creation.')
         
         if form.is_valid() and formset.is_valid():
-            product = form.save()
-            
-            # Save images
-            formset.instance = product
-            formset.save()
-            
-            messages.success(request, f'Product "{product.title}" created successfully!')
-            return redirect('vendors:products_list')
+            try:
+                product = form.save()
+                
+                # Save images
+                formset.instance = product
+                formset.save()
+                
+                # ✅ CHECK: Ensure at least one primary image
+                if not product.images.filter(is_primary=True).exists():
+                    first_image = product.images.first()
+                    if first_image:
+                        first_image.is_primary = True
+                        first_image.save()
+                
+                messages.success(request, f'✅ Product "{product.title}" created successfully!')
+                return redirect('vendors:product_detail', slug=product.slug)
+                
+            except Exception as e:
+                messages.error(request, f'❌ Error: {str(e)}')
+                import traceback
+                print(traceback.format_exc())
+        else:
+            messages.error(request, '❌ Please correct the errors below.')
     else:
-        # Get subcategory if selected
-        subcategory_id = request.GET.get('subcategory')
-        form = ProductForm(vendor=vendor, subcategory_id=subcategory_id)
-        formset = ProductImageFormSet()
+        form = ProductForm(vendor=vendor, is_editing=False)  # ✅ Mark as creation
+        formset = ProductImageFormSet(instance=Product())
+    
+    # Get subcategories
+    subcategories = SubCategory.objects.filter(
+        main_category=vendor.store.main_category,
+        is_active=True
+    ).order_by('name')
     
     context = {
         'form': form,
         'formset': formset,
-        'subcategories': SubCategory.objects.filter(
-            main_category=vendor.store.main_category,
-            is_active=True
-        )
+        'vendor': vendor,
+        'subcategories': subcategories,
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/products/create.html', context)
@@ -573,30 +869,83 @@ def product_create(request):
 @vendor_verified_required
 @vendor_owns_product
 def product_edit(request, slug):
-    """
-    Edit existing product
-    """
-    product = request.product  # Set by decorator
+    """Edit existing product"""
+    product = request.product
+    vendor = request.user.vendorprofile
+
     
     if request.method == 'POST':
-        form = ProductForm(request.POST, instance=product, vendor=request.user.vendorprofile)
+        form = ProductForm(
+            request.POST,
+            request.FILES,
+            instance=product,
+            vendor=vendor,
+            is_editing=True
+        )
         formset = ProductImageFormSet(request.POST, request.FILES, instance=product)
         
         if form.is_valid() and formset.is_valid():
             product = form.save()
             formset.save()
             
-            messages.success(request, 'Product updated successfully!')
-            return redirect('vendors:products_list')
+            messages.success(request, '✅ Product updated successfully!')
+            return redirect('vendors:product_detail', slug=product.slug)
+        else:
+            # ✅ DEBUG: Print errors to console
+            print("=" * 50)
+            print("FORM ERRORS:", form.errors)
+            print("FORM NON-FIELD ERRORS:", form.non_field_errors())
+            print("FORMSET ERRORS:", formset.errors)
+            print("FORMSET NON-FORM ERRORS:", formset.non_form_errors())
+            print("=" * 50)
+            
+            messages.error(request, '❌ Please correct the errors below.')
     else:
-        form = ProductForm(instance=product, vendor=request.user.vendorprofile)
+        form = ProductForm(
+            instance=product,
+            vendor=vendor,
+            is_editing=True
+        )
         formset = ProductImageFormSet(instance=product)
+
+    # Get subcategories for editing
+    import json
+    subcategories = SubCategory.objects.filter(
+        main_category=vendor.store.main_category,
+        is_active=True
+    ).values('id', 'name').order_by('name')
+    
+    # Get current attributes for the product
+    current_attributes = SubCategoryAttribute.objects.filter(
+        subcategory=product.subcategory,
+        is_active=True
+    ).order_by('sort_order')
+
+    # Build attributes JSON with current values
+    attributes_json = json.dumps([
+        {
+            "id": attr.id,
+            "name": attr.name,
+            "field_type": attr.field_type,
+            "options": attr.options if isinstance(attr.options, list) else [],
+            "is_required": attr.is_required,
+            "placeholder": attr.placeholder,
+            "help_text": attr.help_text,
+            "current_value": product.attributes.get(str(attr.id)) if product.attributes else ""
+        }
+        for attr in current_attributes
+    ])
     
     context = {
         'form': form,
         'formset': formset,
         'product': product,
-        'is_editing': True
+        'vendor': vendor,
+        'is_editing': True,
+        'subcategories': list(subcategories),
+        'subcategories_json': json.dumps(list(subcategories)),
+        'attributes_json': attributes_json,
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/products/edit.html', context)
@@ -605,40 +954,169 @@ def product_edit(request, slug):
 @vendor_verified_required
 @vendor_owns_product
 def product_delete(request, slug):
-    """
-    Delete product
-    """
+    """Delete product"""
     product = request.product
     
     if request.method == 'POST':
         title = product.title
         product.delete()
         
-        messages.success(request, f'Product "{title}" deleted')
+        messages.success(request, f'🗑️ Product "{title}" deleted successfully')
         return redirect('vendors:products_list')
     
-    return render(request, 'vendors/products/delete_confirm.html', {'product': product})
+    context = {
+        'product': product,
+        'hide_verification_badge': True,
+    }
+    
+    return render(request, 'vendors/products/delete_confirm.html', context)
 
 
 @vendor_verified_required
 @vendor_owns_product
 def product_detail(request, slug):
-    """
-    View product details
-    """
-    product = request.product
+    """View product details"""
+    product = request.product  # Set by decorator
+    vendor = request.user.vendorprofile
     
     # Get product stats
     context = {
         'product': product,
+        'vendor': vendor,
         'total_orders': OrderItem.objects.filter(product=product).count(),
         'total_revenue': OrderItem.objects.filter(
             product=product,
             order__status='delivered'
-        ).aggregate(total=Sum('total'))['total'] or 0
+        ).aggregate(total=Sum('total'))['total'] or 0,
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/products/detail.html', context)
+
+# ==========================================
+# PUBLIC BUYER PRODUCT DETAIL
+# ==========================================
+
+def product_detail_public(request, store_slug, product_slug):
+    """
+    Public-facing product detail page for buyers
+    
+    URL: /shop/<store_slug>/products/<product_slug>/
+    
+    Shows:
+    - Product info (name, price, images, description)
+    - Dynamic specifications from attributes
+    - Simple stock status (In Stock / Out of Stock)
+    - Store info and link
+    - Units sold (social proof)
+    - Add to cart / Contact seller actions
+    
+    Does NOT show:
+    - Inventory internals
+    - Revenue/analytics
+    - Product ID/SKU/slug
+    - Vendor dashboard controls
+    """
+    # Get store (must be published)
+    store = get_object_or_404(Store, slug=store_slug, is_published=True)
+    
+    # Get product (must be published and belong to this store)
+    product = get_object_or_404(
+        Product,
+        slug=product_slug,
+        store=store,
+        status='published'
+    )
+    
+    # Increment view count
+    product.views_count = F('views_count') + 1
+    product.save(update_fields=['views_count'])
+    product.refresh_from_db()  # Get actual value
+    
+    # Get subcategory attributes for rendering specifications
+    attributes = SubCategoryAttribute.objects.filter(
+        subcategory=product.subcategory,
+        is_active=True
+    ).order_by('sort_order')
+    
+    # Build specifications list with proper labels
+    specifications = []
+    for attr in attributes:
+        value = product.attributes.get(attr.name)
+        if value:  # Only show if product has this attribute filled
+            specifications.append({
+                'label': attr.name.replace('_', ' ').title(),
+                'value': value,
+                'field_type': attr.field_type
+            })
+    # Check if current user is the store owner
+    is_owner = (
+        request.user.is_authenticated and 
+        hasattr(request.user, 'vendorprofile') and 
+        request.user.vendorprofile == store.vendor
+    )
+    
+    context = {
+        'product': product,
+        'store': store,
+        'vendor': store.vendor,
+        'specifications': specifications,
+        'is_owner': is_owner,
+        # Simple stock status for buyers
+        'in_stock': product.is_in_stock,
+    }
+    
+    return render(request, 'products/product_detail.html', context)
+
+    
+# ==========================================
+# AJAX ENDPOINTS FOR DYNAMIC FORMS
+# ==========================================
+
+@vendor_required
+def ajax_get_subcategories(request):
+    """Get subcategories for vendor's main category"""
+    vendor = request.user.vendorprofile
+    
+    if not hasattr(vendor, 'store'):
+        return JsonResponse({'subcategories': []})
+    
+    subcategories = SubCategory.objects.filter(
+        main_category=vendor.store.main_category,
+        is_active=True
+    ).values('id', 'name').order_by('name')
+    
+    return JsonResponse({
+        'subcategories': list(subcategories)
+    })
+
+
+@vendor_required
+def ajax_get_attributes(request):
+    """Get attributes for a specific subcategory"""
+    subcategory_id = request.GET.get('subcategory_id')
+    
+    if not subcategory_id:
+        return JsonResponse({'attributes': []})
+    
+    attributes = SubCategoryAttribute.objects.filter(
+        subcategory_id=subcategory_id,
+        is_active=True
+    ).order_by('sort_order')
+    
+    attrs_data = []
+    for attr in attributes:
+        attrs_data.append({
+            'id': attr.id,
+            'name': attr.name,
+            'field_type': attr.field_type,
+            'is_required': attr.is_required,
+            'placeholder': attr.placeholder,
+            'help_text': attr.help_text,
+            'options': attr.options if attr.field_type == 'dropdown' else []
+        })
+    
+    return JsonResponse({'attributes': attrs_data})
 
 
 # ==========================================
@@ -678,8 +1156,12 @@ def orders_list(request):
         'completed_count': vendor.orders.filter(status='delivered').count(),
         'current_status': status
     }
-    
-    return render(request, 'vendors/orders/list.html', context)
+
+    return render(request, 'vendors/orders/list.html', {
+        'page_obj': page_obj,
+        'orders': page_obj,
+        'hide_verification_badge': True,
+    })
 
 
 @vendor_required
@@ -707,7 +1189,8 @@ def order_detail(request, order_id):
     context = {
         'order': order,
         'form': form,
-        'items': order.items.all()
+        'items': order.items.all(),
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/orders/detail.html', context)
@@ -767,7 +1250,8 @@ def wallet_overview(request):
         'transactions': transactions,
         'total_earned': wallet.total_earned,
         'total_withdrawn': wallet.total_withdrawn,
-        'pending_balance': wallet.pending_balance
+        'pending_balance': wallet.pending_balance,
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/wallet/overview.html', context)
@@ -793,8 +1277,13 @@ def wallet_transactions(request):
         'wallet': wallet,
         'transactions': page_obj
     }
-    
-    return render(request, 'vendors/wallet/transactions.html', context)
+    # wallet_transactions
+    return render(request, 'vendors/wallet/transactions.html', {
+        'page_obj': page_obj,
+        'transactions': page_obj,
+        'wallet': wallet,
+        'hide_verification_badge': True,
+    })
 
 
 @vendor_required
@@ -870,7 +1359,8 @@ def request_payout(request):
     
     context = {
         'wallet': wallet,
-        'min_payout': min_payout
+        'min_payout': min_payout,
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/wallet/payout_request.html', context)
@@ -899,23 +1389,26 @@ def payment_method(request):
     
     context = {
         'wallet': wallet,
-        'vendor': vendor
+        'vendor': vendor,
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/wallet/payment_method.html', context)
 
 
 # ==========================================
-# STORE VIEWS
+# STORE SETTINGS VIEWS
 # ==========================================
 
 @vendor_required
 def store_settings(request):
     """
-    Edit store settings
+    Edit store settings with 1-YEAR CHANGE LIMIT on store name
+    Displays warning if store name is locked
     """
     vendor = request.user.vendorprofile
     
+    # Check if store exists
     try:
         store = vendor.store
     except Store.DoesNotExist:
@@ -923,18 +1416,62 @@ def store_settings(request):
         return redirect('vendors:store_setup')
     
     if request.method == 'POST':
-        form = StoreSetupForm(request.POST, request.FILES, instance=store, vendor=vendor)
+        form = StoreSettingsForm(request.POST, request.FILES, instance=store)
         
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Store settings updated!')
+            # Check if store name is being changed
+            old_store_name = store.store_name
+            new_store_name = form.cleaned_data.get('store_name')
+            
+            store = form.save()
+            
+            # Log store name change
+            if old_store_name != new_store_name:
+                logger.warning(
+                    f"🔄 STORE NAME CHANGED: '{old_store_name}' → '{new_store_name}' "
+                    f"(Vendor: {vendor.full_name}, Change #{store.store_name_change_count})"
+                )
+                messages.success(
+                    request,
+                    f'✅ Store name changed to "{new_store_name}". '
+                    f'You can change it again after {(store.store_name_last_changed_at + timezone.timedelta(days=365)).strftime("%B %d, %Y")}.'
+                )
+            else:
+                messages.success(request, '✅ Store settings updated successfully!')
+            
             return redirect('vendors:store_settings')
+        else:
+            messages.error(request, '❌ Please correct the errors below.')
     else:
-        form = StoreSetupForm(instance=store, vendor=vendor)
+        form = StoreSettingsForm(instance=store)
     
-    return render(request, 'vendors/store/settings.html', {'form': form, 'store': store})
+    # Get change limit info for template
+    can_change_name = store.can_change_store_name()
+    days_until_name_change = store.days_until_next_name_change()
+    can_change_category = store.can_request_category_change()
+    days_until_category_change = store.days_until_next_category_change()
+    
+    # Get published products count
+    active_products_count = vendor.products.filter(status='published').count()
+    
+    context = {
+        'store': store,
+        'form': form,
+        'vendor': vendor,
+        'active_products_count': active_products_count,
+        'can_change_name': can_change_name,
+        'days_until_name_change': days_until_name_change,
+        'can_change_category': can_change_category,
+        'days_until_category_change': days_until_category_change,
+        'hide_verification_badge': True,
+    }
+    
+    return render(request, 'vendors/store/settings.html', context)
 
 
+# ==========================================
+# STORE PUBLIC PREVIEW VIEW FOR VENDORS
+# ==========================================
 @vendor_required
 def store_public_preview(request):
     """
@@ -954,16 +1491,111 @@ def store_public_preview(request):
     context = {
         'store': store,
         'products': products,
-        'is_preview': True
+        'is_preview': True,
+        'hide_verification_badge': True,
     }
     
     return render(request, 'vendors/store/preview.html', context)
 
 
+# ==========================================
+# CATEGORY CHANGE REQUEST VIEWS
+# ==========================================
+
 @vendor_required
 def category_change_request(request):
     """
     Request to change locked main category
+    Enforces 1-YEAR LIMIT on category change requests
+    """
+    vendor = request.user.vendorprofile
+    
+    # Check if store exists
+    try:
+        store = vendor.store
+    except Store.DoesNotExist:
+        messages.warning(request, 'Store not set up yet')
+        return redirect('vendors:store_setup')
+    
+    # Check if category is locked
+    if not store.main_category_locked:
+        messages.info(request, 'Your category is not locked yet. You can change it in store settings.')
+        return redirect('vendors:store_settings')
+    
+    # Check if they can request a change (1-year limit)
+    if not store.can_request_category_change():
+        days_left = store.days_until_next_category_change()
+        next_change_date = (
+            store.main_category_last_changed_at + timezone.timedelta(days=365)
+        ).strftime('%B %d, %Y')
+        
+        messages.warning(
+            request,
+            f'🔒 Category change requests are limited to once per year. '
+            f'You can submit a new request on {next_change_date} ({days_left} days remaining).'
+        )
+        return redirect('vendors:store_settings')
+    
+    # Check for pending requests
+    pending_request = CategoryChangeRequest.objects.filter(
+        store=store,
+        status='pending'
+    ).first()
+    
+    if pending_request:
+        messages.info(
+            request,
+            f'You already have a pending category change request '
+            f'(from {pending_request.current_category.name} to {pending_request.requested_category.name}). '
+            f'Please wait for admin review.'
+        )
+        return redirect('vendors:store_settings')
+    
+    if request.method == 'POST':
+        form = CategoryChangeRequestForm(request.POST, store=store)
+        
+        if form.is_valid():
+            change_request = form.save()
+            
+            logger.info(
+                f"📋 Category change request submitted: {store.store_name} "
+                f"({change_request.current_category.name} → {change_request.requested_category.name})"
+            )
+            
+            messages.success(
+                request,
+                f'✅ Category change request submitted successfully! '
+                f'We will review your request to change from "{change_request.current_category.name}" '
+                f'to "{change_request.requested_category.name}" and notify you via email.'
+            )
+            return redirect('vendors:store_settings')
+        else:
+            messages.error(request, '❌ Please correct the errors below.')
+    else:
+        form = CategoryChangeRequestForm(store=store)
+    
+    # Get change history
+    previous_requests = CategoryChangeRequest.objects.filter(
+        store=store
+    ).exclude(status='pending').order_by('-created_at')[:5]
+    
+    context = {
+        'form': form,
+        'store': store,
+        'vendor': vendor,
+        'previous_requests': previous_requests,
+        'can_request_change': store.can_request_category_change(),
+        'days_until_next_change': store.days_until_next_category_change(),
+        'hide_verification_badge': True,
+    }
+    
+    return render(request, 'vendors/store/category_change_request.html', context)
+
+
+@vendor_required
+def category_change_status(request):
+    """
+    View status of category change requests
     """
     vendor = request.user.vendorprofile
     
@@ -973,24 +1605,192 @@ def category_change_request(request):
         messages.warning(request, 'Store not set up yet')
         return redirect('vendors:store_setup')
     
-    if not store.main_category_locked:
-        messages.info(request, 'Your category is not locked yet')
-        return redirect('vendors:store_settings')
+    # Get all requests
+    all_requests = CategoryChangeRequest.objects.filter(
+        store=store
+    ).order_by('-created_at')
     
-    if request.method == 'POST':
-        form = CategoryChangeRequestForm(request.POST, store=store)
+    # Separate by status
+    pending_requests = all_requests.filter(status='pending')
+    approved_requests = all_requests.filter(status='approved')
+    rejected_requests = all_requests.filter(status='rejected')
+    
+    context = {
+        'store': store,
+        'vendor': vendor,
+        'pending_requests': pending_requests,
+        'approved_requests': approved_requests,
+        'rejected_requests': rejected_requests,
+        'can_request_change': store.can_request_category_change(),
+        'days_until_next_change': store.days_until_next_category_change(),
+        'hide_verification_badge': True,
+    }
+    
+    return render(request, 'vendors/store/category_change_status.html', context)
+
+
+def approve_category_change(category_request_id, admin_user):
+    """
+    Helper function to approve category change request
+    Called from admin panel action
+    
+    Args:
+        category_request_id: ID of CategoryChangeRequest
+        admin_user: User object of admin approving
+    
+    Returns:
+        tuple: (success: bool, message: str)
+    """
+    try:
+        change_request = CategoryChangeRequest.objects.get(id=category_request_id)
         
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Category change request submitted! Admin will review it.')
-            return redirect('vendors:store_settings')
-    else:
-        form = CategoryChangeRequestForm(store=store)
+        if change_request.status != 'pending':
+            return False, f'Request is already {change_request.status}'
+        
+        # Update store category
+        store = change_request.store
+        old_category = store.main_category
+        new_category = change_request.requested_category
+        
+        store.main_category = new_category
+        store.main_category_last_changed_at = timezone.now()
+        store.main_category_change_count = (store.main_category_change_count or 0) + 1
+        store.save()
+        
+        # Update request
+        change_request.status = 'approved'
+        change_request.reviewed_by = admin_user
+        change_request.reviewed_at = timezone.now()
+        change_request.save()
+        
+        logger.info(
+            f"✅ Category change APPROVED: {store.store_name} "
+            f"({old_category.name} → {new_category.name}) by {admin_user.email}"
+        )
+        
+        # TODO: Send notification email to vendor
+        
+        return True, f'Category changed from {old_category.name} to {new_category.name}'
+        
+    except CategoryChangeRequest.DoesNotExist:
+        return False, 'Category change request not found'
+    except Exception as e:
+        logger.error(f'Error approving category change: {str(e)}')
+        return False, f'Error: {str(e)}'
+
+
+def reject_category_change(category_request_id, admin_user, reason=''):
+    """
+    Helper function to reject category change request
+    Called from admin panel action
     
-    return render(request, 'vendors/store/category_change_request.html', {
-        'form': form,
-        'store': store
-    })
+    Args:
+        category_request_id: ID of CategoryChangeRequest
+        admin_user: User object of admin rejecting
+        reason: Optional rejection reason
+    
+    Returns:
+        tuple: (success: bool, message: str)
+    """
+    try:
+        change_request = CategoryChangeRequest.objects.get(id=category_request_id)
+        
+        if change_request.status != 'pending':
+            return False, f'Request is already {change_request.status}'
+        
+        # Update request
+        change_request.status = 'rejected'
+        change_request.reviewed_by = admin_user
+        change_request.reviewed_at = timezone.now()
+        if reason:
+            change_request.admin_comment = reason
+        change_request.save()
+        
+        logger.info(
+            f"❌ Category change REJECTED: {change_request.store.store_name} "
+            f"({change_request.current_category.name} → {change_request.requested_category.name}) "
+            f"by {admin_user.email}"
+        )
+        
+        # TODO: Send notification email to vendor
+        
+        return True, 'Category change request rejected'
+        
+    except CategoryChangeRequest.DoesNotExist:
+        return False, 'Category change request not found'
+    except Exception as e:
+        logger.error(f'Error rejecting category change: {str(e)}')
+        return False, f'Error: {str(e)}'
+
+def get_store_change_summary(store):
+    """
+    Get summary of store changes for display
+    
+    Returns:
+        dict: Summary of change limits and history
+    """
+    return {
+        # Store Name
+        'can_change_name': store.can_change_store_name(),
+        'days_until_name_change': store.days_until_next_name_change(),
+        'name_change_count': store.store_name_change_count or 0,
+        'name_last_changed': store.store_name_last_changed_at,
+        'original_name': store.original_store_name,
+        
+        # Category
+        'can_change_category': store.can_request_category_change(),
+        'days_until_category_change': store.days_until_next_category_change(),
+        'category_change_count': store.main_category_change_count or 0,
+        'category_last_changed': store.main_category_last_changed_at,
+        'original_category': store.original_main_category,
+        'category_locked': store.main_category_locked,
+    }
+
+
+def check_vendor_can_edit_profile(vendor):
+    """
+    Check what profile fields vendor can edit
+    
+    Returns:
+        dict: Permissions for each field type
+    """
+    return {
+        # Read-Only (Cannot Edit)
+        'cannot_edit': {
+            'full_name': 'Verified from NIN',
+            'email': 'Account email',
+            'nin_number': 'Verified identity',
+            'bvn_number': 'Verified banking',
+            'dob': 'From NIN',
+            'gender': 'From NIN',
+            'primary_phone': 'From NIN',
+            'address': 'From NIN',
+            'state': 'From NIN',
+            'lga': 'From NIN',
+        },
+        
+        # Can Edit
+        'can_edit': {
+            'alternative_phone': 'Backup contact',
+            'whatsapp': 'WhatsApp contact',
+        },
+        
+        # Special Cases
+        'special': {
+            'store_name': {
+                'can_edit': vendor.store.can_change_store_name() if hasattr(vendor, 'store') else False,
+                'reason': 'Once per year limit',
+            },
+            'main_category': {
+                'can_edit': False,
+                'reason': 'Requires admin approval',
+            }
+        }
+    }
+
+# ==========================================
+# PUBLIC STOREFRONT VIEW
+
 def store_public(request, slug):
     """
     Public-facing store (accessible to customers)
@@ -999,9 +1799,10 @@ def store_public(request, slug):
     store = get_object_or_404(Store, slug=slug, is_published=True)
     
     # Get published products
-    products = store.products.filter(status='published').order_by('-created_at')
+    products = store.vendor.products.filter(status='published').order_by('-created_at')
     
     # Pagination
+    from django.core.paginator import Paginator
     paginator = Paginator(products, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -1017,6 +1818,7 @@ def store_public(request, slug):
     }
     
     return render(request, 'vendors/store/public_storefront.html', context)
+
 
 # ==========================================
 # NOTIFICATIONS
@@ -1040,7 +1842,12 @@ def notifications_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    return render(request, 'vendors/notifications/list.html', {'notifications': page_obj})
+    return render(request, 'vendors/notifications/list.html', {
+        'page_obj': page_obj,
+        'notifications': page_obj,
+        'hide_verification_badge': True,
+    })
+
 @vendor_required
 def notification_detail(request, notification_id):
     """
@@ -1055,40 +1862,38 @@ def notification_detail(request, notification_id):
         notification.read_at = timezone.now()
         notification.save()
     
-    return render(request, 'vendors/notifications/detail.html', {'notification': notification})
+    return render(request, 'vendors/notifications/detail.html', {'notification': notification, 'hide_verification_badge': True})
 
 
-# ==========================================
-# PROFILE
-# ==========================================
+# Notification actions
+@vendor_required
+@require_http_methods(["POST"])
+def notification_mark_read(request, notification_id):
+    vendor = request.user.vendorprofile
+    notification = get_object_or_404(Notification, id=notification_id, vendor=vendor)
+    if not notification.is_read:
+        notification.is_read = True
+        notification.read_at = timezone.now()
+        notification.save()
+    return redirect('vendors:notification_detail', notification_id=notification.id)
+
 
 @vendor_required
-def profile_view(request):
-    """
-    View vendor profile
-    """
+@require_http_methods(["POST"])
+def notification_delete(request, notification_id):
     vendor = request.user.vendorprofile
-    
-    return render(request, 'vendors/profile/view.html', {'vendor': vendor})
+    notification = get_object_or_404(Notification, id=notification_id, vendor=vendor)
+    notification.delete()
+    return redirect('vendors:notifications_list')
+
 
 @vendor_required
-def profile_edit(request):
-    """
-    Edit vendor profile (non-verification fields)
-    """
+@require_http_methods(["POST"])
+def notifications_mark_all_read(request):
     vendor = request.user.vendorprofile
-    
-    if request.method == 'POST':
-        # Handle profile update
-        vendor.phone = request.POST.get('phone', vendor.phone)
-        vendor.address = request.POST.get('address', vendor.address)
-        # Add more editable fields as needed
-        vendor.save()
-        
-        messages.success(request, 'Profile updated!')
-        return redirect('vendors:profile_view')
-    
-    return render(request, 'vendors/profile/edit.html', {'vendor': vendor})
+    qs = vendor.notifications.filter(is_read=False)
+    qs.update(is_read=True, read_at=timezone.now())
+    return redirect('vendors:notifications_list')
 
 
 # ==========================================

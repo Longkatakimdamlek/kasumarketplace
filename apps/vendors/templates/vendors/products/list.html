@@ -1,7 +1,6 @@
 {% extends 'vendors/base.html' %}
 
 {% block title %}Products - KasuMarketplace{% endblock %}
-
 {% block page_title %}Products{% endblock %}
 
 {% block content %}
@@ -21,37 +20,126 @@
     </a>
 </div>
 
-<!-- Filters -->
+<!-- ✅ STATS CARDS (NEW - Show inventory stats) -->
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+    <!-- Total Products -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs text-gray-600 mb-1">Total Products</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_products }}</p>
+            </div>
+            <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Published -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs text-gray-600 mb-1">Published</p>
+                <p class="text-2xl font-bold text-green-600">{{ published_count }}</p>
+            </div>
+            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Drafts -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs text-gray-600 mb-1">Drafts</p>
+                <p class="text-2xl font-bold text-gray-600">{{ draft_count }}</p>
+            </div>
+            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ✅ LOW STOCK (NEW) -->
+    <div class="bg-white rounded-lg shadow-sm border border-orange-200 p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs text-gray-600 mb-1">Low Stock</p>
+                <p class="text-2xl font-bold text-orange-600">{{ low_stock_count }}</p>
+            </div>
+            <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ✅ OUT OF STOCK (NEW) -->
+    <div class="bg-white rounded-lg shadow-sm border border-red-200 p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs text-gray-600 mb-1">Out of Stock</p>
+                <p class="text-2xl font-bold text-red-600">{{ out_of_stock_count }}</p>
+            </div>
+            <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ FILTERS (UPDATED - Added Stock Filter) -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-    <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <!-- Search -->
-        <div class="md:col-span-2">
-            <input type="text" 
-                   name="search"
-                   value="{{ request.GET.search }}"
-                   placeholder="Search products..."
-                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+    <form method="get" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Search -->
+            <div class="md:col-span-2">
+                <input type="text" 
+                       name="search"
+                       value="{{ search_query }}"
+                       placeholder="🔍 Search by name, SKU, or description..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+            </div>
+            
+            <!-- Status Filter -->
+            <select name="status" 
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                <option value="">📊 All Status</option>
+                <option value="published" {% if current_status == 'published' %}selected{% endif %}>✅ Published</option>
+                <option value="draft" {% if current_status == 'draft' %}selected{% endif %}>📝 Draft</option>
+                <option value="out_of_stock" {% if current_status == 'out_of_stock' %}selected{% endif %}>❌ Out of Stock</option>
+            </select>
+            
+            <!-- ✅ STOCK FILTER (NEW) -->
+            <select name="stock" 
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                <option value="">📦 All Stock Levels</option>
+                <option value="low_stock" {% if stock_filter == 'low_stock' %}selected{% endif %}>⚠️ Low Stock</option>
+                <option value="out_of_stock" {% if stock_filter == 'out_of_stock' %}selected{% endif %}>❌ Out of Stock</option>
+            </select>
         </div>
         
-        <!-- Status Filter -->
-        <select name="status" 
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
-            <option value="">All Status</option>
-            <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
-            <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Draft</option>
-            <option value="out_of_stock" {% if request.GET.status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
-        </select>
-        
-        <!-- Sort -->
-        <select name="sort" 
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
-            <option value="-created_at">Newest First</option>
-            <option value="created_at" {% if request.GET.sort == 'created_at' %}selected{% endif %}>Oldest First</option>
-            <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Name A-Z</option>
-            <option value="-name" {% if request.GET.sort == '-name' %}selected{% endif %}>Name Z-A</option>
-            <option value="price" {% if request.GET.sort == 'price' %}selected{% endif %}>Price Low-High</option>
-            <option value="-price" {% if request.GET.sort == '-price' %}selected{% endif %}>Price High-Low</option>
-        </select>
+        <!-- Filter Actions -->
+        <div class="flex gap-3">
+            <button type="submit" 
+                    class="px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors">
+                Apply Filters
+            </button>
+            <a href="{% url 'vendors:products_list' %}" 
+               class="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors">
+                Clear All
+            </a>
+        </div>
     </form>
 </div>
 
@@ -64,7 +152,7 @@
         <div class="relative aspect-square overflow-hidden bg-gray-100">
             {% if product.images.first %}
             <img src="{{ product.images.first.image.url }}" 
-                 alt="{{ product.name }}"
+                 alt="{{ product.title }}"
                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
             {% else %}
             <div class="w-full h-full flex items-center justify-center">
@@ -74,28 +162,34 @@
             </div>
             {% endif %}
             
-            <!-- Status Badge -->
+            <!-- ✅ STATUS BADGE (UPDATED - Better styling) -->
             <div class="absolute top-3 left-3">
-                {% if product.is_active %}
-                    {% if product.stock_quantity > 0 %}
-                    <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">Active</span>
+                {% if product.status == 'published' %}
+                    {% if product.track_inventory %}
+                        {% if product.stock_quantity > product.low_stock_threshold %}
+                            <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow-lg">✅ In Stock</span>
+                        {% elif product.stock_quantity > 0 %}
+                            <span class="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full shadow-lg">⚠️ Low Stock</span>
+                        {% else %}
+                            <span class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full shadow-lg">❌ Out of Stock</span>
+                        {% endif %}
                     {% else %}
-                    <span class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">Out of Stock</span>
+                        <span class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full shadow-lg">∞ Always Available</span>
                     {% endif %}
                 {% else %}
-                <span class="px-3 py-1 bg-gray-500 text-white text-xs font-bold rounded-full">Draft</span>
+                    <span class="px-3 py-1 bg-gray-500 text-white text-xs font-bold rounded-full shadow-lg">📝 Draft</span>
                 {% endif %}
             </div>
             
             <!-- Quick Actions -->
             <div class="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <a href="{% url 'vendors:product_edit' product.id %}" 
+                <a href="{% url 'vendors:product_edit' product.slug %}" 
                    class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-primary hover:text-white transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
                 </a>
-                <a href="{% url 'vendors:product_detail' product.id %}" 
+                <a href="{% url 'vendors:product_detail' product.slug %}" 
                    class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-soft-blue hover:text-white transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -108,9 +202,10 @@
         <!-- Product Info -->
         <div class="p-5">
             <h3 class="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                {{ product.name }}
+                {{ product.title }}
             </h3>
             
+            <!-- Price & Stock Row -->
             <div class="flex items-center justify-between mb-3">
                 <div>
                     <p class="text-2xl font-bold text-primary">₦{{ product.price|floatformat:2 }}</p>
@@ -118,30 +213,50 @@
                     <p class="text-sm text-gray-500 line-through">₦{{ product.compare_at_price|floatformat:2 }}</p>
                     {% endif %}
                 </div>
+                
+                <!-- ✅ STOCK DISPLAY (NEW) -->
                 <div class="text-right">
-                    <p class="text-sm text-gray-600">Stock</p>
-                    <p class="text-lg font-bold {% if product.stock_quantity <= 5 %}text-red-600{% else %}text-gray-900{% endif %}">
-                        {{ product.stock_quantity }}
-                    </p>
+                    {% if product.track_inventory %}
+                        <p class="text-xs text-gray-600">Stock</p>
+                        {% if product.stock_quantity > product.low_stock_threshold %}
+                            <p class="text-lg font-bold text-green-600">{{ product.stock_quantity }}</p>
+                        {% elif product.stock_quantity > 0 %}
+                            <p class="text-lg font-bold text-orange-600">{{ product.stock_quantity }}</p>
+                        {% else %}
+                            <p class="text-lg font-bold text-red-600">0</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-xs text-gray-600">Stock</p>
+                        <p class="text-lg font-bold text-blue-600">∞</p>
+                    {% endif %}
                 </div>
             </div>
             
-            <!-- Stats -->
-            <div class="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-200">
-                <span>{{ product.views|default:0 }} views</span>
-                <span>{{ product.sales|default:0 }} sold</span>
-                <span>{{ product.created_at|date:"M d, Y" }}</span>
+            <!-- ✅ STATS (UPDATED - Added Sold Count) -->
+            <div class="grid grid-cols-3 gap-2 text-xs text-gray-500 pt-3 border-t border-gray-200">
+                <div class="text-center">
+                    <p class="font-semibold text-gray-900">{{ product.views_count|default:0 }}</p>
+                    <p>Views</p>
+                </div>
+                <div class="text-center">
+                    <p class="font-semibold text-gray-900">{{ product.sales_count|default:0 }}</p>
+                    <p>Sold</p>
+                </div>
+                <div class="text-center">
+                    <p class="font-semibold text-gray-900">{{ product.images.count }}</p>
+                    <p>Images</p>
+                </div>
             </div>
             
             <!-- Actions -->
             <div class="flex gap-2 mt-4">
-                <a href="{% url 'vendors:product_edit' product.id %}" 
+                <a href="{% url 'vendors:product_edit' product.slug %}" 
                    class="flex-1 text-center px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary/90 transition-colors">
-                    Edit
+                    ✏️ Edit
                 </a>
-                <a href="{% url 'vendors:product_detail' product.id %}" 
+                <a href="{% url 'vendors:product_detail' product.slug %}" 
                    class="flex-1 text-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200 transition-colors">
-                    View
+                    👁️ View
                 </a>
             </div>
         </div>
@@ -150,7 +265,27 @@
 </div>
 
 <!-- Pagination -->
-{% include 'vendors/components/pagination.html' with page_obj=products %}
+{% if products.has_other_pages %}
+<div class="flex justify-center items-center space-x-2 mt-8">
+    {% if products.has_previous %}
+    <a href="?page={{ products.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}" 
+       class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Previous
+    </a>
+    {% endif %}
+    
+    <span class="px-4 py-2 bg-primary text-white rounded-lg font-semibold">
+        Page {{ products.number }} of {{ products.paginator.num_pages }}
+    </span>
+    
+    {% if products.has_next %}
+    <a href="?page={{ products.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}" 
+       class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Next
+    </a>
+    {% endif %}
+</div>
+{% endif %}
 
 {% else %}
 <!-- Empty State -->
@@ -158,11 +293,22 @@
     <svg class="w-24 h-24 mx-auto text-gray-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
     </svg>
-    <h3 class="text-2xl font-bold text-gray-900 mb-2">No products yet</h3>
+    <h3 class="text-2xl font-bold text-gray-900 mb-2">No products found</h3>
     <p class="text-gray-600 mb-6 max-w-md mx-auto">
-        Start building your catalog by adding your first product. 
-        Make sure to include great photos and detailed descriptions!
+        {% if search_query or current_status or stock_filter %}
+            No products match your current filters. Try adjusting your search criteria.
+        {% else %}
+            Start building your catalog by adding your first product with great photos and detailed descriptions!
+        {% endif %}
     </p>
+    
+    {% if search_query or current_status or stock_filter %}
+    <a href="{% url 'vendors:products_list' %}" 
+       class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors mr-3">
+        Clear Filters
+    </a>
+    {% endif %}
+    
     <a href="{% url 'vendors:product_create' %}" 
        class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
         <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

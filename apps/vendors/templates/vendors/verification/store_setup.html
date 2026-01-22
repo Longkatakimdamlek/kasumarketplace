@@ -38,46 +38,42 @@
     <!-- Form Card -->
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
         
-        <form method="post" enctype="multipart/form-data" x-data="{ submitting: false, categoryLocked: false }">
+        <form method="POST" action="{% url 'vendors:store_setup' %}" enctype="multipart/form-data" 
+              x-data="{ submitting: false, categoryLocked: false }" 
+              @submit="submitting = true">
             {% csrf_token %}
             
             <!-- Store Name -->
             <div class="mb-6">
-                <label for="{{ form.name.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                <label for="{{ form.store_name.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
                     Store Name
                     <span class="text-red-500">*</span>
                 </label>
                 <input type="text" 
-                       name="{{ form.name.html_name }}"
-                       id="{{ form.name.id_for_label }}"
-                       value="{{ form.name.value|default:'' }}"
+                       name="{{ form.store_name.html_name }}"
+                       id="{{ form.store_name.id_for_label }}"
+                       value="{{ form.store_name.value|default:'' }}"
                        placeholder="e.g., Tech Haven, Fashion Palace"
                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                        required>
-                {% if form.name.errors %}
-                <p class="mt-2 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                {% if form.store_name.errors %}
+                <p class="mt-2 text-sm text-red-600">{{ form.store_name.errors.0 }}</p>
                 {% else %}
                 <p class="mt-2 text-xs text-gray-500">This will be your store's display name</p>
                 {% endif %}
             </div>
             
-            <!-- Main Category -->
+            <!-- Main Category - FIXED VERSION -->
             <div class="mb-6">
                 <label for="{{ form.main_category.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
                     Main Product Category
                     <span class="text-red-500">*</span>
                 </label>
-                <select name="{{ form.main_category.html_name }}"
-                        id="{{ form.main_category.id_for_label }}"
-                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                        required>
-                    <option value="">Select your category</option>
-                    {% for category in categories %}
-                    <option value="{{ category.id }}">{{ category.name }}</option>
-                    {% endfor %}
-                </select>
+                {{ form.main_category }}
                 {% if form.main_category.errors %}
                 <p class="mt-2 text-sm text-red-600">{{ form.main_category.errors.0 }}</p>
+                {% else %}
+                <p class="mt-2 text-xs text-gray-500">⚠️ This will be locked after confirmation</p>
                 {% endif %}
             </div>
             
@@ -168,17 +164,17 @@
                 </div>
                 
                 <div>
-                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    <label for="{{ form.business_email.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
                         Store Email (Optional)
                     </label>
                     <input type="email" 
-                           name="{{ form.email.html_name }}"
-                           id="{{ form.email.id_for_label }}"
-                           value="{{ form.email.value|default:vendor.user.email }}"
+                           name="{{ form.business_email.html_name }}"
+                           id="{{ form.business_email.id_for_label }}"
+                           value="{{ form.business_email.value|default:vendor.user.email }}"
                            placeholder="store@example.com"
                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all">
-                    {% if form.email.errors %}
-                    <p class="mt-2 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                    {% if form.business_email.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.business_email.errors.0 }}</p>
                     {% endif %}
                 </div>
             </div>
@@ -201,7 +197,6 @@
             
             <!-- Submit Button -->
             <button type="submit" 
-                    @click="submitting = true"
                     :disabled="!categoryLocked || submitting"
                     class="w-full py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
                 <span x-show="!submitting">Complete Store Setup</span>

@@ -111,25 +111,22 @@
                                     </svg>
                                     Completed on {{ step.completed_at|date:"M d, Y" }}
                                 </div>
+
+                                {% elif step.url %}
+                                <a href="{% url step.url %}"
+                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary to-soft-blue hover:shadow-lg text-white text-sm font-semibold rounded-lg transition-all duration-200 transform hover:scale-105">
                                 
-                                {% elif step.status == 'in_progress' %}
-                                <a href="{{ step.url }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-semibold rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
-                                    Continue
-                                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                </a>
-                                
-                                {% elif step.status == 'pending' %}
-                                <a href="{{ step.url }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary to-soft-blue hover:shadow-lg text-white text-sm font-semibold rounded-lg transition-all duration-200 transform hover:scale-105">
-                                    Start Now
+                                {% if step.status == 'in_progress' %}
+                                        Continue
+                                {% else %}
+                                        Start Now
+                                {% endif %}  
+
                                     <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                                     </svg>
                                 </a>
-                                
+
                                 {% elif step.status == 'locked' %}
                                 <div class="flex items-center text-gray-500 text-sm">
                                     <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -138,6 +135,7 @@
                                     Complete previous steps to unlock
                                 </div>
                                 {% endif %}
+
                                 
                                 <!-- Additional Info -->
                                 {% if step.note %}
@@ -216,7 +214,7 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 class="font-bold text-gray-900 mb-3">Need Help?</h3>
             <p class="text-sm text-gray-600 mb-4">Our support team is here to assist you with verification.</p>
-            <a href="mailto:support@kasumarketplace.com" 
+            <a href="mailto:support@kasumarketplace.com.ng" 
                class="inline-flex items-center text-sm font-semibold text-primary hover:text-primary/80">
                 Contact Support
                 <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -139,7 +139,7 @@
         {% endif %}
     </p>
     {% if request.GET.filter and request.GET.filter != 'all' %}
-    <a href="{% url 'vendors:notification_list' %}" 
+    <a href="{% url 'vendors:notifications_list' %}" 
        class="inline-block mt-4 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors">
         View All Notifications
     </a>
