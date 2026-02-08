@@ -128,7 +128,8 @@ class DojahService:
     
     def verify_nin(self, nin_number: str) -> Tuple[bool, Dict]:
         """
-        Verify NIN and retrieve identity information
+        Verify NIN using ADVANCED endpoint and retrieve comprehensive identity information
+        Uses /api/v1/kyc/nin/advance for full address, state, and LGA data
         
         Args:
             nin_number: 11-digit National Identity Number
@@ -136,13 +137,13 @@ class DojahService:
         Returns:
             Tuple of (success: bool, data: dict)
         """
-        logger.info(f"🔍 Verifying NIN: ***{nin_number[-4:]}")
+        logger.info(f"🔍 Verifying NIN (Advanced): ***{nin_number[-4:]}")
         
         try:
-            # Use GET with query parameters (not POST with JSON body)
+            # Use ADVANCED endpoint with GET query parameters
             response = self._make_request(
                 'GET',
-                '/api/v1/kyc/nin',
+                '/api/v1/kyc/nin/advance',
                 data={'nin': nin_number}  # This becomes ?nin=xxx in GET request
             )
             
@@ -150,23 +151,110 @@ class DojahService:
             if response.get('entity'):
                 data = response['entity']
                 
-                # Normalize data
+                # Extract name fields (advanced endpoint uses first_name, last_name, middle_name)
+                first_name = (
+                    data.get('first_name') 
+                    or data.get('firstname') 
+                    or data.get('firstName') 
+                    or ''
+                )
+                last_name = (
+                    data.get('last_name')
+                    or data.get('lastname')
+                    or data.get('surname')
+                    or data.get('lastName')
+                    or ''
+                )
+                middle_name = (
+                    data.get('middle_name')
+                    or data.get('middlename')
+                    or data.get('middleName')
+                    or ''
+                )
+                
+                # Extract phone (advanced endpoint uses phone_number)
+                phone = (
+                    data.get('phone_number')
+                    or data.get('phone')
+                    or data.get('telephoneno')
+                    or data.get('phonenumber')
+                    or ''
+                )
+                
+                # Extract date of birth (advanced endpoint uses date_of_birth)
+                birthdate = (
+                    data.get('date_of_birth')
+                    or data.get('birthdate')
+                    or data.get('dateofbirth')
+                    or data.get('dob')
+                    or ''
+                )
+                
+                # Extract gender
+                gender = data.get('gender', '') or ''
+                
+                # ✅ Extract address fields from ADVANCED endpoint
+                # Combine address_line_1 and address_line_2 if both exist
+                address_line_1 = data.get('residence_address_line_1', '') or ''
+                address_line_2 = data.get('residence_address_line_2', '') or ''
+                residence_address = ' '.join([p for p in [address_line_1, address_line_2] if p]).strip()
+                
+                # Fallback to old field names if new ones not present
+                if not residence_address:
+                    residence_address = (
+                        data.get('residence_address')
+                        or data.get('address')
+                        or data.get('residenceAddress')
+                        or ''
+                    )
+                
+                # ✅ Extract state from ADVANCED endpoint
+                residence_state = (
+                    data.get('residence_state')
+                    or data.get('state')
+                    or data.get('residenceState')
+                    or ''
+                )
+                
+                # ✅ Extract LGA from ADVANCED endpoint
+                residence_lga = (
+                    data.get('residence_lga')
+                    or data.get('lga')
+                    or data.get('residenceLga')
+                    or ''
+                )
+                
+                # Extract photo
+                photo = data.get('photo', '') or data.get('image', '') or ''
+
+                # Normalize data with consistent field names
                 normalized_data = {
-                    'firstname': data.get('firstname', ''),
-                    'surname': data.get('surname', ''),
-                    'middlename': data.get('middlename', ''),
-                    'phone': data.get('telephoneno', data.get('phone', '')),
-                    'birthdate': data.get('birthdate', data.get('dateofbirth', '')),
-                    'gender': data.get('gender', ''),
-                    'residence_address': data.get('residence_address', data.get('address', '')),
-                    'residence_state': data.get('residence_state', data.get('state', '')),
-                    'residence_lga': data.get('residence_lga', data.get('lga', '')),
-                    'photo': data.get('photo', ''),
+                    'firstname': first_name,
+                    'first_name': first_name,  # Also include for compatibility
+                    'surname': last_name,
+                    'lastname': last_name,  # Also include for compatibility
+                    'last_name': last_name,  # Also include for compatibility
+                    'middlename': middle_name,
+                    'middle_name': middle_name,  # Also include for compatibility
+                    'phone': phone,
+                    'phone_number': phone,  # Also include for compatibility
+                    'telephoneno': phone,  # Also include for compatibility
+                    'birthdate': birthdate,
+                    'date_of_birth': birthdate,  # Also include for compatibility
+                    'gender': gender,
+                    'residence_address': residence_address,
+                    'address': residence_address,  # Fallback alias
+                    'residence_state': residence_state,
+                    'state': residence_state,  # Fallback alias
+                    'residence_lga': residence_lga,
+                    'lga': residence_lga,  # Fallback alias
+                    'photo': photo,
                     'raw_response': data
                 }
                 
-                logger.info(f'✅ NIN verified successfully: ***{nin_number[-4:]}')
+                logger.info(f'✅ NIN verified successfully (Advanced): ***{nin_number[-4:]}')
                 logger.debug(f'📋 Normalized data: {normalized_data}')
+                logger.info(f'📍 Address: {residence_address[:50]}... | State: {residence_state} | LGA: {residence_lga}')
                 return True, normalized_data
             
             else:
@@ -260,19 +348,44 @@ class DojahService:
             if response.get('entity'):
                 data = response['entity']
                 
+                # Extract name fields - ensure they are strings, not dicts
+                def safe_str(value, default=''):
+                    """Convert value to string, handling dicts and None"""
+                    if value is None:
+                        return default
+                    if isinstance(value, dict):
+                        # If it's a dict, try to get a meaningful value or return empty
+                        return default
+                    if isinstance(value, (list, tuple)):
+                        # If it's a list, join if strings, otherwise return empty
+                        return ' '.join(str(v) for v in value if v) if value else default
+                    return str(value).strip() if value else default
+                
+                firstname = safe_str(data.get('firstname') or data.get('first_name', ''))
+                lastname = safe_str(data.get('lastname') or data.get('last_name') or data.get('surname', ''))
+                middlename = safe_str(data.get('middlename') or data.get('middle_name', ''))
+                
+                # ✅ Construct account_name from BVN name if not directly provided
+                account_name = safe_str(data.get('account_name', ''))
+                if not account_name:
+                    # Build full name from components (filter out empty strings)
+                    name_parts = [p for p in [firstname, middlename, lastname] if p and p.strip()]
+                    account_name = ' '.join(name_parts).strip()
+                
                 normalized_data = {
-                    'firstname': data.get('firstname', data.get('first_name', '')),
-                    'lastname': data.get('lastname', data.get('last_name', data.get('surname', ''))),
-                    'middlename': data.get('middlename', data.get('middle_name', '')),
-                    'phone': data.get('phone', data.get('phonenumber', '')),
-                    'dateofbirth': data.get('dateofbirth', data.get('dob', '')),
-                    'account_name': data.get('account_name', ''),
-                    'account_number': data.get('account_number', ''),
-                    'bank_name': data.get('bank_name', ''),
+                    'firstname': firstname,
+                    'lastname': lastname,
+                    'middlename': middlename,
+                    'phone': safe_str(data.get('phone') or data.get('phonenumber', '')),
+                    'dateofbirth': safe_str(data.get('dateofbirth') or data.get('dob', '')),
+                    'account_name': account_name,  # ✅ Now includes constructed name if needed
+                    'account_number': safe_str(data.get('account_number', '')),
+                    'bank_name': safe_str(data.get('bank_name', '')),
                     'raw_response': data
                 }
                 
                 logger.info(f'✅ BVN verified successfully: ***{bvn_number[-4:]}')
+                logger.info(f'📋 Account Name: {account_name}')
                 return True, normalized_data
             else:
                 logger.warning(f'⚠️ BVN verification failed: No entity data')

@@ -281,7 +281,12 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 # EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 # DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # Email Configuration
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+# Use console backend in development, SMTP in production
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
@@ -294,13 +299,8 @@ SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
 
 # Admin emails
 ADMIN_EMAILS = os.getenv('ADMIN_EMAILS', 'admin@kasumarketplace.com.ng').split(',')
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# OTP Configuration
 OTP_EXPIRY_TIME = 10
 OTP_LENGTH = 6
 

@@ -554,13 +554,67 @@ class PasswordResetCompleteView(DjangoPasswordResetCompleteView):
     """
     template_name = 'users/password_reset_complete.html'
 
-class CustomPasswordResetView(PasswordResetView):
+class CustomPasswordResetView(DjangoPasswordResetView):
+    """
+    View for requesting password reset.
+    Sends email with reset link.
+    """
+    template_name = 'users/password_reset_request.html'
+    email_template_name = 'users/emails/password_reset_email.html'
+    subject_template_name = 'users/emails/password_reset_subject.txt'
+    form_class = PasswordResetRequestForm
+    success_url = reverse_lazy('users:password_reset_done')
+    
     def send_mail(self, subject_template_name, email_template_name,
                   context, from_email, to_email, html_email_template_name=None):
         subject = render_to_string(subject_template_name, context).strip()
         html_content = render_to_string(email_template_name, context)
-        text_content = "Please open this email in HTML view to reset your password."
+        text_content = strip_tags(html_content)
 
         msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
         msg.attach_alternative(html_content, "text/html")
-        msg.send()
+        msg.send(fail_silently=False)
+    
+    def form_valid(self, form):
+        """Send password reset email as multipart (plain + html)."""
+        email = form.cleaned_data.get('email')
+        users = list(form.get_users(email))
+        protocol = 'https' if self.request.is_secure() else 'http'
+        domain = self.request.get_host()
+
+        # If no matching users, do not reveal that — still show success page.
+        if not users:
+            messages.success(
+                self.request,
+                'If an account exists with that email, you will receive password reset instructions.'
+            )
+            return redirect(self.success_url)
+
+        for user in users:
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            context = {
+                'email': user.email,
+                'domain': domain,
+                'site_name': getattr(settings, 'SITE_NAME', 'KasuMarketplace'),
+                'uid': uid,
+                'user': user,
+                'token': token,
+                'protocol': protocol,
+            }
+
+            # Render subject, HTML and plain text bodies
+            subject = render_to_string(self.subject_template_name, context).strip()
+            html_message = render_to_string(self.email_template_name, context)
+            plain_message = strip_tags(html_message)
+
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+            msg = EmailMultiAlternatives(subject, plain_message, from_email, [user.email])
+            msg.attach_alternative(html_message, "text/html")
+            msg.send(fail_silently=False)
+
+        messages.success(
+            self.request,
+            'If an account exists with that email, you will receive password reset instructions.'
+        )
+        return redirect(self.success_url) 
