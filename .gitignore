@@ -12,6 +12,10 @@ venv/
 db.sqlite3
 media/
 
+# Product and store images
+products/
+stores/
+
 # OS / Editor junk
 .DS_Store
 Thumbs.db
