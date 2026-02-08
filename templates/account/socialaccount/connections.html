@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load socialaccount %}
+
+{% block title %}Account Connections - KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 500px;">
+    <div style="margin-bottom: 20px;">
+        <i class="fas fa-link" style="font-size: 48px; color: #6366f1;"></i>
+    </div>
+    <h2>Account Connections</h2>
+    <p class="subtitle">
+        Manage your social account connections
+    </p>
+    
+    <!-- Social Accounts -->
+    {% get_social_accounts user as accounts %}
+    
+    {% if accounts %}
+        <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #374151;">Connected Accounts</h3>
+            {% for account in accounts %}
+                <div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>{{ account.provider|title }}</strong>
+                        <div style="font-size: 12px; color: #6b7280;">{{ account.extra_data.email|default:account.uid }}</div>
+                    </div>
+                    <form method="post" action="{% url 'socialaccount_connections' %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="account" value="{{ account.id }}">
+                        <button type="submit" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                            Remove
+                        </button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Available Providers -->
+    <div style="margin-bottom: 20px;">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #374151;">Connect New Account</h3>
+        <div class="social-icons">
+            <a href="{% provider_login_url 'facebook' process='connect' %}" class="social-btn" aria-label="Connect Facebook">
+                <i class="fab fa-facebook-f" style="color:#1877f2;"></i>
+            </a>
+            <a href="{% provider_login_url 'apple' process='connect' %}" class="social-btn" aria-label="Connect Apple">
+                <i class="fab fa-apple" style="color:#333;"></i>
+            </a>
+            <a href="{% provider_login_url 'google' process='connect' %}" class="social-btn" aria-label="Connect Google">
+                <i class="fab fa-google" style="color:#db4437;"></i>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Back to Profile -->
+    <div class="links" style="margin-top: 20px;">
+        <p><a href="{% url 'vendors:profile_view' %}"><i class="fas fa-arrow-left"></i> Back to profile</a></p>
+    </div>
+</div>
+{% endblock %}

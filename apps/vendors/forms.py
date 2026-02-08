@@ -8,6 +8,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.utils.text import slugify
 from django.utils import timezone
+from django.db import models
+from django.db.models import Q
 from django.forms import inlineformset_factory, BaseInlineFormSet
 from .models import (
     VendorProfile, Store, Product, ProductImage, 
@@ -19,76 +21,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-class VendorProfileEditForm(forms.ModelForm):
-    """
-    Form for editing vendor profile - ONLY editable fields
-    Verified information (NIN, BVN, Email, Legal Name) is READ-ONLY
-    """
-    
-    alternative_phone = forms.CharField(
-        max_length=20,
-        required=False,
-        label='Alternative Phone Number',
-        widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-            'placeholder': '08012345678',
-            'pattern': '^(0|\+234)[7-9][0-1]\d{8}$'
-        }),
-        help_text='Optional backup phone number for customer contact'
-    )
-    
-    whatsapp = forms.CharField(
-        max_length=20,
-        required=False,
-        label='WhatsApp Number',
-        widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500',
-            'placeholder': '08012345678',
-            'pattern': '^(0|\+234)[7-9][0-1]\d{8}$'
-        }),
-        help_text='WhatsApp number for quick customer communication'
-    )
-    
-    class Meta:
-        model = VendorProfile
-        fields = []  # No model fields directly, using custom fields
-    
-    def clean_alternative_phone(self):
-        """Validate alternative phone number format"""
-        phone = self.cleaned_data.get('alternative_phone')
-        
-        if phone:
-            # Remove spaces, dashes, parentheses
-            phone = re.sub(r'[\s\-\(\)]', '', phone)
-            
-            # Nigerian phone validation
-            if not re.match(r'^(0|\+234)[7-9][0-1]\d{8}$', phone):
-                raise ValidationError('Invalid Nigerian phone number format. Use format: 08012345678')
-            
-            # Normalize to 0XXXXXXXXXX format
-            if phone.startswith('+234'):
-                phone = '0' + phone[4:]
-        
-        return phone
-    
-    def clean_whatsapp(self):
-        """Validate WhatsApp number format"""
-        whatsapp = self.cleaned_data.get('whatsapp')
-        
-        if whatsapp:
-            # Remove spaces, dashes, parentheses
-            whatsapp = re.sub(r'[\s\-\(\)]', '', whatsapp)
-            
-            # Nigerian phone validation
-            if not re.match(r'^(0|\+234)[7-9][0-1]\d{8}$', whatsapp):
-                raise ValidationError('Invalid WhatsApp number format. Use format: 08012345678')
-            
-            # Normalize to 0XXXXXXXXXX format
-            if whatsapp.startswith('+234'):
-                whatsapp = '0' + whatsapp[4:]
-        
-        return whatsapp
 
 # ==========================================
 # VERIFICATION FORMS
@@ -166,29 +98,6 @@ class BVNEntryForm(forms.Form):
     Step 3: Vendor enters BVN and bank details
     """
     
-    NIGERIAN_BANKS = [
-        ('', '-- Select Bank --'),
-        ('Access Bank', 'Access Bank'),
-        ('Citibank', 'Citibank'),
-        ('Ecobank', 'Ecobank Nigeria'),
-        ('Fidelity Bank', 'Fidelity Bank'),
-        ('First Bank', 'First Bank of Nigeria'),
-        ('FCMB', 'First City Monument Bank'),
-        ('GTBank', 'Guaranty Trust Bank'),
-        ('Heritage Bank', 'Heritage Bank'),
-        ('Keystone Bank', 'Keystone Bank'),
-        ('Polaris Bank', 'Polaris Bank'),
-        ('Providus Bank', 'Providus Bank'),
-        ('Stanbic IBTC', 'Stanbic IBTC Bank'),
-        ('Standard Chartered', 'Standard Chartered Bank'),
-        ('Sterling Bank', 'Sterling Bank'),
-        ('Union Bank', 'Union Bank of Nigeria'),
-        ('UBA', 'United Bank for Africa'),
-        ('Unity Bank', 'Unity Bank'),
-        ('Wema Bank', 'Wema Bank'),
-        ('Zenith Bank', 'Zenith Bank'),
-    ]
-    
     bvn_number = forms.CharField(
         max_length=11,
         min_length=11,
@@ -208,13 +117,20 @@ class BVNEntryForm(forms.Form):
         ]
     )
     
-    bank_name = forms.ChoiceField(
-        choices=NIGERIAN_BANKS,
+    # Changed to CharField to accept any bank name from the template's comprehensive list
+    bank_name = forms.CharField(
+        max_length=100,
         label='Select Your Bank',
-        widget=forms.Select(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-select'
         })
     )
+    
+    def clean_bank_name(self):
+        bank_name = self.cleaned_data.get('bank_name', '').strip()
+        if not bank_name:
+            raise ValidationError('Please select a bank')
+        return bank_name
     
     def clean_bvn_number(self):
         bvn = self.cleaned_data.get('bvn_number')
@@ -222,10 +138,7 @@ class BVNEntryForm(forms.Form):
         # Remove any spaces or dashes
         bvn = re.sub(r'[\s\-]', '', bvn)
         
-        # Check if already used
-        if VendorProfile.objects.filter(bvn_number=bvn).exists():
-            raise ValidationError('This BVN is already registered with another vendor account.')
-        
+        # Note: Duplicate BVN check is done in the view where we can exclude current vendor
         return bvn
 
 
@@ -445,6 +358,8 @@ class StoreSetupForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
+        # Accept custom kwarg from views (e.g. StoreSetupForm(..., vendor=vendor))
+        self.vendor = kwargs.pop('vendor', None)
         super().__init__(*args, **kwargs)
         
         # ✅ SET QUERYSET HERE - when form is instantiated
@@ -692,9 +607,14 @@ class StoreSettingsForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         # ✅ SET MAIN CATEGORY QUERYSET
-        self.fields['main_category'].queryset = MainCategory.objects.filter(
-            is_active=True
-        ).order_by('sort_order', 'name')
+        # Include current category even if inactive, so it shows in the dropdown
+        queryset = MainCategory.objects.filter(is_active=True)
+        if self.instance and self.instance.pk and self.instance.main_category:
+            # Include the current category even if it's inactive
+            queryset = MainCategory.objects.filter(
+                Q(is_active=True) | Q(pk=self.instance.main_category.pk)
+            )
+        self.fields['main_category'].queryset = queryset.order_by('sort_order', 'name')
         
         # ✅ CHECK IF STORE NAME CAN BE CHANGED
         if self.instance and self.instance.pk:
@@ -722,11 +642,13 @@ class StoreSettingsForm(forms.ModelForm):
                 days_left = self.instance.days_until_next_category_change()
                 last_change_date = self.instance.main_category_last_changed_at.strftime('%B %d, %Y')
                 
-                # Make field read-only
+                # Make field read-only and not required (since disabled fields don't submit)
                 self.fields['main_category'].widget.attrs.update({
                     'disabled': 'disabled',
                     'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed'
                 })
+                # Make it not required when disabled - we'll use instance value in clean method
+                self.fields['main_category'].required = False
                 self.fields['main_category'].help_text = (
                     f'🔒 <span class="text-red-600 font-semibold">Locked until {(self.instance.main_category_last_changed_at + timezone.timedelta(days=365)).strftime("%B %d, %Y")}</span>'
                 )
@@ -803,9 +725,13 @@ class StoreSettingsForm(forms.ModelForm):
         """Validate main category and enforce 1-year limit"""
         main_category = self.cleaned_data.get('main_category')
         
-        # ✅ ENFORCE 1-YEAR CATEGORY LOCK
+        # ✅ FIX: If field is disabled, it won't be in POST data - use instance value
         if self.instance and self.instance.pk:
-            old_category = Store.objects.get(pk=self.instance.pk).main_category
+            # If main_category is None (disabled field not submitted), use instance value
+            if main_category is None:
+                main_category = self.instance.main_category
+            
+            old_category = self.instance.main_category
             if old_category != main_category:
                 # Attempting to change category
                 if not self.instance.can_request_category_change():
@@ -1352,6 +1278,34 @@ class ProductImageForm(forms.ModelForm):
             })
         }
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make image field not required to allow empty forms in formset
+        # The formset's clean() method will validate 3-5 images requirement
+        self.fields['image'].required = False
+        # Allow empty forms in formset
+        self.empty_permitted = True
+    
+    def has_changed(self):
+        """Only consider form changed if image is uploaded or form has existing data"""
+        # For existing instances, use default behavior
+        if self.instance and self.instance.pk:
+            return super().has_changed()
+        
+        # For new forms, check if image was uploaded
+        # Check if image is in form's files (Django populates this from formset files)
+        if hasattr(self, 'files') and self.files and 'image' in self.files:
+            file_obj = self.files.get('image')
+            if file_obj and hasattr(file_obj, 'size') and file_obj.size > 0:
+                return True
+        
+        # Also check cleaned_data (in case validation already happened)
+        if hasattr(self, 'cleaned_data') and self.cleaned_data and self.cleaned_data.get('image'):
+            return True
+        
+        # Default: don't mark as changed if no image
+        return False
+    
     def clean_image(self):
         image = self.cleaned_data.get('image')
         
@@ -1383,48 +1337,146 @@ class ProductImageForm(forms.ModelForm):
 class ProductImageBaseFormSet(BaseInlineFormSet):
     """Custom base formset to validate 3-5 images"""
     
+    def _has_image(self, form):
+        """Check if form has an image (uploaded or existing)"""
+        # Check if form has existing instance with image
+        if form.instance and form.instance.pk and hasattr(form.instance, 'image') and form.instance.image:
+            return True
+        # Check if image is in cleaned_data (validated)
+        if form.cleaned_data and form.cleaned_data.get('image'):
+            return True
+        # Check the formset's files dict directly (most reliable for new uploads)
+        if hasattr(self, 'files') and self.files:
+            # Form field name pattern: form-0-image, form-1-image, etc.
+            form_prefix = form.prefix
+            image_key = f'{form_prefix}-image'
+            if image_key in self.files and self.files[image_key]:
+                return True
+        # Check if image is in form.files (raw upload)
+        if hasattr(form, 'files') and form.files and form.files.get('image'):
+            return True
+        return False
+    
     def clean(self):
+        # Remove errors from empty forms (forms with no image uploaded)
+        for form in self.forms:
+            is_empty = not self._has_image(form)
+            
+            # If form is empty and has errors, clear them
+            if is_empty and form.errors:
+                # Clear image field errors for empty forms
+                if 'image' in form.errors:
+                    form.errors.pop('image', None)
+        
         super().clean()
         
-        if any(self.errors):
-            return
-        
-        # Count non-empty, non-deleted images
-        image_count = 0
+        # Remove errors from empty forms again after super().clean()
         for form in self.forms:
-            if form.cleaned_data and not form.cleaned_data.get('DELETE'):
-                if form.cleaned_data.get('image'):
+            is_empty = not self._has_image(form)
+            
+            if is_empty and 'image' in form.errors:
+                form.errors.pop('image', None)
+        
+        # Count non-empty, non-deleted images (do this even if there are errors)
+        image_count = 0
+        for i, form in enumerate(self.forms):
+            # Skip deleted forms
+            if form.cleaned_data and form.cleaned_data.get('DELETE'):
+                continue
+            
+            # Count if form has an image
+            if self._has_image(form):
+                image_count += 1
+            # Also check raw files data as fallback
+            elif hasattr(self, 'files') and self.files:
+                form_prefix = form.prefix
+                image_key = f'{form_prefix}-image'
+                if image_key in self.files and self.files[image_key]:
                     image_count += 1
         
-        # ✅ VALIDATE 3-5 IMAGES
+        # Validate 3-5 images with cleaner error messages
         if image_count < 3:
             raise ValidationError(
-                f'âŒ Minimum 3 images required. You uploaded {image_count}. '
+                f'Please upload at least 3 images. You currently have {image_count} image(s). '
                 f'Please add {3 - image_count} more image(s).'
             )
         
         if image_count > 5:
             raise ValidationError(
-                f'âŒ Maximum 5 images allowed. You uploaded {image_count}. '
+                f'Maximum 5 images allowed. You have {image_count} image(s). '
                 f'Please remove {image_count - 5} image(s).'
             )
         
-        # ✅ ENSURE ONE PRIMARY IMAGE
-        primary_count = sum(
-            1 for form in self.forms 
-            if form.cleaned_data and not form.cleaned_data.get('DELETE') 
-            and form.cleaned_data.get('is_primary')
-        )
+        # Ensure one primary image
+        primary_count = 0
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get('DELETE'):
+                if form.cleaned_data.get('is_primary'):
+                    primary_count += 1
+                # Also check existing instances
+                elif form.instance and form.instance.pk and form.instance.is_primary:
+                    primary_count += 1
         
         if image_count > 0 and primary_count == 0:
             # Auto-set first image as primary
             for form in self.forms:
-                if form.cleaned_data and form.cleaned_data.get('image'):
+                if self._has_image(form) and form.cleaned_data and not form.cleaned_data.get('DELETE'):
                     form.cleaned_data['is_primary'] = True
                     break
         
         if primary_count > 1:
-            raise ValidationError('âŒ Only one image can be set as primary.')
+            raise ValidationError('Only one image can be set as primary.')
+    
+    def save(self, commit=True):
+        """Override save to ensure forms with images are saved"""
+        # Save using parent method first - this saves forms where has_changed() is True
+        instances = super().save(commit=False)
+        
+        # Track which form indices were saved
+        saved_indices = set()
+        for i, form in enumerate(self.forms):
+            if form.instance and form.instance.pk:
+                saved_indices.add(i)
+        
+        # Also check files directly and save any forms with images that weren't saved
+        if hasattr(self, 'files') and self.files:
+            for i, form in enumerate(self.forms):
+                # Skip if already saved or deleted
+                if i in saved_indices:
+                    continue
+                if form.cleaned_data and form.cleaned_data.get('DELETE'):
+                    continue
+                
+                form_prefix = form.prefix
+                image_key = f'{form_prefix}-image'
+                
+                # If form has an image in files but wasn't saved, save it now
+                if image_key in self.files and self.files[image_key]:
+                    # Create new ProductImage instance
+                    from apps.vendors.models import ProductImage
+                    image_instance = ProductImage(
+                        product=self.instance,
+                        image=self.files[image_key]
+                    )
+                    
+                    # Set other fields from form
+                    if form.cleaned_data:
+                        if 'is_primary' in form.cleaned_data:
+                            image_instance.is_primary = form.cleaned_data['is_primary']
+                        elif i == 0:  # First image is primary by default
+                            image_instance.is_primary = True
+                        if 'sort_order' in form.cleaned_data:
+                            image_instance.sort_order = form.cleaned_data['sort_order']
+                        else:
+                            image_instance.sort_order = i
+                        if 'alt_text' in form.cleaned_data:
+                            image_instance.alt_text = form.cleaned_data['alt_text']
+                    
+                    if commit:
+                        image_instance.save()
+                    instances.append(image_instance)
+        
+        return instances
 
 
 # Create an inline formset factory that binds Product -> ProductImage
@@ -1435,10 +1487,12 @@ ProductImageFormSet = inlineformset_factory(
     ProductImage,
     form=ProductImageForm,
     formset=ProductImageBaseFormSet,
-    extra=0,  # No automatic extra forms
+    extra=5,  # Show 5 empty forms for new products
     can_delete=True,
     min_num=0,  # Allow 0 images temporarily
     validate_min=False,  # Don't enforce minimum on formset level
+    max_num=5,  # Maximum 5 images
+    validate_max=True,  # Enforce maximum
 )
 
 

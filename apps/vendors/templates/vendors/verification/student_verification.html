@@ -79,8 +79,24 @@
     <!-- Form -->
     <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
 
-        <form method="post" enctype="multipart/form-data" x-data="{ submitting: false, fileName: '' }">
+        <form method="post" enctype="multipart/form-data" x-data="{ submitting: false, fileName: '' }" @submit="submitting = true">
             {% csrf_token %}
+
+            <!-- Form Errors -->
+            {% if form.non_field_errors %}
+            <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    <div>
+                        {% for error in form.non_field_errors %}
+                        <p class="text-sm text-red-700">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <input type="hidden" name="institution" value="Kaduna State University (KASU)">
 
@@ -116,10 +132,14 @@
                         </option>
                     {% endfor %}
                 </select>
+                {% if form.graduation_year.errors %}
+                <p class="text-sm text-red-600 mt-1">{{ form.graduation_year.errors.0 }}</p>
+                {% else %}
                 <p class="text-xs text-gray-500 mt-1">
                     Current students: select expected graduation year.<br>
                     Alumni: eligible if graduated within the last 5 years.
                 </p>
+                {% endif %}
             </div>
 
             <!-- ID Upload -->
@@ -128,7 +148,7 @@
                     Student / Alumni ID Card <span class="text-red-500">*</span>
                 </label>
 
-                <div class="border-2 border-dashed rounded-lg p-6 text-center">
+                <div class="border-2 border-dashed rounded-lg p-6 text-center {% if form.id_card.errors %}border-red-300 bg-red-50{% endif %}">
                     <label class="cursor-pointer text-primary font-semibold">
                         Upload ID card
                         <input type="file"
@@ -142,6 +162,9 @@
                     <p x-show="fileName" class="text-sm text-primary mt-2"
                        x-text="'Selected: ' + fileName"></p>
                 </div>
+                {% if form.id_card.errors %}
+                <p class="text-sm text-red-600 mt-2">{{ form.id_card.errors.0 }}</p>
+                {% endif %}
             </div>
 
             <!-- Info -->
@@ -165,11 +188,16 @@
 
             <!-- Submit -->
             <button type="submit"
-                    @click="submitting = true"
                     :disabled="submitting"
-                    class="w-full py-4 bg-primary text-white font-bold rounded-lg hover:opacity-90 transition">
+                    class="w-full py-4 bg-primary text-white font-bold rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 <span x-show="!submitting">Submit for Verification</span>
-                <span x-show="submitting">Submitting…</span>
+                <span x-show="submitting" class="flex items-center justify-center">
+                    <svg class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Submitting…
+                </span>
             </button>
 
             <p class="text-xs text-gray-500 text-center mt-3">

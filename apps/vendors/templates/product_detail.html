@@ -3,18 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ product.title }} - {{ store.store_name }} - KasuMarketplace</title>
+    <title>{{ product.title }} - {{ store.store_name }}</title>
     
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Alpine.js CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- SEO Meta Tags -->
     <meta name="description" content="{{ product.description|truncatewords:30 }}">
     <meta property="og:title" content="{{ product.title }} - {{ store.store_name }}">
     <meta property="og:description" content="{{ product.description|truncatewords:30 }}">
@@ -27,100 +21,211 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#6a3df5',
-                        'soft-blue': '#4b8bff',
+                        primary: { DEFAULT: '#6366f1', foreground: '#ffffff' },
+                        secondary: { DEFAULT: '#f1f5f9', foreground: '#1e293b' },
+                        accent: { DEFAULT: '#8b5cf6', foreground: '#ffffff' },
+                        muted: { DEFAULT: '#f8fafc', foreground: '#64748b' },
+                        destructive: { DEFAULT: '#ef4444', foreground: '#ffffff' },
+                        success: '#10b981',
+                        warning: '#f59e0b',
                     },
                     fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
                     },
+                    boxShadow: {
+                        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+                        'soft-lg': '0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 2px 10px -2px rgba(0, 0, 0, 0.04)',
+                    },
+                    borderRadius: {
+                        '2xl': '1rem',
+                        '3xl': '1.5rem',
+                    }
                 }
             }
         }
     </script>
-</head>
-<body class="h-full font-sans antialiased bg-gray-50">
     
-    <!-- Top Navigation -->
-    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <style>
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slide-in-right {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .animate-fade-in { animation: fade-in 0.5s ease-out; }
+        .animate-slide-in-right { animation: slide-in-right 0.5s ease-out; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+
+<body class="min-h-full font-sans antialiased bg-slate-50">
+    
+    <!-- Navigation -->
+    <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <a href="/" class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-soft-blue rounded-lg flex items-center justify-center">
+            <div class="flex items-center justify-between h-14 sm:h-16">
+                <!-- Logo -->
+                <a href="/" class="flex items-center space-x-2 sm:space-x-3 group min-w-0">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center shadow-soft group-hover:shadow-soft-lg transition-shadow flex-shrink-0">
                         <span class="text-white font-bold text-xl">K</span>
                     </div>
-                    <span class="text-xl font-bold text-gray-900">KasuMarketplace</span>
+                    <span class="text-lg sm:text-xl font-bold text-slate-900 hidden sm:block truncate">KasuMarketplace</span>
                 </a>
                 
-                <div class="flex items-center space-x-4">
+                <!-- Desktop Nav -->
+                <div class="hidden md:flex items-center space-x-6">
                     {% if is_owner %}
-                    <a href="{% url 'vendors:product_detail' product.slug %}" class="text-primary hover:text-primary/80 font-medium">
-                        📊 View Analytics
+                    <a href="{% url 'vendors:product_detail' product.slug %}" class="flex items-center space-x-2 text-primary hover:text-accent font-medium transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span>Analytics</span>
                     </a>
                     {% endif %}
-                    <a href="{% url 'vendors:store_public' store.slug %}" class="text-gray-600 hover:text-gray-900 font-medium">
-                        ← Back to Store
+                    <a href="{% url 'vendors:store_public' store.slug %}" class="flex items-center space-x-2 text-slate-600 hover:text-slate-900 font-medium transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        <span>Back to Store</span>
                     </a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden" x-data="{ open: false }">
+                    <button @click="open = !open" class="p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                        <svg x-show="!open" class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                        <svg x-show="open" class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Mobile Menu -->
+                    <div x-show="open" x-transition class="absolute top-16 left-0 right-0 bg-white border-b border-slate-200 shadow-soft-lg p-4 space-y-3">
+                        {% if is_owner %}
+                        <a href="{% url 'vendors:product_detail' product.slug %}" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            <span class="font-medium text-slate-900">View Analytics</span>
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'vendors:store_public' store.slug %}" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                            </svg>
+                            <span class="font-medium text-slate-700">Back to Store</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
     
     <!-- Breadcrumb -->
-    <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div class="flex items-center space-x-2 text-sm text-gray-600">
-                <a href="/" class="hover:text-primary">Home</a>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-white border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3">
+            <div class="flex items-center space-x-2 text-sm overflow-x-auto scrollbar-hide">
+                <a href="/" class="text-slate-500 hover:text-primary transition-colors whitespace-nowrap flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    <span>Home</span>
+                </a>
+                <svg class="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
-                <a href="{% url 'vendors:store_public' store.slug %}" class="hover:text-primary">{{ store.store_name }}</a>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{% url 'vendors:store_public' store.slug %}" class="text-slate-500 hover:text-primary transition-colors whitespace-nowrap">
+                    {{ store.store_name }}
+                </a>
+                <svg class="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
-                <span class="text-gray-900 font-medium">{{ product.title|truncatewords:5 }}</span>
+                <span class="text-slate-900 font-medium truncate max-w-[160px] min-[360px]:max-w-[220px] sm:max-w-none">
+                    {{ product.title|truncatewords:5 }}
+                </span>
             </div>
         </div>
     </div>
     
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        <div class="grid lg:grid-cols-2 gap-12">
+    <main class="max-w-7xl mx-auto px-3 min-[360px]:px-4 sm:px-6 lg:px-8 py-5 sm:py-8 lg:py-10">
+        <div class="grid lg:grid-cols-2 gap-6 lg:gap-12">
             
             <!-- Left: Product Images -->
-            <div x-data="{ currentImage: 0 }">
+            <div class="animate-fade-in" x-data="{ currentImage: 0, zoomed: false }">
                 <!-- Main Image -->
-                <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-4 aspect-square">
-                    {% if product.images.all %}
-                        {% for image in product.images.all %}
-                        <img x-show="currentImage === {{ forloop.counter0 }}"
-                             x-transition
-                             src="{{ image.image.url }}"
-                             alt="{{ product.title }}"
-                             class="w-full h-full object-cover">
-                        {% endfor %}
-                    {% else %}
-                    <div class="w-full h-full flex items-center justify-center bg-gray-100">
-                        <div class="text-center">
-                            <svg class="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            <p class="text-gray-500">No image available</p>
+                <div class="relative bg-white rounded-2xl sm:rounded-3xl shadow-soft border border-slate-200/80 overflow-hidden mb-3 sm:mb-4">
+                    <div class="aspect-square relative cursor-zoom-in" @click="zoomed = !zoomed">
+                        {% if product.images.all %}
+                            {% for image in product.images.all %}
+                            <img x-show="currentImage === {{ forloop.counter0 }}"
+                                 x-transition:enter="transition ease-out duration-300"
+                                 x-transition:enter-start="opacity-0"
+                                 x-transition:enter-end="opacity-100"
+                                 src="{{ image.image.url }}"
+                                 alt="{{ product.title }}"
+                                 :class="zoomed ? 'scale-150 cursor-zoom-out' : 'scale-100 cursor-zoom-in'"
+                                 class="w-full h-full object-cover transition-transform duration-300 absolute inset-0">
+                            {% endfor %}
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center bg-slate-100">
+                            <div class="text-center p-8">
+                                <svg class="w-16 h-16 sm:w-24 sm:h-24 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                <p class="text-slate-500 text-sm sm:text-base">No image available</p>
+                            </div>
                         </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Image Navigation Arrows -->
+                    {% if product.images.count > 1 %}
+                    <button @click.stop="currentImage = currentImage === 0 ? {{ product.images.count }} - 1 : currentImage - 1"
+                            class="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-9 h-9 min-[360px]:w-10 min-[360px]:h-10 sm:w-12 sm:h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-soft-lg flex items-center justify-center hover:bg-white transition-all hover:scale-105">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <button @click.stop="currentImage = currentImage === {{ product.images.count }} - 1 ? 0 : currentImage + 1"
+                            class="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-9 h-9 min-[360px]:w-10 min-[360px]:h-10 sm:w-12 sm:h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-soft-lg flex items-center justify-center hover:bg-white transition-all hover:scale-105">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Image Counter Badge -->
+                    <div class="absolute bottom-2.5 sm:bottom-4 right-2.5 sm:right-4 px-2.5 py-1 bg-black/60 backdrop-blur-sm text-white text-[11px] min-[360px]:text-xs sm:text-sm font-medium rounded-full">
+                        <span x-text="currentImage + 1"></span> / {{ product.images.count }}
                     </div>
                     {% endif %}
                 </div>
                 
-                <!-- Thumbnail Gallery -->
+                <!-- Desktop Thumbnails -->
                 {% if product.images.count > 1 %}
-                <div class="grid grid-cols-5 gap-3">
+                <div class="hidden sm:grid grid-cols-5 gap-2 sm:gap-3">
                     {% for image in product.images.all %}
                     <button @click="currentImage = {{ forloop.counter0 }}"
-                            :class="{ 'ring-2 ring-primary': currentImage === {{ forloop.counter0 }} }"
-                            class="aspect-square rounded-lg overflow-hidden hover:opacity-75 transition-all border-2 border-transparent bg-white">
+                            :class="currentImage === {{ forloop.counter0 }} ? 'ring-2 ring-primary ring-offset-2' : 'ring-1 ring-slate-200 hover:ring-slate-300'"
+                            class="aspect-square rounded-xl overflow-hidden transition-all bg-white">
                         <img src="{{ image.image.url }}" 
                              alt="{{ product.title }}"
                              class="w-full h-full object-cover">
+                    </button>
+                    {% endfor %}
+                </div>
+                
+                <!-- Mobile Dots -->
+                <div class="flex sm:hidden justify-center space-x-2 mt-3">
+                    {% for image in product.images.all %}
+                    <button @click="currentImage = {{ forloop.counter0 }}"
+                            :class="currentImage === {{ forloop.counter0 }} ? 'bg-primary w-6' : 'bg-slate-300 w-2'"
+                            class="h-2 rounded-full transition-all duration-300">
                     </button>
                     {% endfor %}
                 </div>
@@ -128,243 +233,297 @@
             </div>
             
             <!-- Right: Product Details -->
-            <div class="space-y-6">
+            <div class="space-y-5 sm:space-y-6 animate-slide-in-right min-w-0">
                 
-                <!-- Product Title & Store -->
+                <!-- Title -->
                 <div>
-                    <h1 class="text-4xl font-bold text-gray-900 mb-3 leading-tight">{{ product.title }}</h1>
+                    <h1 class="text-xl min-[360px]:text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-3 leading-tight break-words">
+                        {{ product.title }}
+                    </h1>
                     
-                    <!-- Store Info -->
+                    <!-- Store Link -->
                     <a href="{% url 'vendors:store_public' store.slug %}" 
-                       class="inline-flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors group mb-4">
+                       class="inline-flex items-center space-x-2 mb-4 group min-w-0">
                         {% if store.logo %}
-                        <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="w-8 h-8 rounded-lg object-cover border border-gray-200">
+                        <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="w-8 h-8 rounded-lg object-cover ring-2 ring-slate-100 group-hover:ring-primary/30 transition-all">
                         {% else %}
-                        <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <span class="text-primary font-bold text-sm">{{ store.store_name|first }}</span>
+                        <div class="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">{{ store.store_name|first }}</span>
                         </div>
                         {% endif %}
-                        <span class="font-semibold group-hover:underline">{{ store.store_name }}</span>
-                        <svg class="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span class="text-sm font-semibold text-slate-600 group-hover:text-primary transition-colors truncate max-w-[210px] min-[360px]:max-w-[260px] sm:max-w-none">
+                            {{ store.store_name }}
+                        </span>
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
                     </a>
                     
                     <!-- Category Badge -->
-                    <div class="flex items-center space-x-3 mb-4">
-                        <span class="inline-flex items-center px-3 py-1 bg-primary/10 text-primary text-sm font-semibold rounded-full">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center px-3 py-1.5 bg-primary/10 text-primary text-xs sm:text-sm font-semibold rounded-full">
                             {{ product.subcategory.main_category.name }}
                         </span>
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
-                        <span class="text-sm text-gray-600">{{ product.subcategory.name }}</span>
+                        <span class="text-xs sm:text-sm text-slate-500 font-medium">{{ product.subcategory.name }}</span>
                     </div>
                 </div>
                 
-                <!-- Price -->
-                <div class="bg-gradient-to-br from-primary/5 to-soft-blue/5 rounded-2xl p-6 border border-primary/20">
-                    <div class="flex items-baseline space-x-3 mb-2">
-                        <p class="text-5xl font-bold text-primary">₦{{ product.price|floatformat:2 }}</p>
+                <!-- Price Card -->
+                <div class="bg-gradient-to-br from-primary/5 via-accent/5 to-primary/10 rounded-2xl p-4 min-[360px]:p-5 sm:p-6 border border-primary/10">
+                    <div class="flex flex-wrap items-baseline gap-2 sm:gap-3 mb-2">
+                        <span class="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                            ₦{{ product.price|floatformat:0|intcomma }}
+                        </span>
                         {% if product.compare_at_price %}
-                        <p class="text-2xl text-gray-500 line-through">₦{{ product.compare_at_price|floatformat:2 }}</p>
+                        <span class="text-lg sm:text-xl text-slate-400 line-through font-medium">
+                            ₦{{ product.compare_at_price|floatformat:0|intcomma }}
+                        </span>
                         {% endif %}
                     </div>
+                    
                     {% if product.compare_at_price %}
-                    <div class="flex items-center space-x-2">
-                        <span class="px-3 py-1 bg-red-500 text-white text-sm font-bold rounded-full">
-                            Save {{ product.discount_percentage }}%
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <span class="inline-flex items-center px-3 py-1 bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs sm:text-sm font-bold rounded-full shadow-sm">
+                            🔥 Save {{ product.discount_percentage }}%
                         </span>
-                        <span class="text-sm text-gray-600">
-                            You save ₦{{ product.compare_at_price|floatformat:2|add:"-"|add:product.price|floatformat:2 }}
+                        <span class="text-xs sm:text-sm text-slate-600 font-medium">
+                            You save ₦{{ product.savings|floatformat:0|intcomma }}
                         </span>
                     </div>
                     {% endif %}
                 </div>
                 
-                <!-- Stock Status & Social Proof -->
-                <div class="flex items-center justify-between py-4 border-y border-gray-200">
-                    <!-- Stock Status -->
+                <!-- Stock Status -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-4 border-y border-slate-200">
                     <div class="flex items-center space-x-2">
                         {% if in_stock %}
-                        <span class="flex items-center text-green-600 font-semibold">
-                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <span class="flex items-center space-x-2 text-emerald-600 font-semibold">
+                            <span class="flex h-2.5 w-2.5 relative">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                            </span>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                             </svg>
-                            In Stock
+                            <span>In Stock</span>
                         </span>
                         {% else %}
-                        <span class="flex items-center text-red-600 font-semibold">
-                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <span class="flex items-center space-x-2 text-red-500 font-semibold">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
                             </svg>
-                            Out of Stock
+                            <span>Out of Stock</span>
                         </span>
                         {% endif %}
                     </div>
                     
-                    <!-- Units Sold (Social Proof) -->
-                    <div class="flex items-center text-gray-600">
-                        <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    {% if product.sales_count %}
+                    <div class="flex items-center space-x-2 text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                         </svg>
-                        <span class="font-semibold">{{ product.sales_count|default:0 }}</span>
-                        <span class="ml-1">sold</span>
+                        <span class="text-sm font-medium">
+                            <span class="font-bold text-slate-700">{{ product.sales_count }}</span> sold
+                        </span>
                     </div>
+                    {% endif %}
                 </div>
                 
                 <!-- Action Buttons -->
                 <div class="space-y-3">
                     {% if in_stock %}
-                    <button class="w-full py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all">
-                        🛒 Add to Cart
+                    <button class="w-full py-3.5 min-[360px]:py-4 bg-gradient-to-r from-primary via-primary to-accent text-white text-sm min-[360px]:text-base sm:text-lg font-bold rounded-xl shadow-soft-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        <span>Add to Cart</span>
                     </button>
                     {% else %}
-                    <button disabled class="w-full py-4 bg-gray-300 text-gray-500 text-lg font-bold rounded-xl cursor-not-allowed">
-                        Out of Stock
+                    <button disabled class="w-full py-3.5 min-[360px]:py-4 bg-slate-200 text-slate-400 text-sm min-[360px]:text-base sm:text-lg font-bold rounded-xl cursor-not-allowed flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                        </svg>
+                        <span>Out of Stock</span>
                     </button>
                     {% endif %}
                     
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
                         {% if store.whatsapp %}
                         <a href="https://wa.me/{{ store.whatsapp|cut:'+' }}?text=Hi, I'm interested in {{ product.title }}" 
                            target="_blank"
-                           class="py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition-colors text-center flex items-center justify-center">
-                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                           class="py-3 sm:py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all shadow-soft hover:shadow-soft-lg flex items-center justify-center space-x-2 text-sm sm:text-base">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                             </svg>
-                            WhatsApp
+                            <span>WhatsApp</span>
                         </a>
                         {% endif %}
                         
                         {% if store.phone %}
                         <a href="tel:{{ store.phone }}" 
-                           class="py-3 bg-soft-blue text-white font-bold rounded-lg hover:bg-soft-blue/90 transition-colors text-center flex items-center justify-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           class="py-3 sm:py-3.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all shadow-soft hover:shadow-soft-lg flex items-center justify-center space-x-2 text-sm sm:text-base">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                             </svg>
-                            Call
+                            <span>Call Now</span>
                         </a>
                         {% endif %}
                     </div>
                 </div>
                 
-                <!-- Shipping Info (if applicable) -->
+                <!-- Shipping Info -->
                 {% if store.shipping_policy %}
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 class="font-semibold text-blue-900 mb-2 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
-                        </svg>
-                        Shipping Information
-                    </h4>
-                    <p class="text-sm text-blue-800">{{ store.shipping_policy|truncatewords:20 }}</p>
+                <div class="bg-sky-50 border border-sky-200 rounded-xl p-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-sky-900 text-sm sm:text-base">Shipping Information</h4>
+                            <p class="text-xs sm:text-sm text-sky-700 mt-1 leading-relaxed">{{ store.shipping_policy }}</p>
+                        </div>
+                    </div>
                 </div>
                 {% endif %}
-                
             </div>
-            
         </div>
         
-        <!-- Product Details Tabs -->
-        <div class="mt-12" x-data="{ tab: 'description' }">
-            <!-- Tab Headers -->
-            <div class="bg-white rounded-t-2xl border-b border-gray-200 shadow-sm">
-                <div class="flex space-x-8 px-8 pt-6">
+        <!-- Product Tabs -->
+        <div class="mt-10 sm:mt-12 lg:mt-16" x-data="{ tab: 'description' }">
+            <div class="bg-white rounded-2xl sm:rounded-3xl shadow-soft border border-slate-200/80 overflow-hidden">
+                <!-- Tab Headers -->
+                <div class="flex border-b border-slate-200 overflow-x-auto scrollbar-hide">
                     <button @click="tab = 'description'" 
-                            :class="tab === 'description' ? 'border-primary text-primary' : 'border-transparent text-gray-600 hover:text-gray-900'"
-                            class="pb-4 px-1 border-b-2 font-semibold transition-colors">
-                        Description
+                            :class="tab === 'description' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'"
+                            class="flex-1 sm:flex-none px-4 min-[360px]:px-6 sm:px-8 py-3.5 sm:py-4 border-b-2 font-semibold transition-all whitespace-nowrap text-sm sm:text-base">
+                        <span class="flex items-center justify-center space-x-2">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span>Description</span>
+                        </span>
                     </button>
-                    {% if product.attributes %}
+                    {% if product.resolved_attributes %}
                     <button @click="tab = 'specifications'" 
-                            :class="tab === 'specifications' ? 'border-primary text-primary' : 'border-transparent text-gray-600 hover:text-gray-900'"
-                            class="pb-4 px-1 border-b-2 font-semibold transition-colors">
-                        Specifications
+                            :class="tab === 'specifications' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'"
+                            class="flex-1 sm:flex-none px-4 min-[360px]:px-6 sm:px-8 py-3.5 sm:py-4 border-b-2 font-semibold transition-all whitespace-nowrap text-sm sm:text-base">
+                        <span class="flex items-center justify-center space-x-2">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                            </svg>
+                            <span>Specifications</span>
+                            <span class="ml-1 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
+                                {{ product.resolved_attributes|length }}
+                            </span>
+                        </span>
                     </button>
                     {% endif %}
-                    <!-- Reviews placeholder (future) -->
-                    <!-- <button @click="tab = 'reviews'" class="...">Reviews</button> -->
-                </div>
-            </div>
-            
-            <!-- Tab Content -->
-            <div class="bg-white rounded-b-2xl shadow-sm border border-t-0 border-gray-200 p-8">
-                
-                <!-- Description Tab -->
-                <div x-show="tab === 'description'" x-transition>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Product Description</h3>
-                    <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed whitespace-pre-line">
-                        {{ product.description }}
-                    </div>
                 </div>
                 
-                <!-- Specifications Tab -->
-                {% if product.attributes %}
-                <div x-show="tab === 'specifications'" x-transition>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Technical Specifications</h3>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        {% for attr in product.resolved_attributes %}
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <p class="text-sm font-medium text-gray-600 mb-1">{{ attr.name }}</p>
-                            <p class="text-lg font-bold text-gray-900">{{ attr.value }}</p>
+                <!-- Tab Content -->
+                <div class="p-4 min-[360px]:p-5 sm:p-6 lg:p-8">
+                    <!-- Description Tab -->
+                    <div x-show="tab === 'description'" x-transition>
+                        <h3 class="text-lg min-[360px]:text-xl sm:text-2xl font-bold text-slate-900 mb-4">Product Description</h3>
+                        <div class="prose prose-slate max-w-none text-slate-600 leading-relaxed whitespace-pre-line text-sm sm:text-base">
+                            {{ product.description }}
                         </div>
-                        {% endfor %}
                     </div>
-                </div>
-                {% endif %}
-                
-            </div>
-        </div>
-        
-        <!-- Store Info Section -->
-        <div class="mt-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl shadow-lg border border-gray-200 p-8">
-            <div class="flex items-start justify-between">
-                <div class="flex items-start space-x-4 flex-1">
-                    {% if store.logo %}
-                    <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="w-16 h-16 rounded-xl object-cover border-2 border-white shadow-md">
-                    {% else %}
-                    <div class="w-16 h-16 bg-gradient-to-br from-primary to-soft-blue rounded-xl flex items-center justify-center shadow-md">
-                        <span class="text-white font-bold text-2xl">{{ store.store_name|first }}</span>
+                    
+                    <!-- Specifications Tab -->
+                    {% if product.resolved_attributes %}
+                    <div x-show="tab === 'specifications'" x-transition>
+                        <h3 class="text-lg min-[360px]:text-xl sm:text-2xl font-bold text-slate-900 mb-6">Technical Specifications</h3>
+                        <div class="grid sm:grid-cols-2 gap-3 sm:gap-4">
+                            {% for attr in product.resolved_attributes %}
+                            <div class="flex items-start justify-between gap-4 p-3.5 min-[360px]:p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
+                                <span class="text-[13px] min-[360px]:text-sm font-medium text-slate-500 group-hover:text-primary/70 transition-colors break-words min-w-0">{{ attr.name }}</span>
+                                <span class="text-sm sm:text-base font-bold text-slate-900 break-words text-right min-w-[92px] min-[360px]:min-w-[110px]">{{ attr.value|default:"—" }}</span>
+                            </div>
+                            {% empty %}
+                            <div class="col-span-2 text-center py-12">
+                                <svg class="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <p class="text-slate-500">No specifications available for this product.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
                     {% endif %}
-                    
-                    <div class="flex-1">
-                        <h3 class="text-xl font-bold text-gray-900 mb-1">{{ store.store_name }}</h3>
-                        {% if store.tagline %}
-                        <p class="text-gray-600 mb-3">{{ store.tagline }}</p>
-                        {% endif %}
-                        <div class="flex items-center space-x-4 text-sm text-gray-600">
-                            <span class="flex items-center">
-                                <svg class="w-4 h-4 mr-1 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                </svg>
-                                {{ store.average_rating|floatformat:1|default:"0.0" }}
-                            </span>
-                            <span>{{ store.total_orders|default:0 }} orders</span>
-                            <span>{{ store.total_products }} products</span>
-                        </div>
-                    </div>
                 </div>
-                
-                <a href="{% url 'vendors:store_public' store.slug %}" 
-                   class="px-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap">
-                    Visit Store →
-                </a>
             </div>
         </div>
         
-    </div>
+        <!-- Store Card -->
+        <div class="mt-10 sm:mt-12">
+            <div class="bg-gradient-to-br from-slate-50 via-white to-primary/5 rounded-2xl sm:rounded-3xl shadow-soft border border-slate-200/80 p-5 sm:p-6 lg:p-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center space-x-4">
+                        {% if store.logo %}
+                        <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover ring-2 ring-white shadow-soft">
+                        {% else %}
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center shadow-soft">
+                            <span class="text-white font-bold text-xl sm:text-2xl">{{ store.store_name|first }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div>
+                            <h3 class="text-lg sm:text-xl font-bold text-slate-900">{{ store.store_name }}</h3>
+                            {% if store.tagline %}
+                            <p class="text-slate-500 text-sm">{{ store.tagline }}</p>
+                            {% endif %}
+                            <div class="flex flex-wrap items-center gap-3 sm:gap-4 mt-2 text-xs sm:text-sm text-slate-500">
+                                <span class="flex items-center space-x-1">
+                                    <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                    <span class="font-semibold text-slate-700">{{ store.average_rating|floatformat:1|default:"0.0" }}</span>
+                                </span>
+                                <span class="hidden sm:inline text-slate-300">•</span>
+                                <span><span class="font-semibold text-slate-700">{{ store.total_orders|default:0 }}</span> orders</span>
+                                <span class="hidden sm:inline text-slate-300">•</span>
+                                <span><span class="font-semibold text-slate-700">{{ store.total_products }}</span> products</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <a href="{% url 'vendors:store_public' store.slug %}" 
+                       class="inline-flex items-center justify-center space-x-2 px-5 sm:px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all shadow-soft hover:shadow-soft-lg text-sm sm:text-base">
+                        <span>Visit Store</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
     
     <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12 mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-gray-400 mb-2">© 2025 KasuMarketplace. All rights reserved.</p>
-            <div class="flex justify-center space-x-6 text-sm text-gray-400">
-                <a href="#" class="hover:text-white transition-colors">Terms</a>
-                <a href="#" class="hover:text-white transition-colors">Privacy</a>
-                <a href="#" class="hover:text-white transition-colors">Support</a>
+    <footer class="bg-slate-900 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+            <div class="flex flex-col items-center text-center space-y-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">K</span>
+                    </div>
+                    <span class="text-xl font-bold">KasuMarketplace</span>
+                </div>
+                
+                <p class="text-slate-400 text-sm">© 2025 KasuMarketplace. All rights reserved.</p>
+                
+                <div class="flex items-center space-x-6 text-sm">
+                    <a href="#" class="text-slate-400 hover:text-white transition-colors">Terms</a>
+                    <a href="#" class="text-slate-400 hover:text-white transition-colors">Privacy</a>
+                    <a href="#" class="text-slate-400 hover:text-white transition-colors">Support</a>
+                </div>
             </div>
         </div>
     </footer>

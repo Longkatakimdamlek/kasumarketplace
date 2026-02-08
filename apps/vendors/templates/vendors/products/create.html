@@ -34,20 +34,12 @@
         if (this.subcategory) {
             this.loadAttributes(this.subcategory);
         }
-
-        this.$nextTick(() => {
-            const fileInputs = document.querySelectorAll('input[type=file][name*=image]');
-            fileInputs.forEach(input => {
-                input.addEventListener('change', () => {
-                    this.updateImageCount();
-                });
-            });
-        });
+        this.updateImageCount();
     },
     
     updateImageCount() {
         const inputs = document.querySelectorAll('input[type=file][name*=image]');
-        this.imageCount = Array.from(inputs).filter(input => input.files.length > 0).length;
+        this.imageCount = Array.from(inputs).filter(input => input.files && input.files.length > 0).length;
     },
     
     async loadAttributes(subcategoryId) {
@@ -396,33 +388,36 @@
                 {{ formset.management_form }}
 
                 <!-- Image Upload Grid (5 slots) -->
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="image-formset">
-                    {% for form in formset %}
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary transition-colors relative"
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="image-formset"
+                     @image-selected.window="updateImageCount()">
+                    {% if formset.forms %}
+                        {% for form in formset %}
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary transition-colors relative cursor-pointer"
                          x-data="{ 
                              hasFile: false,
                              fileName: '',
-                             previewUrl: null
-                         }">
-                        <div class="aspect-square flex flex-col items-center justify-center">
+                             previewUrl: null,
+                             fileInput: null
+                         }"
+                         x-init="fileInput = $el.querySelector('input[type=file]')"
+                         @click="if (!hasFile) fileInput.click()">
+                        <div class="aspect-square flex flex-col items-center justify-center mb-2">
                             <!-- Preview Image -->
                             <template x-if="previewUrl">
                                 <img :src="previewUrl" 
-                                     class="w-full h-full object-cover rounded-lg mb-2"
+                                     class="w-full h-full object-cover rounded-lg"
                                      alt="Preview">
                             </template>
                             
                             <!-- Upload Icon -->
                             <template x-if="!previewUrl">
-                                <div>
-                                    <svg class="w-10 h-10 text-gray-400 mb-2 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="flex flex-col items-center">
+                                    <svg class="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                                     </svg>
-                                    <label for="{{ form.image.id_for_label }}" class="cursor-pointer">
-                                        <span class="text-primary text-xs font-semibold hover:text-primary/80">
-                                            {% if forloop.first %}Main Image{% else %}Image {{ forloop.counter }}{% endif %}
-                                        </span>
-                                    </label>
+                                    <span class="text-primary text-xs font-semibold">
+                                        {% if forloop.first %}Main Image{% else %}Image {{ forloop.counter }}{% endif %}
+                                    </span>
                                 </div>
                             </template>
                         </div>
@@ -433,7 +428,7 @@
                                id="{{ form.image.id_for_label }}"
                                accept="image/*"
                                @change="
-                                   if ($event.target.files.length > 0) {
+                                   if ($event.target.files && $event.target.files.length > 0) {
                                        hasFile = true;
                                        fileName = $event.target.files[0].name;
                                        
@@ -448,6 +443,7 @@
                                        hasFile = false;
                                        fileName = '';
                                        previewUrl = null;
+                                       $dispatch('image-selected');
                                    }
                                "
                                class="hidden">
@@ -460,14 +456,15 @@
                         <input type="hidden" name="{{ form.sort_order.html_name }}" value="{{ forloop.counter0 }}">
                         
                         <!-- File name display -->
-                        <p class="text-xs text-gray-500 mt-2" x-show="hasFile" x-text="fileName"></p>
+                        <p class="text-xs text-gray-500 mt-2 truncate" x-show="hasFile" x-text="fileName"></p>
                         <p class="text-xs text-gray-500 mt-2" x-show="!hasFile">Max 5MB</p>
                         
                         <!-- Remove button -->
                         <button type="button"
                                 x-show="hasFile"
-                                @click="
-                                    $el.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.previousElementSibling.value = '';
+                                @click.stop="
+                                    const input = $el.closest('div').querySelector('input[type=file]');
+                                    input.value = '';
                                     hasFile = false;
                                     fileName = '';
                                     previewUrl = null;
@@ -477,7 +474,12 @@
                             ❌ Remove
                         </button>
                     </div>
-                    {% endfor %}
+                        {% endfor %}
+                    {% else %}
+                    <div class="col-span-full p-8 text-center bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+                        <p class="text-yellow-800 font-semibold">⚠️ Image upload forms not available. Please refresh the page.</p>
+                    </div>
+                    {% endif %}
                   </div>
             </div>
             
@@ -556,18 +558,4 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Update image counter when files are selected
-    const fileInputs = document.querySelectorAll('input[type="file"][name*="image"]');
-    
-    fileInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            // Trigger Alpine.js to recount
-            const event = new Event('change', { bubbles: true });
-            this.dispatchEvent(event);
-        });
-    });
-});
-</script>
 {% endblock %}

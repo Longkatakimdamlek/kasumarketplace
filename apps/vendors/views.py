@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, HttpResponse
+from django.http import Http404
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from django.db.models import F
@@ -23,7 +24,6 @@ from .models import (
     MainCategory, SubCategory, SubCategoryAttribute, CategoryChangeRequest,
     Notification
 )
-from .forms import VendorProfileEditForm
 from .forms import (
     NINEntryForm, NINOTPForm, BVNEntryForm, BVNOTPForm,
     StudentVerificationForm, StoreSetupForm, StoreSettingsForm,
@@ -61,61 +61,6 @@ def profile_view(request):
     }
     
     return render(request, 'vendors/profile/view.html', context)
-
-
-@vendor_required
-def profile_edit(request):
-    """
-    Edit vendor profile - LIMITED FIELDS ONLY
-    Can only edit: alternative phone, WhatsApp
-    Verified info (NIN, BVN, Email, Legal Name) is READ-ONLY
-    """
-    vendor = request.user.vendorprofile
-    
-    if request.method == 'POST':
-        form = VendorProfileEditForm(request.POST, instance=vendor)
-        
-        if form.is_valid():
-            # Save editable fields only
-            alternative_phone = form.cleaned_data.get('alternative_phone')
-            whatsapp = form.cleaned_data.get('whatsapp')
-            
-            # Update vendor profile
-            # Note: Store these in a custom field or use existing phone field
-            # For now, we'll assume you have these fields in VendorProfile
-            # If not, you might want to add them to the model
-            
-            # Example: Store in a JSON field or separate columns
-            # vendor.alternative_phone = alternative_phone
-            # vendor.whatsapp = whatsapp
-            # vendor.save()
-            
-            # Temporary: Update phone if alternative_phone provided
-            if alternative_phone:
-                vendor.phone = alternative_phone
-            
-            vendor.save()
-            
-            logger.info(f"✅ Profile updated for vendor: {vendor.full_name}")
-            messages.success(request, '✅ Contact information updated successfully!')
-            return redirect('vendors:profile_view')
-        else:
-            messages.error(request, '❌ Please correct the errors below.')
-    else:
-        # Pre-populate form with existing data
-        initial_data = {
-            'alternative_phone': vendor.phone,
-            # 'whatsapp': vendor.whatsapp if hasattr(vendor, 'whatsapp') else '',
-        }
-        form = VendorProfileEditForm(initial=initial_data)
-    
-    context = {
-        'form': form,
-        'vendor': vendor,
-        'hide_verification_badge': True,
-    }
-    
-    return render(request, 'vendors/profile/edit.html', context)
 
 
 # ==========================================
@@ -284,14 +229,27 @@ def nin_entry(request):
             if success:
                 # Store NIN data
                 vendor.nin_number = nin_number
-                vendor.full_name = f"{data.get('firstname', '')} {data.get('surname', '')}".strip()
+
+                first = data.get('firstname', '') or data.get('first_name', '') or ''
+                middle = data.get('middlename', '') or data.get('middle_name', '') or ''
+                last = data.get('surname', '') or data.get('lastname', '') or data.get('last_name', '') or ''
+                vendor.full_name = " ".join([p for p in [first, middle, last] if p]).strip()
                 
-                phone_from_dojah = data.get('phone', '') or data.get('telephoneno', '')
+                # ✅ Extract phone (advanced endpoint uses phone_number)
+                phone_from_dojah = (
+                    data.get('phone_number') 
+                    or data.get('phone', '') 
+                    or data.get('telephoneno', '')
+                )
                 if phone_from_dojah:
                     vendor.phone = phone_from_dojah
                 
-                # ✅ HANDLE DOB WITH AGE CHECK
-                birthdate = data.get('birthdate') or data.get('dateofbirth')
+                # ✅ HANDLE DOB WITH AGE CHECK (advanced endpoint uses date_of_birth)
+                birthdate = (
+                    data.get('date_of_birth')
+                    or data.get('birthdate') 
+                    or data.get('dateofbirth')
+                )
                 if birthdate and birthdate.strip():
                     try:
                         parsed_date = datetime.strptime(birthdate, '%Y-%m-%d')
@@ -316,9 +274,31 @@ def nin_entry(request):
                     vendor.dob = None
                 
                 vendor.gender = (data.get('gender', '') or '').lower()
-                vendor.address = data.get('residence_address') or data.get('address') or ''
-                vendor.state = data.get('residence_state') or data.get('state') or ''
-                vendor.lga = data.get('residence_lga') or data.get('lga') or ''
+                
+                # ✅ Extract address (now includes combined address_line_1 + address_line_2 from advanced endpoint)
+                vendor.address = (
+                    data.get('residence_address') 
+                    or data.get('address') 
+                    or ''
+                ).strip()
+                
+                # ✅ Extract state (from advanced endpoint)
+                vendor.state = (
+                    data.get('residence_state') 
+                    or data.get('state') 
+                    or ''
+                ).strip()
+                
+                # ✅ Extract LGA (from advanced endpoint)
+                vendor.lga = (
+                    data.get('residence_lga') 
+                    or data.get('lga') 
+                    or ''
+                ).strip()
+                
+                # Log for debugging
+                if vendor.address or vendor.state or vendor.lga:
+                    logger.info(f'✅ Address data extracted - Address: {vendor.address[:50] if vendor.address else "N/A"} | State: {vendor.state} | LGA: {vendor.lga}')
                 
                 # ✅ CAPTURE IP ADDRESS
                 vendor.nin_verification_ip = request.META.get('REMOTE_ADDR')
@@ -428,12 +408,24 @@ def bvn_entry(request):
                 
                 # Update wallet
                 wallet = vendor.wallet
-                wallet.account_holder_name = data.get('account_name', vendor.full_name)
+                
+                # ✅ Extract account holder name from BVN (auto-fill, read-only)
+                # Try account_name first, then construct from firstname+lastname, fallback to vendor full_name
+                account_name = (
+                    data.get('account_name', '') 
+                    or bvn_full_name  # Use the BVN full name we extracted
+                    or vendor.full_name  # Fallback to NIN name
+                )
+                wallet.account_holder_name = account_name.strip()
+                
+                # Bank name and account number can be changed by user
                 wallet.bank_name = bank_name
                 wallet.account_number = data.get('account_number', '')
                 wallet.is_verified = True
                 wallet.verified_at = timezone.now()
                 wallet.save()
+                
+                logger.info(f'✅ Wallet updated - Account Holder: {wallet.account_holder_name} | Bank: {wallet.bank_name} | Account: {wallet.account_number}')
                 
                 # Calculate risk score
                 vendor.calculate_risk_score()
@@ -1017,16 +1009,30 @@ def product_detail_public(request, store_slug, product_slug):
     - Product ID/SKU/slug
     - Vendor dashboard controls
     """
-    # Get store (must be published)
-    store = get_object_or_404(Store, slug=store_slug, is_published=True)
-    
-    # Get product (must be published and belong to this store)
-    product = get_object_or_404(
-        Product,
-        slug=product_slug,
-        store=store,
-        status='published'
+    # Get store (allow owner to view even if not published)
+    try:
+        store = Store.objects.get(slug=store_slug)
+    except Store.DoesNotExist:
+        raise Http404("No Store matches the given query.")
+
+    # Check if current user is the store owner
+    is_owner = (
+        request.user.is_authenticated and 
+        hasattr(request.user, 'vendorprofile') and 
+        request.user.vendorprofile == store.vendor
     )
+
+    # If store is not published, only allow owner to view
+    if not store.is_published and not is_owner:
+        raise Http404("No Store matches the given query.")
+    
+    # Get product
+    # - For public visitors: must be published
+    # - For owner: can view their own unpublished products
+    product_qs = Product.objects.filter(slug=product_slug, store=store)
+    if not is_owner:
+        product_qs = product_qs.filter(status='published')
+    product = get_object_or_404(product_qs)
     
     # Increment view count
     product.views_count = F('views_count') + 1
@@ -1049,19 +1055,13 @@ def product_detail_public(request, store_slug, product_slug):
                 'value': value,
                 'field_type': attr.field_type
             })
-    # Check if current user is the store owner
-    is_owner = (
-        request.user.is_authenticated and 
-        hasattr(request.user, 'vendorprofile') and 
-        request.user.vendorprofile == store.vendor
-    )
-    
     context = {
         'product': product,
         'store': store,
         'vendor': store.vendor,
         'specifications': specifications,
         'is_owner': is_owner,
+        'is_preview': not store.is_published and is_owner,
         # Simple stock status for buyers
         'in_stock': product.is_in_stock,
     }
@@ -1368,28 +1368,67 @@ def request_payout(request):
 def payment_method(request):
     """
     View/Edit bank account details
+    Account Holder Name is READ-ONLY if BVN is verified (auto-filled from BVN)
+    Account Number and Bank Name can be changed
     """
     vendor = request.user.vendorprofile
     wallet = vendor.wallet
     
+    # Check if BVN is verified (account holder name should be locked)
+    bvn_verified = vendor.bank_status == 'bvn_verified'
+    
     if request.method == 'POST':
         # Handle bank account update
-        account_number = request.POST.get('account_number')
-        bank_name = request.POST.get('bank_name')
+        account_number = request.POST.get('account_number', '').strip()
+        bank_name = request.POST.get('bank_name', '').strip()
+        confirm = request.POST.get('confirm')  # Checkbox confirmation
         
-        # Validate via Paystack (optional)
-        # success, data = paystack_service.verify_account(account_number, bank_code)
+        # Validate required fields
+        errors = []
+        if not bank_name:
+            errors.append('Bank name is required.')
+        if not account_number:
+            errors.append('Account number is required.')
+        if not confirm:
+            errors.append('Please confirm that the details are correct.')
         
-        wallet.account_number = account_number
-        wallet.bank_name = bank_name
-        wallet.save()
-        
-        messages.success(request, 'Bank account updated!')
-        return redirect('vendors:payment_method')
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+        else:
+            try:
+                # ✅ Account Holder Name is READ-ONLY if BVN verified
+                # Only update if BVN is NOT verified (shouldn't happen, but safety check)
+                if not bvn_verified:
+                    account_holder_name = request.POST.get('account_name', '').strip()
+                    if account_holder_name:
+                        wallet.account_holder_name = account_holder_name
+                
+                # Account Number and Bank Name can always be updated
+                wallet.account_number = account_number
+                wallet.bank_name = bank_name
+                wallet.save()
+                
+                logger.info(f'✅ Bank account updated for vendor {vendor.vendor_id}: Bank={bank_name}, Account={account_number}')
+                messages.success(request, '✅ Bank account updated successfully!')
+                return redirect('vendors:payment_method')
+            except Exception as e:
+                logger.error(f'❌ Error updating bank account: {str(e)}')
+                messages.error(request, f'Failed to update bank account: {str(e)}')
+    
+    # Create a simple form-like object for template compatibility
+    class SimpleForm:
+        def __init__(self):
+            self.bank_name = type('obj', (object,), {'html_name': 'bank_name', 'id_for_label': 'id_bank_name'})()
+            self.account_number = type('obj', (object,), {'html_name': 'account_number', 'id_for_label': 'id_account_number'})()
+            self.account_name = type('obj', (object,), {'html_name': 'account_name', 'id_for_label': 'id_account_name'})()
     
     context = {
         'wallet': wallet,
         'vendor': vendor,
+        'bank_account': wallet,  # For template compatibility
+        'form': SimpleForm(),  # Simple form object for template
+        'bvn_verified': bvn_verified,  # Pass flag to template
         'hide_verification_badge': True,
     }
     
@@ -1795,8 +1834,24 @@ def store_public(request, slug):
     """
     Public-facing store (accessible to customers)
     No login required
+    
+    Store owners can preview their store even if not published.
+    Non-owners can only see published stores.
     """
-    store = get_object_or_404(Store, slug=slug, is_published=True)
+    # First, try to get the store by slug (without is_published filter)
+    try:
+        store = Store.objects.get(slug=slug)
+    except Store.DoesNotExist:
+        raise Http404("No Store matches the given query.")
+    
+    # Check if store is published
+    is_owner = (request.user.is_authenticated and 
+                hasattr(request.user, 'vendorprofile') and 
+                request.user.vendorprofile == store.vendor)
+    
+    # If not published, only allow owner to view
+    if not store.is_published and not is_owner:
+        raise Http404("No Store matches the given query.")
     
     # Get published products
     products = store.vendor.products.filter(status='published').order_by('-created_at')
@@ -1812,9 +1867,8 @@ def store_public(request, slug):
         'vendor': store.vendor,
         'products': page_obj,
         'total_products': products.count(),
-        'is_owner': request.user.is_authenticated and 
-                    hasattr(request.user, 'vendorprofile') and 
-                    request.user.vendorprofile == store.vendor
+        'is_owner': is_owner,
+        'is_preview': not store.is_published and is_owner,  # Show preview banner for owners
     }
     
     return render(request, 'vendors/store/public_storefront.html', context)

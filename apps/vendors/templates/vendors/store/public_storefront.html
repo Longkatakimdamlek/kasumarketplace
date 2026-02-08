@@ -19,7 +19,7 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#6a3df5',
+                        primary: '{{ store.primary_color|default:"#6a3df5" }}',
                         'soft-blue': '#4b8bff',
                     },
                     fontFamily: {
@@ -29,27 +29,32 @@
             }
         }
     </script>
+    <style>
+        :root {
+            --store-primary-color: {{ store.primary_color|default:"#6a3df5" }};
+        }
+    </style>
 </head>
 <body class="h-full font-sans antialiased bg-gray-50">
     
     <!-- Top Navigation -->
-    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <nav class="sticky top-0 z-50 shadow-sm" style="background-color: {{ store.primary_color|default:'#6a3df5' }}; border-bottom: 2px solid {{ store.primary_color|default:'#6a3df5' }};">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <a href="/" class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-soft-blue rounded-lg flex items-center justify-center">
+                    <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
                         <span class="text-white font-bold text-xl">K</span>
                     </div>
-                    <span class="text-xl font-bold text-gray-900">KasuMarketplace</span>
+                    <span class="text-xl font-bold text-white">KasuMarketplace</span>
                 </a>
                 
                 <div class="flex items-center space-x-4">
                     {% if is_owner %}
-                    <a href="{% url 'vendors:store_settings' %}" class="text-primary hover:text-primary/80 font-medium">
+                    <a href="{% url 'vendors:store_settings' %}" class="text-white hover:text-white/80 font-medium">
                         ⚙️ Edit Store
                     </a>
                     {% endif %}
-                    <a href="/" class="text-gray-600 hover:text-gray-900 font-medium">← Back to Marketplace</a>
+                    <a href="/" class="text-white/90 hover:text-white font-medium">← Back to Marketplace</a>
                 </div>
             </div>
         </div>
@@ -93,8 +98,9 @@
                             <p class="text-lg text-gray-600 mb-3">{{ store.tagline }}</p>
                             {% endif %}
                             
-                            <div class="flex flex-wrap items-center gap-3">
-                                <span class="inline-flex items-center px-3 py-1 bg-primary/10 text-primary text-sm font-semibold rounded-full">
+                            <div class="flex flex-wrap items-center gap-3 mb-3">
+                                <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full"
+                                      style="background-color: {{ store.primary_color|default:'#6a3df5' }}20; color: {{ store.primary_color|default:'#6a3df5' }};">
                                     {{ store.main_category.name }}
                                 </span>
                                 <div class="flex items-center text-yellow-500">
@@ -104,6 +110,12 @@
                                     <span class="ml-1 text-sm font-semibold text-gray-700">{{ store.average_rating|floatformat:1|default:"0.0" }}</span>
                                 </div>
                                 <span class="text-sm text-gray-600">{{ store.total_orders|default:0 }} orders</span>
+                            </div>
+                            
+                            <!-- Store Info -->
+                            <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                                <p>Products: <span class="font-semibold text-gray-900">{{ total_products }}</span></p>
+                                <p>Member since: <span class="font-semibold text-gray-900">{{ store.created_at|date:"M Y" }}</span></p>
                             </div>
                         </div>
                     </div>
@@ -117,7 +129,8 @@
                 <div class="flex flex-col space-y-3 min-w-[200px]">
                     {% if store.phone %}
                     <a href="tel:{{ store.phone }}" 
-                       class="px-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors text-center">
+                       class="px-6 py-3 text-white font-bold rounded-lg transition-colors text-center hover:opacity-90"
+                       style="background-color: {{ store.primary_color|default:'#6a3df5' }};">
                         <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                         </svg>
@@ -147,8 +160,14 @@
         <div class="mb-8 flex flex-col md:flex-row gap-4">
             <input type="text" 
                    placeholder="Search products..."
-                   class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
-            <select class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                   class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-2"
+                   style="--focus-color: {{ store.primary_color|default:'#6a3df5' }};"
+                   onfocus="this.style.borderColor='{{ store.primary_color|default:'#6a3df5' }}'; this.style.boxShadow='0 0 0 2px {{ store.primary_color|default:'#6a3df5' }}40';"
+                   onblur="this.style.borderColor=''; this.style.boxShadow='';">
+            <select class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-2"
+                    style="--focus-color: {{ store.primary_color|default:'#6a3df5' }};"
+                    onfocus="this.style.borderColor='{{ store.primary_color|default:'#6a3df5' }}'; this.style.boxShadow='0 0 0 2px {{ store.primary_color|default:'#6a3df5' }}40';"
+                    onblur="this.style.borderColor=''; this.style.boxShadow='';">
                 <option>Sort by: Latest</option>
                 <option>Price: Low to High</option>
                 <option>Price: High to Low</option>
@@ -185,11 +204,14 @@
                     </div>
                     
                     <div class="p-4">
-                        <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                        <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2 transition-colors"
+                            style="--hover-color: {{ store.primary_color|default:'#6a3df5' }};"
+                            onmouseover="this.style.color='{{ store.primary_color|default:'#6a3df5' }}'"
+                            onmouseout="this.style.color=''">
                             {{ product.title }}
                         </h3>
                         <div class="flex items-baseline space-x-2 mb-2">
-                            <p class="text-xl font-bold text-primary">₦{{ product.price|floatformat:2 }}</p>
+                            <p class="text-xl font-bold" style="color: {{ store.primary_color|default:'#6a3df5' }};">₦{{ product.price|floatformat:2 }}</p>
                             {% if product.compare_at_price %}
                             <p class="text-sm text-gray-500 line-through">₦{{ product.compare_at_price|floatformat:2 }}</p>
                             {% endif %}
@@ -218,7 +240,8 @@
                 </a>
                 {% endif %}
                 
-                <span class="px-4 py-2 bg-primary text-white rounded-lg">
+                <span class="px-4 py-2 text-white rounded-lg"
+                      style="background-color: {{ store.primary_color|default:'#6a3df5' }};">
                     Page {{ products.number }} of {{ products.paginator.num_pages }}
                 </span>
                 
@@ -241,97 +264,116 @@
             <p class="text-gray-600">This store hasn't listed any products yet.</p>
             {% if is_owner %}
             <a href="{% url 'vendors:product_create' %}" 
-               class="inline-block mt-6 px-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors">
+               class="inline-block mt-6 px-6 py-3 text-white font-bold rounded-lg hover:opacity-90 transition-colors"
+               style="background-color: {{ store.primary_color|default:'#6a3df5' }};">
                 Add Your First Product
             </a>
             {% endif %}
         </div>
         {% endif %}
         
-        <!-- Store Info Footer -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mt-12">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">About {{ store.store_name }}</h2>
-            <div class="grid md:grid-cols-3 gap-8">
+    </div>
+    
+    <!-- Footer -->
+    <footer class="text-white py-12 mt-16" style="background-color: {{ store.primary_color|default:'#1f2937' }};">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+                <!-- Store Info -->
                 <div>
-                    <h3 class="font-bold text-gray-900 mb-3">Contact</h3>
-                    <div class="space-y-2 text-sm text-gray-700">
+                    <h3 class="text-lg font-bold mb-4">{{ store.store_name }}</h3>
+                    {% if store.description %}
+                    <p class="text-sm text-white/80 mb-4">{{ store.description|truncatewords:20 }}</p>
+                    {% endif %}
+                    {% if store.tagline %}
+                    <p class="text-sm text-white/90 font-semibold italic">{{ store.tagline }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Contact -->
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Contact Us</h3>
+                    <div class="space-y-2 text-sm text-white/80">
                         {% if store.phone %}
                         <p class="flex items-center">
-                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                             </svg>
                             {{ store.phone }}
                         </p>
                         {% endif %}
-                        
                         {% if store.business_email %}
                         <p class="flex items-center">
-                            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                             </svg>
                             {{ store.business_email }}
                         </p>
                         {% endif %}
-                        
                         {% if store.address %}
                         <p class="flex items-start">
-                            <svg class="w-4 h-4 mr-2 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                             </svg>
-                            {{ store.address }}
+                            {{ store.address|truncatewords:10 }}
                         </p>
                         {% endif %}
                     </div>
                 </div>
                 
+                <!-- Shipping Policy -->
                 <div>
-                    <h3 class="font-bold text-gray-900 mb-3">Statistics</h3>
-                    <div class="space-y-2 text-sm text-gray-700">
-                        <p>Products: <span class="font-semibold">{{ total_products }}</span></p>
-                        <p>Orders: <span class="font-semibold">{{ store.total_orders|default:0 }}</span></p>
-                        <p>Total Sales: <span class="font-semibold">₦{{ store.total_sales|floatformat:0|default:"0" }}</span></p>
-                        <p>Rating: <span class="font-semibold">{{ store.average_rating|floatformat:1|default:"0.0" }} ⭐</span></p>
+                    <h3 class="text-lg font-bold mb-4">Shipping Policy</h3>
+                    {% if store.shipping_policy %}
+                    <div class="text-sm text-white/80 prose prose-invert max-w-none">
+                        <p class="whitespace-pre-line">{{ store.shipping_policy|truncatewords:50 }}</p>
                     </div>
+                    {% else %}
+                    <p class="text-sm text-white/60 italic">No shipping policy available.</p>
+                    {% endif %}
                 </div>
                 
+                <!-- Return Policy -->
                 <div>
-                    <h3 class="font-bold text-gray-900 mb-3">Store Info</h3>
-                    <div class="space-y-2 text-sm text-gray-700">
-                        <p>Category: <span class="font-semibold">{{ store.main_category.name }}</span></p>
-                        <p>Member since: <span class="font-semibold">{{ store.created_at|date:"M Y" }}</span></p>
+                    <h3 class="text-lg font-bold mb-4">Return Policy</h3>
+                    {% if store.return_policy %}
+                    <div class="text-sm text-white/80 prose prose-invert max-w-none">
+                        <p class="whitespace-pre-line">{{ store.return_policy|truncatewords:50 }}</p>
                     </div>
-                    
-                    {% if store.instagram or store.facebook or store.twitter %}
-                    <div class="mt-4">
-                        <h4 class="font-bold text-gray-900 mb-2">Follow Us</h4>
-                        <div class="flex space-x-2">
-                            {% if store.instagram %}
-                            <a href="{{ store.instagram }}" target="_blank" class="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center text-white hover:bg-pink-600 transition-colors">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                            </a>
-                            {% endif %}
-                            
-                            {% if store.facebook %}
-                            <a href="{{ store.facebook }}" target="_blank" class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                            </a>
-                            {% endif %}
-                            
-                            {% if store.twitter %}
-                            <a href="{{ store.twitter }}" target="_blank" class="w-8 h-8 bg-sky-500 rounded-full flex items-center justify-center text-white hover:bg-sky-600 transition-colors">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
-                            </a>
-                            {% endif %}
-                        </div>
-                    </div>
+                    {% else %}
+                    <p class="text-sm text-white/60 italic">No return policy available.</p>
                     {% endif %}
                 </div>
             </div>
+            
+            <!-- Social Links -->
+            {% if store.instagram or store.facebook or store.twitter %}
+            <div class="border-t border-white/20 pt-6 mt-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex space-x-4">
+                        {% if store.instagram %}
+                        <a href="{{ store.instagram }}" target="_blank" class="w-10 h-10 rounded-full flex items-center justify-center text-white hover:opacity-90 transition-all hover:scale-110" style="background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                        </a>
+                        {% endif %}
+                        {% if store.facebook %}
+                        <a href="{{ store.facebook }}" target="_blank" class="w-10 h-10 bg-[#1877F2] rounded-full flex items-center justify-center text-white hover:bg-[#166FE5] transition-all hover:scale-110">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        </a>
+                        {% endif %}
+                        {% if store.twitter %}
+                        <a href="{{ store.twitter }}" target="_blank" class="w-10 h-10 bg-[#1DA1F2] rounded-full flex items-center justify-center text-white hover:bg-[#1a91da] transition-all hover:scale-110">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+                        </a>
+                        {% endif %}
+                    </div>
+                    <p class="text-sm text-white/60">&copy; {% now "Y" %} {{ store.store_name }}. All rights reserved.</p>
+                </div>
+            </div>
+            {% else %}
+            <div class="border-t border-white/20 pt-6 mt-6 text-center">
+                <p class="text-sm text-white/60">&copy; {% now "Y" %} {{ store.store_name }}. All rights reserved.</p>
+            </div>
+            {% endif %}
         </div>
-        
-    </div>
-    
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-8 mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-
+    </footer>

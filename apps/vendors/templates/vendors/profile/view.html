@@ -87,16 +87,6 @@
                     </div>
                 </div>
                 
-                <!-- Action Button -->
-                <div class="flex-shrink-0">
-                    <a href="{% url 'vendors:profile_edit' %}" 
-                       class="inline-flex items-center px-6 py-3 bg-white text-primary font-bold rounded-xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-200">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                        </svg>
-                        Edit Contact Info
-                    </a>
-                </div>
             </div>
         </div>
     </div>
@@ -354,6 +344,14 @@
                             <p class="text-lg font-bold text-gray-900 bg-gray-50 px-4 py-3 rounded-lg border border-gray-200">
                                 {{ vendor.wallet.account_holder_name|default:"—" }}
                             </p>
+                            {% if vendor.bank_status == 'bvn_verified' %}
+                            <p class="text-xs text-gray-500 mt-1 flex items-center">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Auto-filled from BVN verification
+                            </p>
+                            {% endif %}
                         </div>
                         
                         <!-- Bank Name -->
@@ -569,13 +567,6 @@
                         </div>
                     </div>
                     
-                    <a href="{% url 'vendors:profile_edit' %}" 
-                       class="inline-flex items-center px-4 py-2 bg-white text-indigo-600 border-2 border-indigo-200 hover:border-indigo-300 font-semibold rounded-lg transition-all text-sm">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                        </svg>
-                        Edit
-                    </a>
                 </div>
             </div>
             

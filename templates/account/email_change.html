@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Change Email - KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="margin-bottom: 20px;">
+        <i class="fas fa-envelope" style="font-size: 48px; color: #6366f1;"></i>
+    </div>
+    <h2>Change Email</h2>
+    <p class="subtitle">
+        Update your email address
+    </p>
+    
+    <!-- Error Messages -->
+    {% if form.errors %}
+        <div class="error-message">
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Form -->
+    <form method="post" action="{% url 'account_email' %}">
+        {% csrf_token %}
+        
+        <!-- Email Field -->
+        <label for="{{ form.email.id_for_label }}">New Email Address</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+            <div class="error-message">{{ form.email.errors.0 }}</div>
+        {% endif %}
+        
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary">Change Email</button>
+    </form>
+    
+    <!-- Back to Profile -->
+    <div class="links" style="margin-top: 20px;">
+        <p><a href="{% url 'vendors:profile_view' %}"><i class="fas fa-arrow-left"></i> Back to profile</a></p>
+    </div>
+</div>
+{% endblock %}
