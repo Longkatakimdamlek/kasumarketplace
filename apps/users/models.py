@@ -152,3 +152,4 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def is_admin_role(self):
         """Check if user has admin role."""
         return self.role == 'admin'
+    

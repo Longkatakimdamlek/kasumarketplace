@@ -10,7 +10,7 @@
 <div class="bg-gradient-to-r from-primary to-soft-blue rounded-xl p-8 mb-8 text-white shadow-lg">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold mb-2">Welcome back, {{ vendor.user.first_name|default:"Vendor" }}! 👋</h1>
+            <h1 class="text-3xl font-bold mb-2">Welcome back, {{ vendor.user.first_name|default:"Vendor" }}!</h1>
             <p class="text-blue-100">Here's what's happening with your store today.</p>
         </div>
         {% if not vendor.can_sell %}

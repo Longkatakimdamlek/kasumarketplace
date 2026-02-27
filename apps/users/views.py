@@ -6,6 +6,7 @@ Location: apps/users/views.py
 import random
 import string
 from datetime import timedelta
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.contrib import messages
@@ -44,6 +45,7 @@ from .forms import (
     PasswordResetConfirmForm,
 )
 from .models import CustomUser
+from apps.vendors.services.notifications import send_vendor_welcome_email
 
 
 # ===========================
@@ -211,7 +213,15 @@ class VendorSignupView(View):
         if form.is_valid():
             # Save user
             user = form.save()
-            
+
+            # Send vendor welcome email (non-blocking for signup flow)
+            try:
+                site_url = getattr(settings, 'SITE_URL', 'https://kasumarketplace.com.ng').rstrip('/')
+                dashboard_url = f'{site_url}/vendors/dashboard/'
+                send_vendor_welcome_email(user, dashboard_url)
+            except Exception as e:
+                print(f"Error sending vendor welcome email: {str(e)}")
+
             # Generate and send OTP
             otp = generate_otp()
             save_otp_to_user(user, otp)
@@ -557,38 +567,34 @@ class PasswordResetCompleteView(DjangoPasswordResetCompleteView):
 class CustomPasswordResetView(DjangoPasswordResetView):
     """
     View for requesting password reset.
-    Sends email with reset link.
+    Sends email with reset link using the same path as OTP (send_mail + html_message).
     """
     template_name = 'users/password_reset_request.html'
     email_template_name = 'users/emails/password_reset_email.html'
     subject_template_name = 'users/emails/password_reset_subject.txt'
     form_class = PasswordResetRequestForm
     success_url = reverse_lazy('users:password_reset_done')
-    
-    def send_mail(self, subject_template_name, email_template_name,
-                  context, from_email, to_email, html_email_template_name=None):
-        subject = render_to_string(subject_template_name, context).strip()
-        html_content = render_to_string(email_template_name, context)
-        text_content = strip_tags(html_content)
 
-        msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
-        msg.attach_alternative(html_content, "text/html")
-        msg.send(fail_silently=False)
-    
     def form_valid(self, form):
-        """Send password reset email as multipart (plain + html)."""
+        """Send password reset email with canonical link and Reply-To for better deliverability."""
         email = form.cleaned_data.get('email')
         users = list(form.get_users(email))
-        protocol = 'https' if self.request.is_secure() else 'http'
-        domain = self.request.get_host()
 
-        # If no matching users, do not reveal that — still show success page.
+        # Use canonical SITE_URL for the link so From domain and link domain match (reduces spam)
+        site_url = getattr(settings, 'SITE_URL', '') or 'https://kasumarketplace.com.ng'
+        parsed = urlparse(site_url)
+        protocol = parsed.scheme or 'https'
+        domain = parsed.netloc or self.request.get_host()
+
         if not users:
             messages.success(
                 self.request,
                 'If an account exists with that email, you will receive password reset instructions.'
             )
             return redirect(self.success_url)
+
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or 'no-reply@kasumarketplace.com.ng'
+        reply_to = getattr(settings, 'DEFAULT_REPLY_TO_EMAIL', None)
 
         for user in users:
             uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -603,14 +609,18 @@ class CustomPasswordResetView(DjangoPasswordResetView):
                 'protocol': protocol,
             }
 
-            # Render subject, HTML and plain text bodies
             subject = render_to_string(self.subject_template_name, context).strip()
             html_message = render_to_string(self.email_template_name, context)
             plain_message = strip_tags(html_message)
 
-            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
-            msg = EmailMultiAlternatives(subject, plain_message, from_email, [user.email])
-            msg.attach_alternative(html_message, "text/html")
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=plain_message,
+                from_email=from_email,
+                to=[user.email],
+                reply_to=[reply_to] if reply_to else None,
+            )
+            msg.attach_alternative(html_message, 'text/html')
             msg.send(fail_silently=False)
 
         messages.success(

@@ -530,3 +530,42 @@ KasuMarketplace System
 
 # Singleton instance
 notification_service = NotificationService()
+
+
+def send_vendor_welcome_email(user, dashboard_url: str) -> bool:
+    """
+    Send a branded HTML welcome email to a new vendor.
+
+    Uses EmailMultiAlternatives with a custom from address and the
+    shared ZeptoMail SMTP configuration defined in Django settings.
+
+    Args:
+        user: User instance (must have `email` and `first_name`)
+        dashboard_url: Absolute URL to the vendor dashboard
+
+    Returns:
+        bool: True if the email was sent successfully, False otherwise.
+    """
+    try:
+        subject = 'Welcome to KasuMarketplace – Your Vendor Dashboard'
+        context = {
+            'user': user,
+            'dashboard_url': dashboard_url,
+            'site_name': getattr(settings, 'SITE_NAME', 'KasuMarketplace'),
+        }
+
+        html_body = render_to_string('emails/vendor_welcome.html', context)
+        text_body = strip_tags(html_body)
+
+        message = EmailMultiAlternatives(
+            subject=subject,
+            body=text_body,
+            from_email='support@kasumarketplace.com.ng',
+            to=[user.email],
+        )
+        message.attach_alternative(html_body, 'text/html')
+        message.send(fail_silently=False)
+        return True
+    except Exception as exc:
+        logger.error(f'Failed to send vendor welcome email to {getattr(user, "email", "")}: {exc}')
+        return False

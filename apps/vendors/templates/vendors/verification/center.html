@@ -98,7 +98,7 @@
                             <div class="ml-4 flex-1">
                                 <div class="flex items-center justify-between mb-2">
                                     <h3 class="text-lg font-bold text-gray-900">{{ step.title }}</h3>
-                                    {% include 'vendors/components/verification_badge.html' with status=step.status label=step.status_label size="sm" show_icon=True %}
+                                    {% include 'vendors/components/verification_badge.html' with status=step.status label=step.status_label verification_type=step.verification_type size="sm" show_icon=True %}
                                 </div>
                                 
                                 <p class="text-gray-600 text-sm mb-4">{{ step.description }}</p>

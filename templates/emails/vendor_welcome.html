@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Reset Your Password</title>
+    <title>Welcome to KasuMarketplace</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -54,30 +54,47 @@
             <td align="center">
                 <div class="container">
                     <div class="header">
-                        <h1 style="margin: 0; font-size: 28px;">Reset Your Password</h1>
+                        <h1 style="margin: 0; font-size: 28px;">Welcome to KasuMarketplace</h1>
+                        <p style="margin-top: 8px; font-size: 14px; opacity: 0.9;">
+                            Your trusted marketplace for the KASU community
+                        </p>
                     </div>
                     <div class="content">
-                        <p>Hi {{ user.get_short_name|default:"" }},</p>
-                        <p>You recently requested to reset your password for your KasuMarketplace account. Click the button below to reset it.</p>
-                        
-                        <div style="text-align: center;">
-                            <a href="{{ protocol }}://{{ domain }}{% url 'users:password_reset_confirm' uidb64=uid token=token %}" class="btn">
-                                Reset Password
+                        <p>Hi {{ user.first_name|default:user.get_short_name|default:"there" }},</p>
+
+                        <p>
+                            Welcome to <strong>KasuMarketplace</strong> as a vendor. Your account has been created successfully,
+                            and you're just a few steps away from setting up your store and receiving your first orders.
+                        </p>
+
+                        <p>
+                            From your dashboard, you can:
+                        </p>
+                        <ul style="padding-left: 20px; margin-top: 12px; margin-bottom: 12px;">
+                            <li>Set up and customize your store</li>
+                            <li>Add products with rich descriptions and images</li>
+                            <li>Track orders, payouts, and performance</li>
+                            <li>Manage verification and account security</li>
+                        </ul>
+
+                        <div style="text-align: center; margin-top: 24px;">
+                            <a href="{{ dashboard_url }}" class="btn">
+                                Go to your vendor dashboard
                             </a>
                         </div>
-                        
-                        <p style="margin-top: 24px;">Or copy and paste this link into your browser:</p>
-                        <p style="word-break: break-all; color: #6366f1; font-size: 14px;">
-                            {{ protocol }}://{{ domain }}{% url 'users:password_reset_confirm' uidb64=uid token=token %}
+
+                        <p style="margin-top: 24px;">
+                            Or copy and paste this link into your browser:
                         </p>
-                        
-                        <div style="background-color: #fff4e6; border-radius: 8px; padding: 16px; margin-top: 24px;">
-                            <p style="margin: 0; font-size: 14px;">
-                                <strong>⚠️ Security Notice:</strong><br>
-                                This link will expire in 24 hours. If you didn't request a password reset, please ignore this email or contact support if you have concerns.
-                            </p>
-                        </div>
-                        
+                        <p style="word-break: break-all; color: #6366f1; font-size: 14px;">
+                            {{ dashboard_url }}
+                        </p>
+
+                        <p style="margin-top: 32px;">
+                            If you didn’t sign up for a KasuMarketplace vendor account, please ignore this email
+                            or contact our support team so we can assist you.
+                        </p>
+
                         <p style="margin-top: 32px;">
                             Best regards,<br>
                             <strong>The KasuMarketplace Team</strong>
@@ -85,7 +102,7 @@
                     </div>
                     <div class="footer">
                         <p>© 2025 KasuMarketplace. All rights reserved.</p>
-                        <p>You received this because a password reset was requested for your account.</p>
+                        <p>You’re receiving this email because a vendor account was created with this address.</p>
                     </div>
                 </div>
             </td>
@@ -93,3 +110,4 @@
     </table>
 </body>
 </html>
+
