@@ -1,0 +1,1274 @@
+================================================================================
+KASU MARKETPLACE - VENDOR DASHBOARD STATE SUMMARY
+Generated: February 26, 2026
+================================================================================
+
+COMPLETE STRUCTURED OVERVIEW OF VENDOR APP (apps/vendors)
+
+================================================================================
+1️⃣ MODELS
+================================================================================
+
+### VENDOR PROFILE & VERIFICATION ###
+
+MODEL: VendorProfile
+- Fields:
+  * user (OneToOne to User)
+  * vendor_id (UUID, unique)
+  * full_name, phone, dob, address, state, lga
+  * nin_number (11-digit string)
+  * bvn_number (11-digit string)
+  * photo_from_nin, student_id_image, selfie (ImageFields)
+  * gender, matric_number, department, level
+  
+- Status Tracking:
+  * verification_status: pending, nin_verified, bvn_verified, student_verified, approved, rejected, suspended
+  * identity_status: not_started, nin_entered, nin_otp_sent, nin_verified, failed
+  * bank_status: not_started, bvn_entered, bvn_otp_sent, bvn_verified, failed
+  * student_status: not_applicable, not_started, pending, verified, rejected
+  * store_setup_completed, store_setup_skipped (Boolean flags)
+
+- Security & Fraud Detection:
+  * registration_ip, nin_verification_ip, bvn_verification_ip (IP tracking)
+  * has_name_mismatch, name_mismatch_details (fuzzy match result)
+  * has_duplicate_nin, duplicate_nin_vendor_id
+  * has_duplicate_bvn, duplicate_bvn_vendor_id
+  * is_underage (age < 18)
+  * calculated_age, risk_score (0-100)
+
+- Admin Review:
+  * admin_comment, reviewed_by (FK), reviewed_at
+  * verification_progress (JSON field)
+  * admin_internal_notes (not visible to vendor)
+  * bvn_full_name (for comparison in name matching)
+
+- Key Methods:
+  * is_verified (property) - checks if status == 'approved'
+  * can_sell (property) - checks if NIN + BVN verified
+  * current_step (property) - calculates next verification step
+  * completion_percentage (property) - 0-100 verification progress
+  * age (property) - calculated from dob
+  * check_name_match(bvn_name) - fuzzy match with 80% threshold
+  * calculate_risk_score() - returns 0-100 risk score
+  * get_masked_nin(), get_masked_bvn() - returns masked versions for display
+
+MODEL: VerificationAttempt
+- Stores audit log of all verification API calls
+- Fields: vendor (FK), attempt_type (nin/bvn/student/otp), status, request_data, response_data, error_message, ip_address, user_agent
+- Purpose: Compliance & debugging
+
+---
+
+### STORE & CATEGORIES ###
+
+MODEL: MainCategory
+- Fields: name, slug, description, icon, is_active, sort_order
+- Purpose: Admin-defined main business categories (e.g., Fashion, Tech, Food)
+- Rules: Vendors pick ONE main category (locked after confirmation)
+
+MODEL: SubCategory
+- Fields: main_category (FK), name, slug, description, icon, is_active, sort_order
+- Purpose: Subcategories under each main category
+- Rules: Unique name per main_category. Vendors auto-access ALL subcategories in their main category
+
+MODEL: SubCategoryAttribute
+- Fields: subcategory (FK), name, field_type (text/number/dropdown/checkbox/textarea/radio), options (JSON list), is_required, min_value, max_value, placeholder, help_text, sort_order, is_active
+- Purpose: Define dynamic product attributes/specifications per subcategory
+- Example: 
+  * Subcategory "Laptops" → Attributes: Brand, Processor, RAM, Storage, Screen Size
+  * Subcategory "Shoes" → Attributes: Size, Color, Material, Brand
+- Rules: Unique attribute name per subcategory
+
+MODEL: Store
+- Fields:
+  * vendor (OneToOne)
+  * store_name, slug, tagline, description
+  * main_category (FK) - LOCKED after confirmation, read-only after setup
+  * logo, banner, primary_color (branding)
+  * business_email, phone, whatsapp, address (contact)
+  * instagram, facebook, twitter (social links)
+  * shipping_policy, return_policy (policies)
+  * is_published (Boolean) - controls visibility
+  * allow_reviews (Boolean)
+  * total_products, total_orders, total_sales, average_rating (stats, updated via signals)
+  * meta_title, meta_description (SEO)
+  * main_category_locked, main_category_locked_at (timestamp)
+  * store_name_change_count, store_name_last_changed_at
+  * main_category_change_count, main_category_last_changed_at
+  * original_store_name, original_main_category (for tracking)
+
+- Key Methods:
+  * can_change_store_name() - True if never changed or >365 days since last change
+  * can_request_category_change() - True if never changed or >365 days since last change
+  * days_until_next_name_change() - Returns days remaining
+  * days_until_next_category_change() - Returns days remaining
+  * lock_main_category() - Locks category after confirmation
+
+- Rules:
+  * Store name changeable ONCE PER YEAR (365-day limit)
+  * Main category locked after confirmation
+  * Category change requires admin approval
+
+MODEL: CategoryChangeRequest
+- Fields: store (FK), current_category (FK), requested_category (FK), reason (text), status (pending/approved/rejected), admin_comment, reviewed_by (FK), reviewed_at
+- Purpose: Vendor request to change locked main category (requires admin approval)
+- Rules: Once per YEAR limit enforced
+
+---
+
+### PRODUCTS ###
+
+MODEL: Product
+- Fields:
+  * vendor (FK), store (FK), subcategory (FK - must belong to store's main category)
+  * title, slug, description
+  * price, compare_at_price (for discount display)
+  * stock_quantity, low_stock_threshold, track_inventory (Boolean)
+  * sku (stock-keeping unit)
+  * attributes (JSON) - dynamic per-subcategory specs
+  * status (draft/published/discontinued)
+  * is_featured, views_count, sales_count
+  * meta_title, meta_description (SEO)
+  * created_at, updated_at, published_at
+
+- Status Logic:
+  * Vendors can create as: draft or published
+  * Vendors can set to: discontinued (only on existing products)
+  * AUTO-CONVERSION: If track_inventory=True and stock_quantity=0 → status becomes out_of_stock
+  * Cannot create new product as discontinued
+
+- Attributes:
+  * Stored as JSON dict with attribute_id as key
+  * Must match subcategory's defined attributes
+  * Validation: slugify(title) for slug
+  * Validation: subcategory must belong to store's main_category
+
+- Key Properties & Methods:
+  * is_low_stock - true if 0 < stock <= low_stock_threshold
+  * is_in_stock - true if stock_quantity > 0
+  * is_out_of_stock - true if stock_quantity == 0
+  * display_stock_status - human-readable (In Stock / Low Stock / Out of Stock)
+  * discount_percentage - calculated from compare_at_price
+  * resolved_attributes() - returns [{name, value}, ...] with human-readable names
+  * get_attribute(name, default) - helper to fetch specific attribute
+
+MODEL: ProductImage
+- Fields: product (FK), image (ImageField), alt_text, is_primary (Boolean), sort_order
+- Purpose: Multiple images per product
+- Rules: One marked as primary (main product image)
+
+---
+
+### WALLET & TRANSACTIONS ###
+
+MODEL: Wallet
+- Fields:
+  * vendor (OneToOne)
+  * account_number, bank_name, bank_code, account_holder_name (READ-ONLY if BVN verified)
+  * balance (Decimal) - AVAILABLE for withdrawal
+  * pending_balance (Decimal) - LOCKED until order delivered
+  * total_earned, total_withdrawn (Decimal)
+  * commission_rate (default 10%, 0-100%)
+  * auto_payout (Boolean), payout_threshold (Decimal)
+  * is_verified, verified_at (timestamp)
+
+- Purpose: Vendor payment account management
+- Key Rules:
+  * account_holder_name auto-filled from BVN, READ-ONLY after BVN verified
+  * account_number and bank_name can be edited by vendor
+  * Minimum payout: ₦1,000
+  * Bank details verified via Paystack API
+  * Commission auto-deducted from order totals
+
+MODEL: Transaction
+- Fields:
+  * wallet (FK)
+  * transaction_id (UUID, unique)
+  * transaction_type (credit/debit/payout/refund/commission)
+  * amount, status (pending/completed/failed/reversed)
+  * reference, description
+  * order (FK - optional, for order-related transactions)
+  * balance_before, balance_after (snapshot)
+  * metadata (JSON)
+  * created_at, completed_at
+
+- Purpose: Audit trail of all wallet movements
+- Auto-Created By Signals:
+  * On order payment_status=paid → credit transaction (pending)
+  * On order status=delivered → credit transaction (completed, moves pending→available)
+  * On refund approved → debit transaction
+  * On payout initiated → payout transaction
+  * On commission calculation → commission transaction
+
+---
+
+### ORDERS & REFUNDS ###
+
+MODEL: Order
+- Fields:
+  * order_id (UUID)
+  * vendor (FK), customer (FK to User)
+  * status (pending/confirmed/processing/shipped/delivered/cancelled/refunded)
+  * total_amount, commission_amount, vendor_amount (all Decimal)
+  * payment_reference, payment_status (pending/paid), paid_at
+  * shipping_address, shipping_phone, tracking_number
+  * customer_note, vendor_note
+  * created_at, updated_at, delivered_at
+
+- Status Flow:
+  * pending → confirmed → processing → shipped → delivered
+  * Can cancel at: pending or confirmed
+  * Can refund after: delivered
+
+- Wallet Integration:
+  * On payment_status=paid → add vendor_amount to pending_balance (signal)
+  * On status=delivered → move vendor_amount from pending_balance → balance (signal)
+  * Commission: auto-deducted from total_amount, vendor_amount = total_amount - commission_amount
+
+- Signals Triggered:
+  * notify_vendor_new_order - notification created
+  * update_wallet_on_order_payment - add to pending_balance
+  * update_wallet_on_order_delivery - move to available balance
+  * update_store_order_stats - increment store totals
+
+MODEL: OrderItem
+- Fields: order (FK), product (FK), quantity, price, total
+- Purpose: Individual line items in an order
+- Signal on save: update_product_sales_count, reduce_product_quantity
+
+MODEL: RefundRequest
+- Fields:
+  * refund_id (UUID)
+  * order (FK), order_item (FK), vendor (FK)
+  * reason (damaged/wrong_item/not_as_described/defective/other)
+  * description, amount
+  * status (pending/approved/rejected/completed)
+  * admin_comment, processed_by (FK), created_at, updated_at, processed_at
+
+- Wallet Impact:
+  * On status=approved → DEDUCT amount from vendor balance (signal)
+  * Creates debit transaction automatically
+
+---
+
+### NOTIFICATIONS ###
+
+MODEL: Notification
+- Fields:
+  * vendor (FK)
+  * notification_type (order/payment/refund/verification/admin_message/system)
+  * title, message, link (URL)
+  * is_read, read_at (timestamp)
+  * created_at
+
+- Auto-Triggered By Signals:
+  * New order → notification_type='order'
+  * Payment received → notification_type='payment'
+  * Refund request → notification_type='refund'
+  * Payout successful → notification_type='payment'
+  * Order status update → notification_type='order'
+
+================================================================================
+2️⃣ VIEWS
+================================================================================
+
+### PROFILE & DASHBOARD ###
+
+profile_view (GET)
+- Decorator: @vendor_required
+- Purpose: Read-only vendor profile display
+- Context: vendor, masked NIN/BVN
+
+dashboard (GET)
+- Decorator: @vendor_required
+- Purpose: Main vendor dashboard with stats & overview
+- Context:
+  * vendor
+  * total_products (published count)
+  * pending_orders (pending + confirmed)
+  * total_sales (Decimal)
+  * wallet_balance
+  * recent_orders (last 5)
+  * low_stock_products (last 5)
+  * unread_notifications (count)
+- Logic: Shows verification progress banner if not can_sell
+
+---
+
+### VERIFICATION FLOW (5 STEPS) ###
+
+verification_center (GET)
+- Decorator: @vendor_required
+- Purpose: Shows 5-step verification progress with step status indicators
+- Context: vendor, steps (list), completion_percentage, current_step, can_sell
+- Displays:
+  1. Verify Identity (NIN)
+  2. Verify Banking (BVN)
+  3. Set Up Store
+  4. Verify Student Status (optional)
+  5. Pending Admin Review
+
+Step 1: NIN Entry
+---
+nin_entry (GET/POST)
+- Decorator: @vendor_required, @rate_limit_verification
+- Purpose: Vendor enters NIN (11 digits)
+- Form: NINEntryForm (regex validation, duplicate check)
+- Logic on POST:
+  1. Check for duplicate NIN (same NIN on another vendor) → flag if exists
+  2. Call Dojah API verify_nin(nin_number)
+  3. Extract data:
+     - full_name (from firstname + middlename + lastname/surname)
+     - phone (phone_number or phone field)
+     - dob (date_of_birth or birthdate)
+     - gender
+     - address (residence_address or address)
+     - state (residence_state or state)
+     - lga (residence_lga or lga)
+  4. Validate DOB:
+     - Parse as date
+     - Calculate age
+     - If age < 18 → flag is_underage = True
+  5. Capture IP: request.META.get('REMOTE_ADDR')
+  6. Set identity_status = 'nin_otp_sent'
+  7. Calculate risk_score()
+  8. Call Dojah send_nin_otp(nin_number)
+  9. Redirect to nin_otp
+- Context: form, hide_verification_badge
+
+nin_otp (GET/POST)
+- Decorator: @vendor_required, @rate_limit_verification
+- Purpose: Verify OTP sent to NIN-linked phone
+- Form: NINOTPForm (6-digit regex, auto-focus)
+- Logic on POST:
+  1. Verify OTP via Dojah verify_nin_otp(nin_number, otp)
+  2. If success:
+     - Set identity_status = 'nin_verified'
+     - Check duplicate NIN again
+     - Check if underage (from existing dob)
+     - Capture IP
+     - Save vendor
+     - Redirect to nin_success
+- Context: form, vendor, phone_last_4 (masked), hide_verification_badge
+
+nin_success (GET)
+- Decorator: @vendor_required
+- Validation: identity_status must be 'nin_verified'
+- Purpose: Confirmation page
+- Redirect on fail: nin_entry
+
+Step 2: BVN Entry
+---
+bvn_entry (GET/POST)
+- Decorator: @vendor_required, @rate_limit_verification
+- Validation: identity_status must be 'nin_verified'
+- Purpose: Vendor enters BVN (11 digits) + bank name
+- Form: BVNEntryForm (11-digit regex, bank name)
+- Logic on POST:
+  1. Check for duplicate BVN → flag if exists
+  2. Call Dojah API verify_bvn(bvn_number)
+  3. Extract BVN data:
+     - bvn_first = firstname or first_name
+     - bvn_last = lastname or last_name or surname
+     - bvn_full_name = combine
+  4. NAME MATCHING CHECK:
+     - Call vendor.check_name_match(bvn_full_name)
+     - Uses SequenceMatcher for fuzzy matching
+     - Threshold: 80% match required
+     - If < 80% → flag has_name_mismatch = True, store details
+  5. Update vendor:
+     - bvn_number = bvn_number
+     - bvn_full_name = extracted name
+     - has_name_mismatch (Boolean)
+     - name_mismatch_details (text)
+     - bank_status = 'bvn_verified'
+     - bvn_verified_at = now()
+     - bvn_verification_ip = request IP
+  6. Update wallet:
+     - account_holder_name = bvn_full_name (READ-ONLY from now on)
+     - bank_name = form bank_name
+     - account_number = extracted from BVN
+     - is_verified = True
+     - verified_at = now()
+  7. Calculate risk_score()
+  8. Send notification: send_bvn_verified(vendor)
+  9. Redirect to store_setup
+- Context: form, vendor, hide_verification_badge
+
+bvn_otp (GET/POST)
+- Decorator: @vendor_required, @rate_limit_verification
+- Validation: bank_status must be 'bvn_otp_sent'
+- Purpose: Verify OTP sent to BVN-linked phone
+- Logic on POST:
+  1. Verify OTP via Dojah verify_bvn_otp(bvn_number, otp)
+  2. If success:
+     - Set bank_status = 'bvn_verified'
+     - Update wallet.is_verified, verified_at
+     - Redirect to bvn_success
+- Context: form, vendor, phone_last_4, hide_verification_badge
+
+bvn_success (GET)
+- Decorator: @vendor_required
+- Validation: bank_status must be 'bvn_verified'
+- Purpose: Confirmation page
+
+Step 3: Store Setup
+---
+store_setup (GET/POST)
+- Decorator: @vendor_required
+- Validation: Both identity_status AND bank_status must be 'verified'
+- Purpose: Create/edit store (can be skipped)
+- Form: StoreSetupForm (store_name, main_category, tagline, logo, banner)
+- Logic:
+  * Can SKIP: POST with 'skip' button → sets store_setup_skipped=True
+  * On form POST (no skip):
+    - Create or update Store
+    - Lock main_category (main_category_locked=True, timestamp)
+    - Set store_setup_completed=True
+    - Create Wallet if not exists
+    - Redirect to verification_center
+- Context: form, vendor, graduation_years (2024-2031), is_new, categories (active main categories), store, hide_verification_badge
+
+Step 4: Student Verification
+---
+student_verification (GET/POST)
+- Decorator: @vendor_required
+- Purpose: Optional student/alumni verification for KASU community
+- Form: StudentVerificationForm (matric_number, department, level, student_id_image, selfie)
+- Logic on POST:
+  1. Save form
+  2. Force institution = "Kaduna State University (KASU)" (hardcoded)
+  3. Set student_status = 'pending' (for admin review)
+  4. Save vendor
+  5. Show message: "submitted, review in 24-48 hours"
+  6. Redirect to verification_center
+- Context: form, vendor, graduation_years (past 5 + future 7), hide_verification_badge
+
+Step 5: Admin Review
+---
+pending_review (GET)
+- Decorator: @vendor_required
+- Validation: must have NIN + BVN verified (can_sell)
+- If already approved → redirect to dashboard
+- Purpose: Shows "waiting for admin review" status
+- Context: vendor, submitted_at, estimated_review_time ('24-48 hours'), hide_verification_badge
+
+---
+
+### PRODUCT MANAGEMENT ###
+
+products_list (GET)
+- Decorator: @vendor_verified_required
+- Purpose: List all vendor products with filtering & pagination
+- Query Params:
+  * status: draft, published, discontinued
+  * stock: low_stock, out_of_stock, all
+  * search: text search in title/description/sku
+- Pagination: 20 products per page
+- Context:
+  * products (paginated)
+  * total_products, published_count, draft_count, low_stock_count, out_of_stock_count
+  * current_status, stock_filter, search_query
+  * hide_verification_badge
+- Logic: Apply filters → Order by -created_at → Paginate
+
+product_create (GET/POST)
+- Decorator: @vendor_verified_required
+- Validation: Store must exist
+- Purpose: Create new product with images & dynamic attributes
+- Form: ProductForm (subcategory, title, price, description, attributes, status)
+- Image Formset: ProductImageFormSet (multiple images upload)
+- Validation on POST:
+  * Cannot set status='discontinued' on new products (server-side validation)
+  * At least one image is required (if none uploaded, error)
+- Logic on POST:
+  1. Save product (auto-generates slug)
+  2. Save images formset
+  3. Check if any image marked as primary
+  4. If no primary image → mark first image as primary
+  5. Redirect to product_detail
+- Context: form, formset, vendor, subcategories (filtered by main category), hide_verification_badge
+
+product_edit (GET/POST)
+- Decorator: @vendor_verified_required, @vendor_owns_product (checks vendor authorization)
+- Purpose: Edit product (can set to discontinued on edit)
+- Form & Formset: Same as create
+- Validation on POST:
+  * Can set status='discontinued' on edit
+  * Can update all fields
+- Logic on POST:
+  1. Update product (slug NOT regenerated if already exists)
+  2. Update images
+  3. Update attributes JSON
+  4. Redirect to product_detail
+- Context: form, formset, product, vendor, is_editing=True, subcategories_json, attributes_json, hide_verification_badge
+
+product_detail (GET)
+- Decorator: @vendor_verified_required, @vendor_owns_product
+- Purpose: View product detail & stats
+- Computed Stats:
+  * total_orders (count of OrderItems with this product)
+  * total_revenue (sum of OrderItem.total where order.status='delivered')
+- Context: product, vendor, total_orders, total_revenue, hide_verification_badge
+
+product_delete (GET/POST)
+- Decorator: @vendor_verified_required, @vendor_owns_product
+- Purpose: Delete product permanently
+- GET: Show confirmation page
+- POST: Delete product → Redirect to products_list
+- Context: product, hide_verification_badge
+
+product_detail_public (GET)
+- URL: /shop/<store_slug>/products/<product_slug>/
+- Decorator: None (public, but owner can preview unpublished products)
+- Purpose: Public-facing product page for buyers
+- Access Rules:
+  * Buyers can only see published products from published stores
+  * Store owner can preview their product even if unpublished/store not published (preview banner shown)
+- Logic:
+  1. Get Store by slug (no is_published filter yet)
+  2. Check if current user is owner (vendor)
+  3. If not owner and store not published → 404
+  4. Get Product filtered by status:
+     - Owner: can see any status
+     - Non-owner: must be status='published'
+  5. Increment product.views_count by 1
+  6. Fetch SubCategoryAttributes to build specification list
+  7. Build specifications array with resolved attribute names
+- Context:
+  * product
+  * store, vendor
+  * specifications [{label, value, field_type}, ...]
+  * is_owner (Boolean)
+  * is_preview (True if owner viewing unpublished)
+  * in_stock (simple True/False for buyers)
+
+---
+
+### ORDER MANAGEMENT ###
+
+orders_list (GET)
+- Decorator: @vendor_required
+- Purpose: List all vendor orders with status filtering
+- Query Params:
+  * status: filter by status
+- Pagination: 20 orders per page
+- Context:
+  * orders (paginated)
+  * total_orders, pending_count (pending+confirmed), completed_count (delivered)
+  * current_status
+  * hide_verification_badge
+- Logic: Filter by vendor → Filter by status if provided → Order by -created_at
+
+order_detail (GET/POST)
+- Decorator: @vendor_required, @vendor_owns_order
+- Purpose: View order details & update status
+- Form: OrderStatusUpdateForm (allowed transitions)
+- Allowed Status Transitions:
+  * pending → confirmed, cancelled
+  * confirmed → processing, cancelled
+  * processing → shipped
+  * shipped → delivered
+- Logic on POST:
+  1. Validate status transition
+  2. Update order.status
+  3. Update order.tracking_number if provided
+  4. Call notification_service.send_order_status_update()
+  5. Redirect to order_detail
+- Context: order, form, items (OrderItem queryset), hide_verification_badge
+
+order_status_update_ajax (POST)
+- Decorator: @vendor_required, @vendor_owns_order, @require_http_methods(["POST"])
+- Purpose: Quick AJAX status update without page reload
+- POST Data: status, tracking_number (optional)
+- Returns: JsonResponse
+  * Success: {success: True, message: "Status updated"}
+  * Error: {success: False, error: "Invalid status transition"} (400 status)
+- Logic: Same as order_detail POST validation
+
+---
+
+### WALLET MANAGEMENT ###
+
+wallet_overview (GET)
+- Decorator: @vendor_required
+- Purpose: Display wallet balance, pending balance, recent transactions
+- Context:
+  * wallet (Wallet object)
+  * transactions (last 10, all().limit(10))
+  * total_earned, total_withdrawn, pending_balance
+  * hide_verification_badge
+
+wallet_transactions (GET)
+- Decorator: @vendor_required
+- Purpose: Full transaction history with pagination
+- Pagination: 50 transactions per page
+- Ordering: -created_at (newest first)
+- Context: page_obj, transactions (paginated), wallet, hide_verification_badge
+
+payment_method (GET/POST)
+- Decorator: @vendor_required
+- Purpose: View/edit bank account details
+- Read-Only Info:
+  * account_holder_name (if BVN verified)
+  * BVN verified status
+- Editable Fields (if BVN not verified):
+  * account_name (if BVN not verified)
+  * account_number
+  * bank_name
+- Validation on POST:
+  * account_number required & not empty
+  * bank_name required & not empty
+  * confirm checkbox required (must check)
+- Logic on POST:
+  1. If BVN NOT verified → can update account_holder_name
+  2. Update account_number, bank_name
+  3. Save wallet
+  4. Redirect to payment_method
+  5. Show success message
+- Context:
+  * wallet
+  * vendor
+  * bank_account (alias for wallet for template compatibility)
+  * form (simple object with HTML names)
+  * bvn_verified (Boolean flag)
+  * hide_verification_badge
+
+request_payout (GET/POST)
+- Decorator: @vendor_required
+- Purpose: Request withdrawal/payout from wallet
+- Constraints:
+  * Minimum payout: ₦1,000
+  * Only available if balance >= min_payout
+- Logic on POST:
+  1. Get amount from form
+  2. Validate amount > min_payout
+  3. Validate amount <= wallet.balance
+  4. Create Paystack transfer recipient if not exists:
+     - account_number, bank_code, account_holder_name
+  5. Initiate Paystack transfer
+  6. On success:
+     - Deduct from wallet.balance
+     - Add to wallet.total_withdrawn
+     - Create Transaction record
+     - Send notification
+  7. Redirect to wallet_overview
+- Context: wallet, min_payout (₦1,000), hide_verification_badge
+
+---
+
+### STORE MANAGEMENT ###
+
+store_settings (GET/POST)
+- Decorator: @vendor_required
+- Validation: Store must exist
+- Purpose: Edit store settings with change limits
+- Form: StoreSettingsForm (store_name, logo, banner, contact, policies, publish toggle)
+- Store Name Change Limit:
+  * Rule: Can change ONCE PER YEAR (365 days)
+  * Form validation enforces: raises error if trying to change within 365 days
+  * On success: Updates store_name_last_changed_at, increments store_name_change_count
+- Category Lock:
+  * main_category is READ-ONLY after store_setup (cannot change here)
+  * To change category: must go to category_change_request
+- Logic on POST:
+  1. Check if old_store_name != new_store_name
+  2. Save form
+  3. If name changed → log warning message with date range
+  4. Show success message with next available change date
+  5. Redirect to store_settings
+- Context:
+  * store, form, vendor
+  * active_products_count
+  * can_change_name, days_until_name_change
+  * can_change_category, days_until_category_change
+  * hide_verification_badge
+
+store_public_preview (GET)
+- Decorator: @vendor_required
+- Purpose: Vendor previews their public storefront
+- Logic:
+  1. Get vendor.store
+  2. Get published products (first 12)
+  3. Pass to template
+  4. Show with preview styling but no edit controls
+- Context: store, products, is_preview=True, hide_verification_badge
+
+store_public (GET)
+- URL: /vendors/store/<slug>/
+- Decorator: None (public)
+- Purpose: Public-facing vendor storefront
+- Access Rules:
+  * Non-owner: can only see if store.is_published=True
+  * Owner: can see own store even if unpublished (with preview banner)
+- Logic:
+  1. Get Store by slug
+  2. Check if current user is owner
+  3. If not published and not owner → 404
+  4. Get published products from vendor (paginated, 12 per page)
+  5. Render storefront
+- Context:
+  * store, vendor
+  * products (paginated Page object)
+  * total_products
+  * is_owner, is_preview (shows banner if owner viewing unpublished)
+
+category_change_request (GET/POST)
+- Decorator: @vendor_required
+- Validation:
+  * Store must exist
+  * main_category must be locked
+  * Cannot request if already have pending request
+  * Cannot request if tried within last 365 days (once per YEAR)
+- Purpose: Request to change locked main category
+- Form: CategoryChangeRequestForm (requested_category, reason)
+- Constraints:
+  * Days until next change: calculated & shown if blocked
+  * Pending requests block new requests
+- Logic on POST:
+  1. Check can_request_category_change()
+  2. Check for pending requests
+  3. Validate form
+  4. Create CategoryChangeRequest (status='pending')
+  5. Log info message
+  6. Show success message
+  7. Redirect to store_settings
+- Context:
+  * form, store, vendor
+  * previous_requests (all non-pending, last 5)
+  * can_request_change, days_until_next_change
+  * hide_verification_badge
+
+category_change_status (GET)
+- Decorator: @vendor_required
+- Purpose: View history of category change requests
+- Logic: Fetch all requests grouped by status (pending, approved, rejected)
+- Context:
+  * store, vendor
+  * pending_requests, approved_requests, rejected_requests
+  * can_request_change, days_until_next_change
+  * hide_verification_badge
+
+---
+
+### NOTIFICATIONS ###
+
+notifications_list (GET)
+- Decorator: @vendor_required
+- Purpose: List all vendor notifications
+- Logic:
+  1. Get all notifications (order by -created_at)
+  2. Mark ALL unread as read (is_read=True, read_at=now())
+  3. Paginate (20 per page)
+- Context: page_obj, notifications, hide_verification_badge
+
+notification_detail (GET)
+- Decorator: @vendor_required
+- Purpose: View single notification
+- Logic:
+  1. Get notification (vendor must own)
+  2. Mark as read if not already
+  3. Render
+- Context: notification, hide_verification_badge
+
+notification_mark_read (POST)
+- Decorator: @vendor_required, @require_http_methods(["POST"])
+- Logic: Mark notification as read → Redirect to detail
+
+notification_delete (POST)
+- Decorator: @vendor_required, @require_http_methods(["POST"])
+- Logic: Delete notification → Redirect to list
+
+notifications_mark_all_read (POST)
+- Decorator: @vendor_required, @require_http_methods(["POST"])
+- Logic: Mark all unread as read → Redirect to list
+
+---
+
+### AJAX ENDPOINTS ###
+
+ajax_get_subcategories (GET)
+- Decorator: @vendor_required
+- Purpose: Get subcategories for vendor's main category (used in product forms)
+- Query Params: None (uses vendor.store.main_category)
+- Returns: {subcategories: [{id, name}, ...]}
+
+ajax_get_attributes (GET)
+- Decorator: @vendor_required
+- Purpose: Get attributes for a specific subcategory (used in product forms)
+- Query Params: subcategory_id
+- Returns: {attributes: [{id, name, field_type, options, is_required, placeholder, help_text}, ...]}
+
+get_subcategories_ajax (GET)
+- Decorator: @vendor_required, @require_http_methods(["GET"])
+- Purpose: Alternative endpoint for subcategories
+- Query Params: main_category_id
+- Returns: {subcategories: [{id, name}, ...]}
+
+get_category_attributes_ajax (GET)
+- Decorator: @vendor_required, @require_http_methods(["GET"])
+- Purpose: Alternative endpoint for attributes
+- Query Params: subcategory_id
+- Returns: {subcategory: name, attributes: [{...}, ...]}
+
+================================================================================
+3️⃣ TEMPLATES
+================================================================================
+
+TEMPLATE STRUCTURE:
+
+templates/vendors/
+├── base.html                          
+│   └── Main layout with navbar, verification badge, scripts
+│
+├── dashboard.html                     
+│   └── Main dashboard: stat cards, recent orders, low stock, notifications
+│
+├── components/
+│   └── stats_card.html               
+│       └── Reusable card component for KPIs
+│
+├── profile/
+│   └── view.html                     
+│       └── Read-only profile with masked NIN/BVN
+│
+├── verification/
+│   ├── center.html                   
+│   │   └── 5-step progress display with step indicators
+│   ├── nin_entry.html                
+│   │   └── NIN input (11 digits)
+│   ├── nin_otp.html                  
+│   │   └── OTP entry form with resend option
+│   ├── nin_success.html              
+│   │   └── NIN verified confirmation
+│   ├── bvn_entry.html                
+│   │   └── BVN input + bank name selection
+│   ├── bvn_otp.html                  
+│   │   └── OTP entry form with resend option
+│   ├── bvn_success.html              
+│   │   └── BVN verified confirmation
+│   ├── store_setup.html              
+│   │   └── Store name, main category, logo, banner, option to skip
+│   ├── student_verification.html     
+│   │   └── Matric number, dept, level, student ID image, selfie upload
+│   └── pending_review.html           
+│       └── Admin review in progress message
+│
+├── products/
+│   ├── list.html                     
+│   │   └── Product list with status/stock filters, pagination
+│   ├── create.html                   
+│   │   └── Product form (no discontinued option) + image formset
+│   ├── edit.html                     
+│   │   └── Product form (can set discontinued) + image formset
+│   ├── detail.html                   
+│   │   └── Product detail view with stats (vendor dashboard)
+│   └── delete_confirm.html           
+│       └── Delete confirmation page
+│
+├── orders/
+│   ├── list.html                     
+│   │   └── Order list with status filter, pagination
+│   └── detail.html                   
+│       └── Order detail with status update form
+│
+├── wallet/
+│   ├── overview.html                 
+│   │   └── Balance display, pending balance, recent transactions
+│   ├── transactions.html             
+│   │   └── Transaction history (paginated)
+│   ├── payment_method.html           
+│   │   └── Bank account info (display/edit with read-only account holder)
+│   └── payout_request.html           
+│       └── Withdrawal request form (min ₦1,000)
+│
+├── store/
+│   ├── settings.html                 
+│   │   └── Edit store with 1-year change limit warning
+│   ├── preview.html                  
+│   │   └── Preview storefront as vendor
+│   ├── public_storefront.html        
+│   │   └── Public storefront (no dashboard controls)
+│   └── category_change_request.html  
+│       └── Request category change with reason
+│
+├── notifications/
+│   ├── list.html                     
+│   │   └── Notification list (paginated)
+│   └── detail.html                   
+│       └── Single notification detail
+│
+└── emails/
+    └── vendor_welcome.html           
+        └── Welcome email template
+
+================================================================================
+4️⃣ JS & FRONTEND LOGIC
+================================================================================
+
+STATIC FILES STRUCTURE:
+
+static/vendors/
+├── css/
+│   ├── main.css                  
+│   │   └── General vendor dashboard styles
+│   ├── dashboard.css             
+│   │   └── Dashboard-specific styling
+│   └── verification.css          
+│       └── Verification flow styles
+│
+├── js/
+│   ├── main.js                   
+│   │   └── EMPTY - no global logic yet
+│   │
+│   ├── verification.js           
+│   │   └── Verification flow logic:
+│   │       - OTP auto-focus: on digit input, auto-move focus to next field
+│   │       - OTP auto-submit: submit form when all 6 digits entered
+│   │       - Resend countdown: timer for OTP resend button
+│   │
+│   ├── product-form.js           
+│   │   └── Dynamic product form logic:
+│   │       - Subcategory change event listener
+│   │       - AJAX call to ajax_get_attributes on subcategory selection
+│   │       - Dynamically render attribute input fields based on field_type
+│   │       - Populate existing values on edit page
+│   │       - Validation: required field checks
+│   │
+│   ├── image-upload.js           
+│   │   └── Image upload logic:
+│   │       - Drag-and-drop zone for images
+│   │       - File select via input
+│   │       - Image preview thumbnails before upload
+│   │       - Reorder images (sort_order)
+│   │       - Mark primary image (is_primary flag)
+│   │       - Delete image preview
+│   │
+│   └── charts.js                 
+│       └── Dashboard charts:
+│           - Orders trend (line/bar chart)
+│           - Sales trend over time
+│           - Revenue breakdown (pie chart)
+│           - Top products (bar chart)
+│           - Uses Chart.js library
+│
+└── images/
+    └── (vendor icons, logo placeholders, etc.)
+
+================================================================================
+5️⃣ EXISTING FEATURES SUMMARY
+================================================================================
+
+✅ FULLY IMPLEMENTED (95%+ Complete)
+================================================================================
+
+1. VENDOR VERIFICATION (5-STEP FLOW)
+   ✅ NIN verification with Dojah API
+      - 11-digit entry with regex validation
+      - Duplicate detection
+      - Auto-extract: full_name, phone, dob, gender, address, state, LGA
+      - Age check (flag if < 18)
+      - OTP verification
+   
+   ✅ BVN verification with name matching
+      - 11-digit entry + bank name selection
+      - Duplicate BVN detection
+      - Fuzzy name matching (80% threshold)
+      - Flag name mismatch (NIN name vs BVN name)
+      - Auto-wallet setup: account_number, bank_name, account_holder_name (read-only)
+      - OTP verification
+   
+   ✅ Security features:
+      - IP address tracking (registration, NIN verification, BVN verification)
+      - Risk scoring (0-100): duplicates (50pts each), name mismatch (40pts), underage (100pts)
+      - Verification audit log (VerificationAttempt model)
+      - Rate limiting on verification attempts
+   
+   ✅ Store setup: name, main category (locked), logo, banner, tagline
+   
+   ✅ Student verification (optional): matric, dept, level, student ID, selfie
+      - Submitted for admin review (24-48h estimated)
+   
+   ✅ Admin review status tracking
+
+2. STORE MANAGEMENT
+   ✅ Store name editable with 1-YEAR change limit (365 days)
+   ✅ Main category locked after confirmation
+      - Change requires admin approval (CategoryChangeRequest model)
+      - Also 1-YEAR limit on change requests
+   ✅ Branding: logo, banner, primary color
+   ✅ Contact: business_email, phone, whatsapp, address
+   ✅ Social links: Instagram, Facebook, Twitter
+   ✅ Policies: shipping_policy, return_policy (text fields)
+   ✅ Publish/draft toggle (is_published)
+   ✅ SEO: meta_title, meta_description
+   ✅ Store stats tracked via signals: total_products, total_orders, total_sales, average_rating
+
+3. PRODUCT MANAGEMENT
+   ✅ Product CRUD: create, read, update, delete
+   ✅ Product status: draft, published, discontinued
+      - Vendors cannot set new products as discontinued
+      - Can only set discontinued after product exists
+   ✅ Image uploads with formset:
+      - Multiple images per product
+      - Primary image flag (one main product image)
+   ✅ Inventory tracking:
+      - stock_quantity, low_stock_threshold, track_inventory flag
+      - Auto-status conversion: if stock=0 → automatic out_of_stock status
+   ✅ Dynamic attributes per subcategory (JSON-based)
+      - Matched against SubCategoryAttribute definitions
+      - Resolved with human-readable names on display
+   ✅ Pricing: price, compare_at_price (for discount calculation)
+   ✅ Auto-features: slug generation, published_at timestamp
+   ✅ Product stats: views_count, sales_count (auto-incremented)
+   ✅ Low stock alerts: query for low_stock_count dashboard
+
+4. ORDER MANAGEMENT
+   ✅ Order list with status filtering
+   ✅ Order detail view
+   ✅ Status update with allowed transitions:
+      pending → confirmed/cancelled
+      confirmed → processing/cancelled
+      processing → shipped
+      shipped → delivered
+   ✅ AJAX quick status update with tracking number
+   ✅ Commission calculation (auto-deducted from total_amount)
+   ✅ Order items display (product, qty, price, total)
+   ✅ Signals: Auto-create notifications on order placement & status changes
+
+5. WALLET & PAYMENT SYSTEM
+   ✅ Double-balance model:
+      - balance: available for withdrawal
+      - pending_balance: locked until order delivered
+   
+   ✅ Order payment flow:
+      - On payment_status=paid → add vendor_amount to pending_balance (signal)
+      - On status=delivered → move vendor_amount from pending to balance (signal)
+      - Signals auto-create transactions
+   
+   ✅ Payouts (withdrawals):
+      - Minimum: ₦1,000
+      - Creates Paystack transfer recipient
+      - Initiates transfer
+      - Deducts from balance
+      - Creates transaction record
+      - Sends notification
+   
+   ✅ Refund handling:
+      - On refund approved → deduct from balance (signal)
+      - Auto-creates debit transaction
+   
+   ✅ Bank account management:
+      - Auto-filled from BVN (account_holder_name, account_number)
+      - account_holder_name: READ-ONLY if BVN verified
+      - account_number, bank_name: editable by vendor
+   
+   ✅ Commission: customizable per wallet (default 10%), 0-100%
+   
+   ✅ Transaction audit trail:
+      - All credit/debit/payout/refund/commission transactions recorded
+      - Balances before/after snapshot
+      - Reference tracking
+
+6. NOTIFICATIONS
+   ✅ In-app notifications with types:
+      - order: new order, status updates
+      - payment: payment received, payout successful
+      - refund: refund request/processed
+      - verification: verification status updates
+      - admin_message: admin communications
+      - system: system messages
+   
+   ✅ Auto-triggered by signals
+   ✅ Mark read/unread, delete, mark all as read
+   ✅ Notification list with pagination
+
+7. SECURITY & COMPLIANCE
+   ✅ Verification audit log (VerificationAttempt)
+   ✅ IP tracking (registration, NIN/BVN verification)
+   ✅ Risk scoring with flags
+   ✅ Admin comments on vendor profile
+   ✅ Admin internal notes (not visible to vendor)
+   ✅ BVN full name stored for comparison
+   ✅ Duplicate detection (NIN & BVN)
+   ✅ Underage detection
+   ✅ Rate limiting on verification attempts
+   ✅ Decorators: @vendor_required, @vendor_verified_required, @vendor_owns_product, @vendor_owns_order
+
+================================================================================
+
+❌ MISSING / NOT YET IMPLEMENTED
+================================================================================
+
+1. SubOrder Model / Item-Level Acceptance
+   ❌ No SubOrder model
+   ❌ No per-item vendor acceptance/rejection flow
+   ❌ No 48-hour acceptance deadline
+   
+   Current: Orders are created as whole, directly linked to vendor, no marketplace seller acceptance workflow
+
+2. Contact Unlock Rules
+   ❌ No contact/phone visibility rules for buyers
+   ❌ No "unlock after X purchases" feature
+   ❌ No buyer-seller direct messaging system
+   ❌ No time-based contact reveal (e.g., after 24/48 hours)
+   
+   Current: Store contact info is public on storefront
+
+3. Wallet Pending Balance Hold Period
+   ❌ No hold period after order delivery
+   ❌ No chargeback/dispute window (e.g., 7-14 days hold)
+   ❌ No buyer return window tracking
+   
+   Current: Funds move to available immediately on order delivery
+
+4. Advanced Product Features
+   ❌ No product variants (size/color options - must create separate products)
+   ❌ No bundled/combo products
+   ❌ No on-sale/flash sale scheduling
+   ❌ No product pre-order feature
+   ❌ No inventory sync with external platforms
+
+5. Store Analytics
+   ❌ No detailed analytics dashboard (beyond basic stat cards)
+   ❌ No sales trend forecasting
+   ❌ No customer segmentation
+   ❌ No A/B testing for product listings
+
+6. Review & Rating System
+   ❌ No product review model
+   ❌ No vendor rating aggregation
+   ❌ No review moderation/moderation queue
+   ❌ No review authenticity checks
+
+7. Buyer-Seller Communication
+   ❌ No built-in messaging system (vendor ↔ buyer)
+   ❌ No support ticket system
+   ❌ No vendor support category/FAQ
+
+8. Advanced Verification
+   ❌ No facial liveness check for selfies
+   ❌ No manual document review workflow UI for student status
+   ❌ No appeals process for rejected verification
+   ❌ No re-verification request flow
+
+9. Tax & Compliance
+   ❌ No VAT/tax calculation
+   ❌ No tax certificate generation
+   ❌ No tax return reports
+   ❌ No compliance audit exports
+
+10. Automation & Scheduling
+    ❌ No scheduled product unlisting
+    ❌ No auto-discount scheduling
+    ❌ No inventory reorder alerts/suggestions
+    ❌ No abandoned cart recovery
+
+================================================================================
+
+FEATURE IMPLEMENTATION STATUS MATRIX
+================================================================================
+
+Category                    Status      Notes
+────────────────────────────────────────────────────────────────────────────
+Identity Verification       95% ✅      NIN+BVN+security complete. No liveness
+Store Setup                 90% ✅      Core done. No advanced analytics
+Product Management          85% ✅      CRUD done. No variants/bundles
+Wallet & Payments           80% ✅      Order flow solid. No hold periods
+Order Management            75% ✅      Status tracking works. No item-level acceptance
+Notifications               90% ✅      In-app complete. No SMS/email
+Public Storefront          60% ⚠️       Basic works. No search/filtering/reviews
+Vendor Dashboard           70% ⚠️       Core stats. No analytics/forecasting
+Buyer Communication         0% ❌       No messaging or support system
+Market Verification         5% ❌       No liveness, appeals, re-verification
+────────────────────────────────────────────────────────────────────────────
+
+OVERALL APP READINESS: ~75% ✅
+Core business logic implemented. Missing advanced features & buyer experience enhancements.
+
+================================================================================
+
+KEY ARCHITECTURAL PATTERNS
+================================================================================
+
+1. Product Attributes
+   - Dynamic per-subcategory
+   - Stored as JSON {attribute_id: value}
+   - NOT product variants (no size/color options)
+   - Resolved at display time with human-readable names
+
+2. Commission Calculation
+   - Per-order calculation
+   - vendor_amount = total_amount - commission_amount
+   - Commission deducted automatically
+   - Rate customizable per wallet (default 10%)
+
+3. Wallet Double-Balance System
+   balance: available for withdrawal
+   pending_balance: locked until delivery
+   Transition via signal on status='delivered'
+
+4. Verification Multi-Step
+   - Sequential: NIN → BVN → Store → Student → Admin Review
+   - current_step calculated based on status
+   - Each step has dedicated view(s)
+   - Can skip Store & Student steps
+
+5. Rate Limiting
+   - @rate_limit_verification decorator
+   - Applied to NIN/BVN entry & OTP views
+   - Prevents brute-force attempts
+
+6. Decorators (Access Control)
+   @vendor_required: user is authenticated vendor
+   @vendor_verified_required: vendor NIN+BVN verified
+   @vendor_owns_product: vendor owns product
+   @vendor_owns_order: vendor owns order
+
+7. Category Locking
+   - main_category locked after store setup confirmation
+   - Change requires admin approval via CategoryChangeRequest
+   - Once per YEAR limit enforced at model level
+   - Store name also has once-per-YEAR change limit
+
+8. Risk Scoring
+   - 0-100 scale
+   - Flags: duplicates (+50 each), name mismatch (+40), underage (+100)
+   - Auto-calculated on NIN/BVN verification
+   - Used for admin review decision-making
+
+9. Signal-Driven Architecture
+   - Notifications auto-created on events
+   - Wallet balances auto-updated on order status changes
+   - Product stats auto-updated on order events
+   - Store stats aggregated via signals
+
+10. Verification Audit Trail
+    - VerificationAttempt model tracks all API calls
+    - request_data & response_data stored
+    - IP addresses logged
+    - Used for compliance & debugging
+
+================================================================================
+END OF SUMMARY
+================================================================================
+
+This document serves as a complete technical reference for the Vendor Dashboard
+app. It is organized for easy discovery by other developers integrating new
+features without overwriting existing work.
+
+Categories Covered:
+- 1️⃣ Models: Complete database schema with relationships & constraints
+- 2️⃣ Views: All view functions with URL mappings, decorators, logic & context
+- 3️⃣ Templates: Directory structure & purpose of all templates
+- 4️⃣ Frontend Logic: JavaScript files & their functionality
+- 5️⃣ Features: What's implemented (95%+) vs missing (for integration planning)
+
+Architecture Notes: Key patterns for consistent implementation
+
+Generated: 2026-02-26
+App: apps/vendors (Django)
+Database: SQLite (db.sqlite3)
+Framework: Django 4.x, Django REST Framework
+Frontend: Tailwind CSS, Chart.js, jQuery
+================================================================================

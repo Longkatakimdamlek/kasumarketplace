@@ -123,32 +123,62 @@ def verification_center(request):
         messages.success(request, "You're already verified!")
         return redirect('vendors:dashboard')
     
+    # Map raw status to badge status and label (for NIN/BVN)
+    def _nin_badge(s):
+        if s == 'nin_verified':
+            return 'completed', 'Verified'
+        if s in ('nin_otp_sent', 'nin_entered'):
+            return 'in_progress', 'OTP Sent' if s == 'nin_otp_sent' else 'In Progress'
+        if s == 'failed':
+            return 'failed', 'Failed'
+        return 'not_started', 'Not Started'
+
+    def _bvn_badge(s):
+        if s == 'bvn_verified':
+            return 'completed', 'Verified'
+        if s in ('bvn_otp_sent', 'bvn_entered'):
+            return 'in_progress', 'OTP Sent' if s == 'bvn_otp_sent' else 'In Progress'
+        if s == 'failed':
+            return 'failed', 'Failed'
+        return 'not_started', 'Not Started'
+
     # Calculate step status
+    nin_badge_status, nin_status_label = _nin_badge(vendor.identity_status)
+    bvn_badge_status, bvn_status_label = _bvn_badge(vendor.bank_status)
+
     steps = [
     {
         'number': 1,
-        'name': 'Identity (NIN)',
-        'status': vendor.identity_status,
+        'name': 'Verify Your Identity (nin)',
+        'title': 'Verify Your Identity (nin)',
+        'status': nin_badge_status,
+        'status_label': nin_status_label,
         'completed': vendor.identity_status == 'nin_verified',
         'url': 'vendors:nin_entry',
+        'verification_type': 'nin',
         'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                    </svg>'''
     },
     {
         'number': 2,
-        'name': 'Banking (BVN)',
-        'status': vendor.bank_status,
+        'name': 'Verify Your Banking (bvn)',
+        'title': 'Verify Your Banking (bvn)',
+        'status': bvn_badge_status,
+        'status_label': bvn_status_label,
         'completed': vendor.bank_status == 'bvn_verified',
         'url': 'vendors:bvn_entry',
+        'verification_type': 'bvn',
         'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                    </svg>'''
     },
     {
         'number': 3,
-        'name': 'Store Setup',
+        'name': 'Set Up Your Store',
+        'title': 'Set Up Your Store',
         'status': 'completed' if vendor.store_setup_completed else 'pending',
+        'status_label': 'Completed' if vendor.store_setup_completed else 'Pending',
         'completed': vendor.store_setup_completed,
         'url': 'vendors:store_setup',
         'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,8 +187,14 @@ def verification_center(request):
     },
     {
         'number': 4,
-        'name': 'Student Verification (Optional)',
-        'status': vendor.student_status,
+        'name': 'Verify Student Status (optional)',
+        'title': 'Verify Student Status (optional)',
+        'status': ('completed' if vendor.student_status == 'verified' else
+                  'pending' if vendor.student_status == 'pending' else
+                  'not_started'),
+        'status_label': ('Verified' if vendor.student_status == 'verified' else
+                        'Pending' if vendor.student_status == 'pending' else
+                        'Not Started'),
         'completed': vendor.student_status == 'verified',
         'url': 'vendors:student_verification',
         'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,8 +205,14 @@ def verification_center(request):
     },
     {
         'number': 5,
-        'name': 'Admin Review',
-        'status': vendor.verification_status,
+        'name': 'Pending Admin Review',
+        'title': 'Pending Admin Review',
+        'status': ('completed' if vendor.verification_status == 'approved' else
+                  'failed' if vendor.verification_status == 'rejected' else
+                  'pending'),
+        'status_label': ('Approved' if vendor.verification_status == 'approved' else
+                        'Rejected' if vendor.verification_status == 'rejected' else
+                        'Pending'),
         'completed': vendor.verification_status == 'approved',
         'url': 'vendors:pending_review',
         'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

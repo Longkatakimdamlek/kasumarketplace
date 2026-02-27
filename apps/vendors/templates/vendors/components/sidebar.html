@@ -1,3 +1,4 @@
+{% load static %}
 <!-- Mobile sidebar backdrop -->
 <div x-show="sidebarOpen" 
      @click="sidebarOpen = false"
@@ -15,12 +16,14 @@
     
     <!-- Logo -->
     <div class="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-        <a href="{% url 'vendors:dashboard' %}" class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-primary via-soft-blue to-pink-accent rounded-lg flex items-center justify-center shadow-lg">
-                <span class="text-white font-bold text-xl">K</span>
+        <a href="{% url 'vendors:dashboard' %}" class="flex items-center space-x-1">
+            <div class="w-14 h-14 flex items-center justify-center flex-shrink-0">
+                <img src="{% static 'images/kasu-logo.png' %}"
+                     alt="KASU Logo"
+                     class="w-full h-full object-contain">
             </div>
-            <span class="text-xl font-bold bg-gradient-to-r from-primary to-soft-blue bg-clip-text text-transparent">
-                Kasu
+            <span class="text-xl font-bold text-green-700">
+                Marketplace
             </span>
         </a>
         
