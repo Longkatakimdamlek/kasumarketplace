@@ -12,7 +12,7 @@ from apps.vendors import views as vendor_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', user_views.home, name='home'),
+    path('', include('apps.marketplace.urls', namespace='marketplace')),
     path('', include(('apps.users.urls', 'users'), namespace='users')),
     path('vendors/', include(('apps.vendors.urls', 'vendors'), namespace='vendors')),
     
@@ -28,6 +28,7 @@ urlpatterns = [
          name='product_detail_public'),
     
     path('accounts/', include('allauth.urls')),
+    
 ]
 
 if settings.DEBUG:

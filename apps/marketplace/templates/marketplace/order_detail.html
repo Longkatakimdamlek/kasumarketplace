@@ -1,0 +1,86 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}My Orders — KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-8">
+
+  <h1 class="font-display font-bold text-xl text-dark mb-5">My Orders</h1>
+
+  {% if not orders %}
+  <div class="flex flex-col items-center justify-center py-20 text-center">
+    <div class="w-20 h-20 rounded-3xl bg-surface flex items-center justify-center mb-5">
+      <svg class="w-10 h-10 text-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      </svg>
+    </div>
+    <p class="font-display font-bold text-lg text-dark mb-2">No orders yet</p>
+    <p class="text-sm text-muted mb-6">Your orders will appear here after you make a purchase</p>
+    <a href="{% url 'marketplace:product_list' %}" class="px-6 py-3 bg-primary text-white text-sm font-bold rounded-xl">Start Shopping</a>
+  </div>
+
+  {% else %}
+  <div class="space-y-3">
+    {% for order in orders %}
+    <div class="bg-card rounded-2xl shadow-card overflow-hidden">
+
+      <!-- Order header -->
+      <button onclick="toggleOrder('order-{{ order.pk }}')"
+              class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-surface/50 transition">
+        <div>
+          <p class="text-sm font-bold text-dark">{{ order.order_number }}</p>
+          <p class="text-xs text-muted mt-0.5">{{ order.created_at|date:"M d, Y" }} · {{ order.suborders.count }} store{{ order.suborders.count|pluralize }}</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-bold text-primary">₦{{ order.total|floatformat:0 }}</span>
+          <svg class="w-4 h-4 text-muted transition-transform" id="chevron-order-{{ order.pk }}"
+               fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+      </button>
+
+      <!-- SubOrders (collapsed by default) -->
+      <div id="order-{{ order.pk }}" class="hidden border-t border-border divide-y divide-border">
+        {% for sub in order.suborders.all %}
+        <a href="{% url 'marketplace:order_detail' order.order_number %}"
+           class="flex items-center gap-4 px-5 py-4 hover:bg-surface/50 transition">
+
+          <!-- Store initial -->
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shrink-0">
+            {{ sub.store.store_name|first|upper }}
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-dark truncate">{{ sub.store.store_name }}</p>
+            <p class="text-xs text-muted">{{ sub.items.count }} item{{ sub.items.count|pluralize }} · ₦{{ sub.subtotal|floatformat:0 }}</p>
+          </div>
+
+          <!-- Status badge -->
+          {% include 'marketplace/partials/status_badge.html' with status=sub.status %}
+
+          <svg class="w-4 h-4 text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </a>
+        {% endfor %}
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function toggleOrder(id) {
+    const el = document.getElementById(id);
+    const pk = id.replace('order-', '');
+    const chevron = document.getElementById('chevron-' + id);
+    el.classList.toggle('hidden');
+    if (chevron) chevron.classList.toggle('rotate-180');
+  }
+</script>
+{% endblock %}

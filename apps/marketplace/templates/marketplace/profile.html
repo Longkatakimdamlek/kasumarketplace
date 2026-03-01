@@ -1,0 +1,111 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}My Profile — KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-8">
+
+  <h1 class="font-display font-bold text-xl text-dark mb-5">My Profile</h1>
+
+  <!-- Avatar + name -->
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4 flex items-center gap-4">
+    <div class="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white font-display font-bold text-xl shrink-0">
+      {{ user.email|first|upper }}
+    </div>
+    <div class="flex-1 min-w-0">
+      <p class="font-display font-bold text-dark text-base">
+        {% if profile and profile.full_name %}{{ profile.full_name }}{% else %}{{ user.email }}{% endif %}
+      </p>
+      <p class="text-xs text-muted mt-0.5">{{ user.email }}</p>
+    </div>
+    <span class="text-xs bg-primary/10 text-primary font-semibold px-2.5 py-1 rounded-full">Buyer</span>
+  </div>
+
+  <!-- Profile form -->
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <p class="font-display font-bold text-base text-dark mb-4">Personal Details</p>
+
+    <form method="POST" id="profile-form" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update_profile" />
+
+      <div>
+        <label class="block text-xs font-semibold text-muted mb-1.5">Full Name</label>
+        <input type="text" name="full_name"
+               value="{% if profile %}{{ profile.full_name }}{% endif %}"
+               placeholder="Your full name"
+               class="w-full h-11 px-4 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-muted mb-1.5">Phone Number</label>
+        <input type="tel" name="phone"
+               value="{% if profile %}{{ profile.phone }}{% endif %}"
+               placeholder="080XXXXXXXX"
+               class="w-full h-11 px-4 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-muted mb-1.5">Default Delivery Address</label>
+        <textarea name="default_address" rows="2"
+                  placeholder="Street, landmark, area"
+                  class="w-full px-4 py-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition resize-none">{% if profile %}{{ profile.default_address }}{% endif %}</textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-muted mb-1.5">City</label>
+          <input type="text" name="city"
+                 value="{% if profile %}{{ profile.city }}{% endif %}"
+                 placeholder="City"
+                 class="w-full h-11 px-4 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-muted mb-1.5">State</label>
+          <input type="text" name="state"
+                 value="{% if profile %}{{ profile.state }}{% endif %}"
+                 placeholder="State"
+                 class="w-full h-11 px-4 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition" />
+        </div>
+      </div>
+
+      <button type="submit"
+              class="w-full py-3 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary-dark active:scale-95 transition-all">
+        Save Changes
+      </button>
+    </form>
+  </div>
+
+  <!-- Quick links -->
+  <div class="bg-card rounded-2xl shadow-card overflow-hidden mb-4">
+    <a href="{% url 'marketplace:order_list' %}" class="flex items-center gap-4 px-5 py-4 hover:bg-surface transition border-b border-border">
+      <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <span class="flex-1 text-sm font-semibold text-dark">My Orders</span>
+      <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+    </a>
+    <a href="{% url 'marketplace:cart' %}" class="flex items-center gap-4 px-5 py-4 hover:bg-surface transition">
+      <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+        </svg>
+      </div>
+      <span class="flex-1 text-sm font-semibold text-dark">My Cart</span>
+      <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Logout -->
+  <a href="{% url 'users:logout' %}"
+     class="block w-full py-3 border border-red-200 text-red-500 font-semibold text-sm text-center rounded-xl hover:bg-red-50 transition">
+    Sign Out
+  </a>
+
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% comment %}
+Status badge partial.
+Usage: {% include 'marketplace/partials/status_badge.html' with status=sub.status %}
+{% endcomment %}
+{% if status == 'PENDING_VENDOR' %}
+  <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">
+    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Pending
+  </span>
+{% elif status == 'ACCEPTED' %}
+  <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
+    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>Accepted
+  </span>
+{% elif status == 'CONFIRMED' %}
+  <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
+    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Confirmed
+  </span>
+{% elif status == 'REJECTED' %}
+  <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700">
+    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Rejected
+  </span>
+{% elif status == 'CANCELLED' %}
+  <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+    <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>Cancelled
+  </span>
+{% elif status == 'REFUNDED' %}
+  <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">
+    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>Refunded
+  </span>
+{% elif status == 'DISPUTED' %}
+  <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-100 text-rose-700">
+    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Disputed
+  </span>
+{% else %}
+  <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+    {{ status }}
+  </span>
+{% endif %}

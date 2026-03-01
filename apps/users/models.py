@@ -153,3 +153,70 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         """Check if user has admin role."""
         return self.role == 'admin'
     
+# ==========================================
+# BUYER PROFILE
+# ==========================================
+
+class BuyerProfile(models.Model):
+    """
+    Extended profile for buyers.
+    Stores delivery address and location for distance calculation.
+    Created automatically when a user with role='buyer' is created.
+    """
+    user = models.OneToOneField(
+        'CustomUser',
+        on_delete=models.CASCADE,
+        related_name='buyer_profile'
+    )
+
+    # Full name (can differ from account email name)
+    full_name = models.CharField(max_length=200, blank=True)
+
+    # Primary phone number
+    phone = models.CharField(max_length=20, blank=True)
+
+    # Default delivery address (pre-filled at checkout, editable)
+    default_address = models.TextField(
+        blank=True,
+        help_text="Default delivery address for orders"
+    )
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+
+    # Location coordinates (set via browser geolocation)
+    # Used for Haversine distance calculation to stores
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text="Buyer's latitude (from browser geolocation)"
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text="Buyer's longitude (from browser geolocation)"
+    )
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Buyer Profile"
+        verbose_name_plural = "Buyer Profiles"
+
+    def __str__(self):
+        return f"{self.user.email} - Buyer Profile"
+
+    @property
+    def has_location(self):
+        """Check if buyer has shared their location"""
+        return self.latitude is not None and self.longitude is not None
+
+    @property
+    def display_name(self):
+        """Return best available display name"""
+        return self.full_name or self.user.username or self.user.email.split('@')[0]

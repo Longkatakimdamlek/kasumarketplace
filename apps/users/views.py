@@ -246,7 +246,7 @@ class VendorSignupView(View):
 
 
 class LoginView(View):
-    """Handle user login."""
+    """Handle user login with support for next/redirect parameter."""
     
     template_name = 'users/login.html'
     form_class = LoginForm
@@ -254,20 +254,28 @@ class LoginView(View):
     def get(self, request):
         """Display login form."""
         if request.user.is_authenticated:
-            # Redirect based on user role
+            # Already authenticated; send user to their dashboard directly
             if request.user.is_vendor:
                 return redirect('vendors:dashboard')
             return redirect('users:buyer_dashboard')
         
         form = self.form_class()
-        return render(request, self.template_name, {'form': form})
+        # carry along any "next" parameter so we can honor it on POST
+        next_url = request.GET.get('next', '')
+        return render(request, self.template_name, {'form': form, 'next': next_url})
     
     def post(self, request):
-        """Process login form."""
+        """Process login form and redirect appropriately."""
         form = self.form_class(request=request, data=request.POST)
+        next_url = request.POST.get('next', '')
         
         if form.is_valid():
             user = form.get_user()
+
+            # merge any anonymous cart before the session is flushed by login
+            from apps.marketplace.services.cart_service import merge_session_cart_to_user
+            old_key = request.session.session_key
+            merge_session_cart_to_user(old_key, user)
             
             # Login user (explicit backend required when multiple auth backends are configured)
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
@@ -278,7 +286,13 @@ class LoginView(View):
             
             messages.success(request, f'Welcome back, {user.get_short_name()}!')
             
-            # Redirect based on user role
+            # if a next URL was provided and is safe, use it
+            if next_url:
+                from django.utils.http import url_has_allowed_host_and_scheme
+                if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                    return redirect(next_url)
+            
+            # Redirect based on user role if no next or not safe
             if user.is_vendor:
                 return redirect('vendors:dashboard')
             elif user.is_buyer:
@@ -286,7 +300,7 @@ class LoginView(View):
             else:
                 return redirect('home')
         
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {'form': form, 'next': next_url})
 
 
 class OTPVerificationView(View):
@@ -419,7 +433,8 @@ def logout_view(request):
         logout(request)
         messages.success(request, f'Goodbye, {user_name}! You have been logged out successfully.')
     
-    return redirect('home')
+    # redirect to marketplace listing since 'home' route removed
+    return redirect('marketplace:product_list')
 
 
 # ===========================
@@ -428,14 +443,19 @@ def logout_view(request):
 
 @login_required
 def buyer_dashboard(request):
-    """Buyer dashboard view."""
+    """Placeholder buyer dashboard.
+
+    This view no longer attempts to read the HTTP_REFERER because the
+    login flow now handles redirection via a ``next`` parameter. Returning
+    users here would previously bounce between ``/login/`` and this URL.
+    Instead always send buyers to the marketplace listing.
+    """
     if not request.user.is_buyer:
         messages.error(request, 'Access denied. Buyers only.')
-        return redirect('home')
-    
-    return render(request, 'users/buyer_dashboard.html', {
-        'user': request.user,
-    })
+        return redirect('marketplace:product_list')
+
+    # redirect buyers to the product listing (no more looping logic)
+    return redirect('marketplace:product_list')
 
 @login_required
 def vendor_dashboard(request):

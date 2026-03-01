@@ -284,6 +284,7 @@ class StoreSetupForm(forms.ModelForm):
             'store_name', 'tagline', 'description', 'main_category',
             'logo', 'banner', 'primary_color',
             'business_email', 'phone', 'whatsapp', 'address',
+            'latitude', 'longitude',
             'instagram', 'facebook', 'twitter',
             'shipping_policy', 'return_policy'
         ]
@@ -361,6 +362,11 @@ class StoreSetupForm(forms.ModelForm):
         # Accept custom kwarg from views (e.g. StoreSetupForm(..., vendor=vendor))
         self.vendor = kwargs.pop('vendor', None)
         super().__init__(*args, **kwargs)
+        # Hidden fields — filled by JS geolocation picker
+        self.fields['latitude'].widget = forms.HiddenInput()
+        self.fields['longitude'].widget = forms.HiddenInput()
+        self.fields['latitude'].required = False
+        self.fields['longitude'].required = False
         
         # ✅ SET QUERYSET HERE - when form is instantiated
         self.fields['main_category'].queryset = MainCategory.objects.filter(is_active=True).order_by('sort_order', 'name')

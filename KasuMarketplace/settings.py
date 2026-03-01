@@ -60,12 +60,15 @@ INSTALLED_APPS = [
     # local apps
     'apps.users.apps.UsersConfig',
     'apps.vendors.apps.VendorsConfig',
+    'apps.marketplace.apps.MarketplaceConfig',
 
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # capture session key before login rotates it so cart merging works
+    'apps.marketplace.middleware.PreserveSessionKeyMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -97,6 +100,8 @@ TEMPLATES = [
                 'apps.users.context_processors.user_role_context',
                 'apps.users.context_processors.site_settings',
                 'apps.users.context_processors.otp_settings',
+                # marketplace cart context
+                'apps.marketplace.context_processors.cart_context',
             ],
         },
     },
@@ -302,6 +307,11 @@ OTP_LENGTH = 6
 # For testing without actual reCAPTCHA validation
 RECAPTCHA_PUBLIC_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
 RECAPTCHA_PRIVATE_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'
+
+# Paystack
+PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', '')
+PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', '')
+PAYSTACK_BASE_URL = os.environ.get('PAYSTACK_BASE_URL', 'https://api.paystack.co')
 
 
 REST_FRAMEWORK = {

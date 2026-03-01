@@ -1,0 +1,194 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}Your Cart — KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-8">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-5">
+    <h1 class="font-display font-bold text-xl text-dark">
+      My Cart
+      {% if not is_empty %}
+      <span class="text-sm font-normal text-muted ml-1">({{ total_items }} item{{ total_items|pluralize }})</span>
+      {% endif %}
+    </h1>
+    {% if not is_empty %}
+    <button onclick="clearCartConfirm()" class="text-xs text-red-400 hover:text-red-600 font-medium transition">Clear all</button>
+    {% endif %}
+  </div>
+
+  {% if is_empty %}
+  <!-- Empty state -->
+  <div class="flex flex-col items-center justify-center py-20 text-center">
+    <div class="w-20 h-20 rounded-3xl bg-surface flex items-center justify-center mb-5">
+      <svg class="w-10 h-10 text-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+      </svg>
+    </div>
+    <p class="font-display font-bold text-lg text-dark mb-2">Your cart is empty</p>
+    <p class="text-sm text-muted mb-6">Browse products and add items to your cart</p>
+    <a href="{% url 'marketplace:product_list' %}" class="px-6 py-3 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition">
+      Start Shopping
+    </a>
+  </div>
+
+  {% else %}
+
+  <!-- Items grouped by store -->
+  <div class="space-y-4 mb-6" id="cart-items">
+    {% for store, items in items_by_store.items %}
+    <div class="bg-card rounded-2xl overflow-hidden shadow-card">
+
+      <!-- Store header -->
+      <div class="flex items-center gap-3 px-4 py-3 border-b border-border bg-surface/50">
+        <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+          {% if store.logo %}
+            <img src="{{ store.logo.url }}" class="w-8 h-8 rounded-lg object-cover" />
+          {% else %}
+            {{ store.store_name|first|upper }}
+          {% endif %}
+        </div>
+        <span class="text-sm font-semibold text-dark">{{ store.store_name }}</span>
+      </div>
+
+      <!-- Cart items -->
+      <div class="divide-y divide-border">
+        {% for item in items %}
+        <div id="cart-item-{{ item.product.pk }}" class="flex gap-3 p-4">
+
+          <!-- Product image -->
+          <div class="w-16 h-16 rounded-xl overflow-hidden bg-surface shrink-0">
+            {% with img=item.product.images.all|first %}
+            {% if img %}
+              <img src="{{ img.image.url }}" class="w-full h-full object-cover" />
+            {% else %}
+              <div class="w-full h-full flex items-center justify-center">
+                <svg class="w-6 h-6 text-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01"/>
+                </svg>
+              </div>
+            {% endif %}
+            {% endwith %}
+          </div>
+
+          <!-- Info -->
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-dark line-clamp-2 leading-snug mb-1">{{ item.product.title }}</p>
+            <p class="text-base font-bold text-primary">₦{{ item.unit_price|floatformat:0 }}</p>
+          </div>
+
+          <!-- Qty controls + remove -->
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <!-- Remove -->
+            <button onclick="removeItem({{ item.product.pk }})"
+                    class="text-muted hover:text-red-500 transition p-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+
+            <!-- Qty stepper -->
+            <div class="flex items-center border border-border rounded-lg overflow-hidden">
+              <button onclick="updateQty({{ item.product.pk }}, {{ item.quantity }} - 1)"
+                      class="w-7 h-7 flex items-center justify-center text-muted hover:text-dark active:bg-surface text-sm">−</button>
+              <span id="qty-{{ item.product.pk }}" class="w-7 text-center text-sm font-bold">{{ item.quantity }}</span>
+              <button onclick="updateQty({{ item.product.pk }}, {{ item.quantity }} + 1)"
+                      class="w-7 h-7 flex items-center justify-center text-muted hover:text-dark active:bg-surface text-sm">+</button>
+            </div>
+
+            <!-- Subtotal -->
+            <p id="sub-{{ item.product.pk }}" class="text-xs text-muted font-medium">
+              ₦{{ item.subtotal|floatformat:0 }}
+            </p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Order summary -->
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <p class="font-display font-bold text-base text-dark mb-4">Order Summary</p>
+    <div class="space-y-2 text-sm mb-4">
+      <div class="flex justify-between text-muted">
+        <span>Subtotal ({{ total_items }} item{{ total_items|pluralize }})</span>
+        <span>₦{{ grand_total|floatformat:0 }}</span>
+      </div>
+      <div class="flex justify-between text-muted">
+        <span>Delivery</span>
+        <span class="text-emerald-600 font-medium">Arranged with vendor</span>
+      </div>
+    </div>
+    <div class="border-t border-border pt-3 flex justify-between font-bold text-dark">
+      <span>Total</span>
+      <span class="text-primary text-lg">₦{{ grand_total|floatformat:0 }}</span>
+    </div>
+  </div>
+
+  <!-- Checkout button -->
+  <a href="{% url 'marketplace:checkout' %}"
+     class="block w-full py-4 bg-primary text-white text-center font-bold rounded-2xl hover:bg-primary-dark active:scale-95 transition-all shadow-card-hover">
+    Proceed to Checkout — ₦{{ grand_total|floatformat:0 }}
+  </a>
+
+  <!-- Continue shopping -->
+  <a href="{% url 'marketplace:product_list' %}"
+     class="block text-center text-sm text-muted mt-3 hover:text-primary transition">
+    Continue Shopping
+  </a>
+
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function updateQty(productId, newQty) {
+    if (newQty < 1) { removeItem(productId); return; }
+    fetch("{% url 'marketplace:cart_update' %}", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ product_id: productId, quantity: newQty })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        showToast(data.message, 'error');
+      }
+    });
+  }
+
+  function removeItem(productId) {
+    fetch("{% url 'marketplace:cart_remove' %}", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ product_id: productId })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        const el = document.getElementById('cart-item-' + productId);
+        if (el) el.remove();
+        updateCartBadge(data.cart_total_items);
+        if (data.cart_total_items === 0) location.reload();
+        showToast('Item removed', 'success');
+      }
+    });
+  }
+
+  function clearCartConfirm() {
+    if (confirm('Remove all items from your cart?')) {
+      // Remove all items one by one
+      document.querySelectorAll('[id^="cart-item-"]').forEach(el => {
+        const pid = el.id.replace('cart-item-', '');
+        removeItem(parseInt(pid));
+      });
+    }
+  }
+</script>
+{% endblock %}

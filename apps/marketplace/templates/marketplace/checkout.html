@@ -1,0 +1,178 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}Checkout — KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-8">
+
+  <h1 class="font-display font-bold text-xl text-dark mb-5">Checkout</h1>
+
+  <!-- Order items summary (collapsed) -->
+  <details class="bg-card rounded-2xl shadow-card mb-5 overflow-hidden">
+    <summary class="flex items-center justify-between px-5 py-4 cursor-pointer select-none">
+      <span class="text-sm font-semibold text-dark">
+        Order Summary
+        <span class="text-muted font-normal">({{ total_items }} item{{ total_items|pluralize }})</span>
+      </span>
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-primary">₦{{ grand_total|floatformat:0 }}</span>
+        <svg class="w-4 h-4 text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
+    </summary>
+    <div class="border-t border-border px-5 py-4 space-y-3">
+      {% for store, items in items_by_store.items %}
+      <div>
+        <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{{ store.store_name }}</p>
+        {% for item in items %}
+        <div class="flex items-center gap-3 py-1.5">
+          <div class="w-10 h-10 rounded-lg overflow-hidden bg-surface shrink-0">
+            {% with img=item.product.images.all|first %}
+            {% if img %}<img src="{{ img.image.url }}" class="w-full h-full object-cover" />
+            {% else %}<div class="w-full h-full bg-border"></div>{% endif %}
+            {% endwith %}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-dark truncate">{{ item.product.title }}</p>
+            <p class="text-xs text-muted">x{{ item.quantity }}</p>
+          </div>
+          <p class="text-sm font-bold text-dark shrink-0">₦{{ item.subtotal|floatformat:0 }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      <div class="border-t border-border pt-3 flex justify-between font-bold">
+        <span class="text-sm">Total</span>
+        <span class="text-primary">₦{{ grand_total|floatformat:0 }}</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- Delivery details form -->
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-5">
+    <p class="font-display font-bold text-base text-dark mb-4">Delivery Details</p>
+    <div class="space-y-4">
+
+      <div>
+        <label class="block text-xs font-semibold text-muted mb-1.5">Full Name</label>
+        <input type="text" id="field-name" value="{{ prefill_name }}" placeholder="Your full name"
+               class="w-full h-11 px-4 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-muted mb-1.5">Phone Number</label>
+        <input type="tel" id="field-phone" value="{{ prefill_phone }}" placeholder="080XXXXXXXX"
+               class="w-full h-11 px-4 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-muted mb-1.5">Delivery Address</label>
+        <textarea id="field-address" rows="2" placeholder="House/room number, street, landmark"
+                  class="w-full px-4 py-3 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition resize-none">{{ prefill_address }}</textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-muted mb-1.5">City</label>
+          <input type="text" id="field-city" value="{{ prefill_city }}" placeholder="City"
+                 class="w-full h-11 px-4 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-muted mb-1.5">State</label>
+          <input type="text" id="field-state" value="{{ prefill_state }}" placeholder="State"
+                 class="w-full h-11 px-4 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition" />
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Payment notice -->
+  <div class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-5">
+    <svg class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+    </svg>
+    <div>
+      <p class="text-sm font-semibold text-emerald-800">Secure Payment via Paystack</p>
+      <p class="text-xs text-emerald-600 mt-0.5">Your payment is protected. Funds are only released to vendor after you confirm delivery.</p>
+    </div>
+  </div>
+
+  <!-- Pay button -->
+  <button id="pay-btn" onclick="initiatePayment()"
+          class="w-full py-4 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark active:scale-95 transition-all shadow-card-hover flex items-center justify-center gap-2 text-sm">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+    </svg>
+    Pay Securely — ₦{{ grand_total|floatformat:0 }}
+  </button>
+
+  <p class="text-center text-xs text-muted mt-3">
+    By paying, you agree to our terms. Vendor contact is unlocked after payment.
+  </p>
+
+</div>
+
+<!-- Paystack inline JS -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function validateForm() {
+    const name = document.getElementById('field-name').value.trim();
+    const phone = document.getElementById('field-phone').value.trim();
+    const address = document.getElementById('field-address').value.trim();
+    if (!name) { showToast('Please enter your full name.', 'error'); return false; }
+    if (!phone) { showToast('Please enter your phone number.', 'error'); return false; }
+    if (!address) { showToast('Please enter your delivery address.', 'error'); return false; }
+    return true;
+  }
+
+  async function initiatePayment() {
+    if (!validateForm()) return;
+
+    const btn = document.getElementById('pay-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    // Save delivery info to session
+    await fetch("{% url 'marketplace:checkout_save_delivery' %}", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({
+        address: document.getElementById('field-address').value.trim(),
+        city: document.getElementById('field-city').value.trim(),
+        state: document.getElementById('field-state').value.trim(),
+        phone: document.getElementById('field-phone').value.trim(),
+      })
+    });
+
+    btn.textContent = 'Opening payment...';
+
+    // Open Paystack
+    const handler = PaystackPop.setup({
+      key: '{{ paystack_public_key }}',
+      email: '{{ user.email }}',
+      amount: {{ grand_total|floatformat:0 }} * 100,
+      currency: 'NGN',
+      ref: '{{ reference }}',
+      metadata: {
+        custom_fields: [
+          { display_name: 'Customer Name', variable_name: 'customer_name', value: document.getElementById('field-name').value.trim() }
+        ]
+      },
+      callback: function(response) {
+        // Payment complete — verify server-side
+        window.location.href = "{% url 'marketplace:payment_verify' %}?reference=" + response.reference;
+      },
+      onClose: function() {
+        btn.disabled = false;
+        btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Pay Securely — ₦{{ grand_total|floatformat:0 }}`;
+        showToast('Payment cancelled.', 'warning');
+      }
+    });
+    handler.openIframe();
+  }
+</script>
+{% endblock %}

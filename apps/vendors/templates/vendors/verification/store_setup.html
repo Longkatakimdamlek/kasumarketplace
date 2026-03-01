@@ -178,6 +178,72 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- ==========================================
+                 STORE LOCATION PICKER
+                 Paste after the phone/email grid closing </div> (line ~180)
+                 ========================================== -->
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    Store Location
+                    <span class="text-gray-400 font-normal">(helps buyers see distance)</span>
+                </label>
+
+                <!-- Hidden lat/lng inputs submitted with form -->
+                {{ form.latitude }}
+                {{ form.longitude }}
+
+                <!-- Address text field -->
+                <div class="relative mb-3">
+                    <input type="text"
+                           name="{{ form.address.html_name }}"
+                           id="{{ form.address.id_for_label }}"
+                           value="{{ form.address.value|default:'' }}"
+                           placeholder="e.g. Kasu Main Gate, Kafanchan Road, Kaduna"
+                           class="w-full px-4 py-3 pr-12 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                           id="id_address_display" />
+                    {% if form.address.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.address.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Use My Location button -->
+                <button type="button"
+                        id="locate-btn"
+                        onclick="captureLocation()"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 font-semibold text-sm rounded-lg hover:bg-blue-100 active:scale-95 transition-all">
+                    <svg id="locate-icon" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <svg id="locate-spinner" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                    </svg>
+                    <span id="locate-label">Use My Current Location</span>
+                </button>
+
+                <!-- Status message -->
+                <div id="location-status" class="hidden mt-3 flex items-start gap-2 text-sm rounded-lg px-3 py-2.5"></div>
+
+                <!-- Map preview (shown after location captured) -->
+                <div id="map-preview" class="hidden mt-3 rounded-xl overflow-hidden border-2 border-blue-200 h-40 bg-gray-100 relative">
+                    <div id="map-placeholder" class="w-full h-full flex items-center justify-center bg-blue-50">
+                        <div class="text-center">
+                            <svg class="w-8 h-8 text-blue-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                            </svg>
+                            <p id="map-coords" class="text-xs text-blue-600 font-medium"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="mt-2 text-xs text-gray-500">
+                    📍 Your exact coordinates are saved so buyers can see how far you are from them.
+                    Address is shown publicly; coordinates are used only for distance calculation.
+                </p>
+            </div>
+            <!-- END LOCATION PICKER -->
             
             <!-- Confirmation Checkbox -->
             <div class="mb-6 bg-gray-50 rounded-lg p-4">
@@ -241,5 +307,134 @@
     </div>
     
 </div>
+
+<script>
+// ==========================================
+// STORE LOCATION PICKER
+// ==========================================
+
+function captureLocation() {
+    if (!navigator.geolocation) {
+        showLocationStatus('error', 'Geolocation is not supported by your browser.');
+        return;
+    }
+
+    setLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const lat = position.coords.latitude.toFixed(6);
+            const lon = position.coords.longitude.toFixed(6);
+
+            // Fill hidden form fields
+            const latEl = document.getElementById('id_latitude');
+            const lonEl = document.getElementById('id_longitude');
+            if (latEl) latEl.value = lat;
+            if (lonEl) lonEl.value = lon;
+
+            // Show map preview with coords
+            const mp = document.getElementById('map-preview');
+            const coords = document.getElementById('map-coords');
+            if (mp) mp.classList.remove('hidden');
+            if (coords) coords.textContent = `${lat}, ${lon}`;
+
+            // Reverse geocode using OpenStreetMap Nominatim (free, no API key)
+            reverseGeocode(lat, lon);
+
+            showLocationStatus('success', `✅ Location captured: ${lat}, ${lon}`);
+            setLocating(false);
+        },
+        function(error) {
+            setLocating(false);
+            let msg = 'Could not get your location.';
+            if (error.code === 1) msg = 'Location access denied. Please allow location in your browser.';
+            if (error.code === 2) msg = 'Location unavailable. Try again or enter address manually.';
+            if (error.code === 3) msg = 'Location request timed out. Try again.';
+            showLocationStatus('error', msg);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+function reverseGeocode(lat, lon) {
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
+        headers: { 'Accept-Language': 'en' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data && data.display_name) {
+            const addressField = document.getElementById('id_address_display');
+            // Only fill if empty
+            if (addressField && !addressField.value.trim()) {
+                const parts = data.address || {};
+                const short = [
+                    parts.road || parts.pedestrian || parts.suburb,
+                    parts.city || parts.town || parts.village || parts.county,
+                    parts.state
+                ].filter(Boolean).join(', ');
+
+                addressField.value = short || data.display_name;
+            }
+        }
+    })
+    .catch(() => {
+        // Reverse geocode failed — no problem, user can type address
+    });
+}
+
+function setLocating(loading) {
+    const btn = document.getElementById('locate-btn');
+    const icon = document.getElementById('locate-icon');
+    const spinner = document.getElementById('locate-spinner');
+    const label = document.getElementById('locate-label');
+
+    if (loading) {
+        if (btn) btn.disabled = true;
+        if (icon) icon.classList.add('hidden');
+        if (spinner) spinner.classList.remove('hidden');
+        if (label) label.textContent = 'Getting location...';
+    } else {
+        if (btn) btn.disabled = false;
+        if (icon) icon.classList.remove('hidden');
+        if (spinner) spinner.classList.add('hidden');
+        if (label) label.textContent = 'Update Location';
+    }
+}
+
+function showLocationStatus(type, message) {
+    const el = document.getElementById('location-status');
+    if (!el) return;
+    el.classList.remove('hidden', 'bg-green-50', 'text-green-700', 'border', 'border-green-200',
+                        'bg-red-50', 'text-red-700', 'border-red-200');
+    if (type === 'success') {
+        el.className = 'mt-3 flex items-start gap-2 text-sm rounded-lg px-3 py-2.5 bg-green-50 text-green-700 border border-green-200';
+    } else {
+        el.className = 'mt-3 flex items-start gap-2 text-sm rounded-lg px-3 py-2.5 bg-red-50 text-red-700 border border-red-200';
+    }
+    el.textContent = message;
+    el.classList.remove('hidden');
+}
+
+// On page load — if lat/lng already saved, show map preview
+document.addEventListener('DOMContentLoaded', function() {
+    const latEl = document.getElementById('id_latitude');
+    const lonEl = document.getElementById('id_longitude');
+    const lat = latEl ? latEl.value : '';
+    const lon = lonEl ? lonEl.value : '';
+    if (lat && lon) {
+        const mp = document.getElementById('map-preview');
+        const coords = document.getElementById('map-coords');
+        if (mp) mp.classList.remove('hidden');
+        if (coords) coords.textContent = `${lat}, ${lon}`;
+        const label = document.getElementById('locate-label');
+        if (label) label.textContent = 'Update Location';
+        showLocationStatus('success', `✅ Location saved: ${lat}, ${lon}`);
+    }
+});
+</script>
 
 {% endblock %}

@@ -1,0 +1,322 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}KasuMarketplace{% endblock %}</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary:   '#047857',
+            'primary-dark': '#036a3d',
+            accent:    '#FF6B00',
+            surface:   '#F5F7FA',
+            card:      '#FFFFFF',
+            muted:     '#6B7280',
+            border:    '#E5E7EB',
+            dark:      '#111827',
+          },
+          fontFamily: {
+            sans: ['"DM Sans"', 'sans-serif'],
+            display: ['"Clash Display"', '"DM Sans"', 'sans-serif'],
+          },
+          borderRadius: {
+            'xl2': '1.25rem',
+            '3xl': '1.5rem',
+          },
+          boxShadow: {
+            'card': '0 2px 16px 0 rgba(0,0,0,0.07)',
+            'card-hover': '0 8px 32px 0 rgba(4,120,87,0.13)',
+            'nav': '0 -2px 20px 0 rgba(0,0,0,0.08)',
+          },
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Heroicons (SVG inline — no CDN needed) -->
+
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'DM Sans', sans-serif; background: #F5F7FA; }
+
+    /* Smooth scrolling */
+    html { scroll-behavior: smooth; }
+
+    /* Bottom nav safe area */
+    .bottom-nav-safe { padding-bottom: env(safe-area-inset-bottom); }
+
+    /* Hide scrollbar but keep scroll */
+    .scroll-hidden::-webkit-scrollbar { display: none; }
+    .scroll-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Cart badge pulse */
+    @keyframes badge-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+    .badge-pulse { animation: badge-pulse 0.3s ease; }
+
+    /* Drawer transition */
+    .drawer { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+    .drawer-closed { transform: translateX(-100%); }
+    .drawer-open { transform: translateX(0); }
+
+    /* Skeleton shimmer */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    /* Toast */
+    #toast {
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      transform: translateY(100px);
+      opacity: 0;
+    }
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Page fade-in */
+    .page-enter {
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="bg-surface text-dark min-h-screen">
+
+  <!-- ===================== DESKTOP TOPBAR ===================== -->
+  <header class="hidden md:flex sticky top-0 z-40 bg-white border-b border-border shadow-sm">
+    <div class="max-w-7xl mx-auto w-full px-6 h-16 flex items-center gap-6">
+
+      <!-- Logo -->
+      <a href="{% url 'marketplace:product_list' %}" class="flex items-center gap-3 shrink-0">
+        <div class="w-14 h-14 flex items-center justify-center">
+          <img src="{% static 'images/kasu-logo.png' %}" alt="KASU Logo" class="w-full h-full object-contain">
+        </div>
+        <span class="font-display font-bold text-xl text-dark">Kasu<span class="text-primary">Marketplace</span></span>
+      </a>
+
+      <!-- Search bar -->
+      <form method="GET" action="{% url 'marketplace:product_list' %}" class="flex-1 max-w-xl">
+        <div class="relative">
+          <input
+            type="text"
+            name="q"
+            value="{{ request.GET.q }}"
+            placeholder="Search products, stores..."
+            class="w-full h-10 pl-10 pr-4 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+          />
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+          </svg>
+        </div>
+      </form>
+
+      <!-- Nav links -->
+      <nav class="flex items-center gap-1">
+        <a href="{% url 'marketplace:product_list' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">Home</a>
+        <button onclick="toggleDrawer()" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">Categories</button>
+      </nav>
+
+      <!-- Cart + Profile -->
+      <div class="flex items-center gap-3 ml-auto">
+        <a href="{% url 'marketplace:cart' %}" class="relative p-2 rounded-xl hover:bg-surface transition">
+          <svg class="w-6 h-6 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+          </svg>
+          {% if cart_count and cart_count > 0 %}
+          <span class="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold">{{ cart_count }}</span>
+          {% endif %}
+        </a>
+
+        {% if user.is_authenticated %}
+        <a href="{% url 'marketplace:profile' %}" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
+          {{ user.email|first|upper }}
+        </a>
+        {% else %}
+        <a href="{% url 'users:login' %}?next={{ request.get_full_path }}" class="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-dark transition">Sign in</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== MOBILE TOPBAR ===================== -->
+  <header class="md:hidden sticky top-0 z-40 bg-white border-b border-border">
+    <div class="px-4 h-14 flex items-center gap-3">
+
+      <!-- Logo / Scan -->
+      <div class="w-10 h-10 flex items-center justify-center shrink-0">
+        <img src="{% static 'images/kasu-logo.png' %}" alt="KASU Logo" class="w-full h-full object-contain">
+      </div>
+
+      <!-- Search -->
+      <form method="GET" action="{% url 'marketplace:product_list' %}" class="flex-1">
+        <div class="relative">
+          <input
+            type="text"
+            name="q"
+            value="{{ request.GET.q }}"
+            placeholder="Search products..."
+            class="w-full h-9 pl-9 pr-3 rounded-xl bg-surface border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          />
+          <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+          </svg>
+        </div>
+      </form>
+
+      <!-- Cart icon -->
+      <a href="{% url 'marketplace:cart' %}" class="relative p-1.5 shrink-0">
+        <svg class="w-6 h-6 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+        </svg>
+        {% if cart_count and cart_count > 0 %}
+        <span id="mobile-cart-badge" class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ cart_count }}</span>
+        {% endif %}
+      </a>
+    </div>
+  </header>
+
+  <!-- ===================== CATEGORY DRAWER ===================== -->
+  {% include 'marketplace/partials/category_drawer.html' %}
+
+  <!-- ===================== MESSAGES / TOAST ===================== -->
+  {% if messages %}
+  <div id="django-messages" class="hidden">
+    {% for message in messages %}
+    <span data-level="{{ message.tags }}" data-text="{{ message }}"></span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Toast UI -->
+  <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-medium shadow-xl max-w-xs text-center pointer-events-none">
+  </div>
+
+  <!-- ===================== MAIN CONTENT ===================== -->
+  <main class="page-enter pb-24 md:pb-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ===================== BOTTOM NAV (MOBILE) ===================== -->
+  {% include 'marketplace/partials/bottom_nav.html' %}
+
+  <!-- ===================== GLOBAL JS ===================== -->
+  <script>
+    // ---- CSRF helper ----
+    function getCookie(name) {
+      let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+      return v ? v[2] : null;
+    }
+    const CSRF = getCookie('csrftoken');
+
+    // ---- Toast ----
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-medium shadow-xl max-w-xs text-center pointer-events-none show`;
+      if (type === 'error') {
+        toast.classList.add('bg-red-500');
+        toast.classList.remove('bg-dark');
+      } else if (type === 'warning') {
+        toast.classList.add('bg-accent');
+        toast.classList.remove('bg-dark');
+      } else {
+        toast.classList.add('bg-dark');
+        toast.classList.remove('bg-red-500', 'bg-accent');
+      }
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // ---- Auto-show Django messages ----
+    document.addEventListener('DOMContentLoaded', () => {
+      const msgs = document.getElementById('django-messages');
+      if (msgs) {
+        msgs.querySelectorAll('span').forEach(el => {
+          const level = el.dataset.level;
+          const text = el.dataset.text;
+          const type = level.includes('error') ? 'error' : level.includes('warning') ? 'warning' : 'success';
+          setTimeout(() => showToast(text, type), 300);
+        });
+      }
+    });
+
+    // ---- Category Drawer ----
+    function toggleDrawer() {
+      const drawer = document.getElementById('category-drawer');
+      const overlay = document.getElementById('drawer-overlay');
+      const isOpen = !drawer.classList.contains('drawer-closed');
+      if (isOpen) {
+        drawer.classList.add('drawer-closed');
+        drawer.classList.remove('drawer-open');
+        overlay.classList.add('hidden');
+        document.body.style.overflow = '';
+      } else {
+        drawer.classList.remove('drawer-closed');
+        drawer.classList.add('drawer-open');
+        overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    // ---- Update cart badge ----
+    function updateCartBadge(count) {
+      const badges = document.querySelectorAll('#mobile-cart-badge, #desktop-cart-badge');
+      badges.forEach(b => {
+        b.textContent = count;
+        b.classList.add('badge-pulse');
+        if (count > 0) b.classList.remove('hidden');
+        else b.classList.add('hidden');
+        setTimeout(() => b.classList.remove('badge-pulse'), 300);
+      });
+    }
+
+    // ---- Geolocation: send to backend ----
+    function requestLocation() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(pos => {
+        fetch("{% url 'marketplace:update_buyer_location' %}", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body: JSON.stringify({ lat: pos.coords.latitude, lon: pos.coords.longitude })
+        });
+      });
+    }
+    // Request on first visit
+    if (!sessionStorage.getItem('loc_requested')) {
+      sessionStorage.setItem('loc_requested', '1');
+      setTimeout(requestLocation, 2000);
+    }
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

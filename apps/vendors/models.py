@@ -574,6 +574,22 @@ class Store(models.Model):
     primary_color = models.CharField(max_length=7, blank=True, help_text="Hex color code (e.g., #FF5733)")
     
     # Contact Info (Public)
+    # Location Coordinates (for buyer distance calculation)
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text="Store latitude (set by vendor in store settings)"
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text="Store longitude (set by vendor in store settings)"
+    )
+    
     business_email = models.EmailField(blank=True)
     phone = models.CharField(max_length=20, blank=True)
     whatsapp = models.CharField(max_length=20, blank=True, help_text="WhatsApp number for quick contact")

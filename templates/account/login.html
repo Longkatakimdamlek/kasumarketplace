@@ -18,15 +18,13 @@
     <!-- Login Form -->
     <form method="post">
         {% csrf_token %}
-        {% if next %}
-            <input type="hidden" name="next" value="{{ next }}" />
-        {% endif %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}" />{% endif %}
         
-        <!-- Email Field -->
-        <label for="{{ form.email.id_for_label }}">Email address</label>
-        {{ form.email }}
-        {% if form.email.errors %}
-            <div class="error-message">{{ form.email.errors.0 }}</div>
+        <!-- Login Field (email or username) -->
+        <label for="{{ form.login.id_for_label }}">Email or Username</label>
+        {{ form.login }}
+        {% if form.login.errors %}
+            <div class="error-message">{{ form.login.errors.0 }}</div>
         {% endif %}
         
         <!-- Password Field -->
@@ -44,8 +42,8 @@
         <!-- Remember Me & Forgot Password -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <div class="form-check">
-                {{ form.remember_me }}
-                <label for="{{ form.remember_me.id_for_label }}" style="font-size: 14px;">Remember me</label>
+                {{ form.remember }}
+                <label for="{{ form.remember.id_for_label }}" style="font-size: 14px;">Remember me</label>
             </div>
             <div class="forgot-link" style="margin: 0;">
                 <a href="{% url 'users:password_reset' %}">Forgot password?</a>

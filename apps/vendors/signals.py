@@ -188,6 +188,45 @@ def handle_product_publish(sender, instance, created, **kwargs):
         )
 
 
+@receiver(post_save, sender=Product)
+def notify_vendor_stock_status(sender, instance, created, **kwargs):
+    """
+    Notify vendor when product stock is low or out of stock.
+    Fires whenever product is saved (including after inventory reduction).
+    """
+    if not instance.track_inventory or instance.status != 'published':
+        return
+    
+    # Check if stock is out
+    if instance.stock_quantity == 0:
+        # Create out of stock notification (avoid duplicates with get_or_create methodology)
+        Notification.objects.get_or_create(
+            vendor=instance.vendor,
+            link=f'/vendors/products/{instance.slug}/',
+            notification_type='inventory',
+            title='Out of Stock! ⚠️',
+            defaults={
+                'message': f'Your product "{instance.title}" is now out of stock. Restock it to continue selling.',
+                'is_read': False,
+            }
+        )
+        print(f"⚠️ Out of stock notification: {instance.title}")
+    
+    # Check if stock is low (below threshold)
+    elif instance.stock_quantity <= instance.low_stock_threshold and instance.stock_quantity > 0:
+        Notification.objects.get_or_create(
+            vendor=instance.vendor,
+            link=f'/vendors/products/{instance.slug}/',
+            notification_type='inventory',
+            title='Low Stock Alert 📉',
+            defaults={
+                'message': f'Your product "{instance.title}" has low stock ({instance.stock_quantity} units left). Consider restocking.',
+                'is_read': False,
+            }
+        )
+        print(f"📉 Low stock notification: {instance.title}")
+
+
 # ==========================================
 # ORDER SIGNALS
 # ==========================================

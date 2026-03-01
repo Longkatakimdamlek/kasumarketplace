@@ -1,0 +1,47 @@
+<!-- Mobile Bottom Navigation — 4 items -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border shadow-nav bottom-nav-safe">
+  <div class="grid grid-cols-4 h-16">
+
+    <!-- Home -->
+    <a href="{% url 'marketplace:product_list' %}"
+       class="flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'product_list' %}text-primary{% else %}text-muted{% endif %} transition">
+      <svg class="w-6 h-6" fill="{% if request.resolver_match.url_name == 'product_list' %}currentColor{% else %}none{% endif %}" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/>
+      </svg>
+      <span class="text-xs font-medium">Home</span>
+    </a>
+
+    <!-- Categories -->
+    <button onclick="toggleDrawer()"
+       class="flex flex-col items-center justify-center gap-1 text-muted transition active:text-primary">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+      <span class="text-xs font-medium">Categories</span>
+    </button>
+
+    <!-- Cart -->
+    <a href="{% url 'marketplace:cart' %}"
+       class="flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'cart' %}text-primary{% else %}text-muted{% endif %} transition relative">
+      <div class="relative">
+        <svg class="w-6 h-6" fill="{% if request.resolver_match.url_name == 'cart' %}currentColor{% else %}none{% endif %}" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+        </svg>
+        {% if cart_count and cart_count > 0 %}
+        <span id="mobile-cart-badge" class="absolute -top-2 -right-2 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ cart_count }}</span>
+        {% endif %}
+      </div>
+      <span class="text-xs font-medium">Cart</span>
+    </a>
+
+    <!-- Profile -->
+    <a href="{% if user.is_authenticated %}{% url 'marketplace:profile' %}{% else %}{% url 'users:login' %}?next={{ request.get_full_path }}{% endif %}"
+       class="flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'profile' %}text-primary{% else %}text-muted{% endif %} transition">
+      <svg class="w-6 h-6" fill="{% if request.resolver_match.url_name == 'profile' %}currentColor{% else %}none{% endif %}" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zm-4 7a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"/>
+      </svg>
+      <span class="text-xs font-medium">Profile</span>
+    </a>
+
+  </div>
+</nav>

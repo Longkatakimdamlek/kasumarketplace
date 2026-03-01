@@ -29,11 +29,11 @@
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     {% include 'vendors/components/stats_card.html' with title="Total Products" value=total_products change="+5" change_type="increase" icon="package" color="purple" url="/vendors/products/" %}
     
-    {% include 'vendors/components/stats_card.html' with title="Pending Orders" value=pending_orders icon="shopping" color="blue" url="/vendors/orders/?status=pending" %}
+    {% include 'vendors/components/stats_card.html' with title="Total Orders" value=orders_total icon="shopping" color="orange" url="/vendors/orders/" %}
+    
+    {% include 'vendors/components/stats_card.html' with title="Pending Orders" value=orders_pending icon="clock" color="blue" url="/vendors/orders/?status=pending" %}
     
     {% include 'vendors/components/stats_card.html' with title="Total Sales" value="₦"|add:total_sales|default:"₦0" change="+12.5%" change_type="increase" icon="chart" color="green" url="/vendors/wallet/" %}
-    
-    {% include 'vendors/components/stats_card.html' with title="Wallet Balance" value="₦"|add:wallet_balance|floatformat:0|default:"₦0" icon="wallet" color="pink" url="/vendors/wallet/" %}
 </div>
 
 <!-- Main Content Grid -->
@@ -270,6 +270,31 @@
         
     </div>
     
+</div>
+
+<!-- Orders Breakdown -->
+<div class="mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <h3 class="text-sm font-semibold text-gray-700 mb-3">Orders Breakdown</h3>
+        <div class="flex items-center space-x-6">
+            <div class="text-center">
+                <p class="text-lg font-bold text-gray-900">{{ orders_total|default:0 }}</p>
+                <p class="text-xs text-gray-500">Total orders</p>
+            </div>
+            <div class="text-center">
+                <p class="text-lg font-bold text-blue-600">{{ orders_pending|default:0 }}</p>
+                <p class="text-xs text-gray-500">Pending</p>
+            </div>
+            <div class="text-center">
+                <p class="text-lg font-bold text-green-600">{{ orders_confirmed|default:0 }}</p>
+                <p class="text-xs text-gray-500">Accepted</p>
+            </div>
+            <div class="text-center">
+                <p class="text-lg font-bold text-red-600">{{ orders_cancelled|default:0 }}</p>
+                <p class="text-xs text-gray-500">Rejected</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% endblock %}

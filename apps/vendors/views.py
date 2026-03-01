@@ -10,6 +10,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, HttpResponse
 from django.http import Http404
 from django.db.models import Sum, Count, Q
+from apps.marketplace.services.distance_service import get_distance_to_store
 from django.utils import timezone
 from django.db.models import F
 from django.core.paginator import Paginator
@@ -78,7 +79,10 @@ def dashboard(request):
     context = {
         'vendor': vendor,
         'total_products': vendor.products.filter(status='published').count(),
-        'pending_orders': vendor.orders.filter(status__in=['pending', 'confirmed']).count(),
+        'orders_total': vendor.orders.all().count(),
+        'orders_pending': vendor.orders.filter(status='pending').count(),
+        'orders_confirmed': vendor.orders.filter(status='confirmed').count(),
+        'orders_cancelled': vendor.orders.filter(status__in=['cancelled', 'refunded']).count(),
         'total_sales': vendor.store.total_sales if hasattr(vendor, 'store') else 0,
         'wallet_balance': vendor.wallet.balance if hasattr(vendor, 'wallet') else 0,
         
@@ -1090,13 +1094,17 @@ def product_detail_public(request, store_slug, product_slug):
     # Build specifications list with proper labels
     specifications = []
     for attr in attributes:
-        value = product.attributes.get(attr.name)
+        # ✅ FIX: Look up by ID (str), not by name
+        value = product.attributes.get(str(attr.id))
         if value:  # Only show if product has this attribute filled
             specifications.append({
                 'label': attr.name.replace('_', ' ').title(),
                 'value': value,
                 'field_type': attr.field_type
             })
+    buyer_lat = request.session.get('buyer_lat')
+    buyer_lon = request.session.get('buyer_lon')
+
     context = {
         'product': product,
         'store': store,
@@ -1104,8 +1112,8 @@ def product_detail_public(request, store_slug, product_slug):
         'specifications': specifications,
         'is_owner': is_owner,
         'is_preview': not store.is_published and is_owner,
-        # Simple stock status for buyers
         'in_stock': product.is_in_stock,
+        'distance': get_distance_to_store(buyer_lat, buyer_lon, store),
     }
     
     return render(request, 'products/product_detail.html', context)
@@ -1165,43 +1173,38 @@ def ajax_get_attributes(request):
 # ORDER VIEWS
 # ==========================================
 
-@vendor_required
+@vendor_verified_required
 def orders_list(request):
-    """
-    List all vendor orders with filters
-    """
+    """List all vendor SubOrders from the marketplace."""
     vendor = request.user.vendorprofile
-    
-    # Get filter parameters
-    status = request.GET.get('status', '')
-    
-    # Base queryset
-    orders = vendor.orders.all()
-    
-    # Apply filters
-    if status:
-        orders = orders.filter(status=status)
-    
-    # Order by newest first
-    orders = orders.order_by('-created_at')
-    
-    # Pagination
-    paginator = Paginator(orders, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # Stats
-    context = {
-        'orders': page_obj,
-        'total_orders': vendor.orders.count(),
-        'pending_count': vendor.orders.filter(status__in=['pending', 'confirmed']).count(),
-        'completed_count': vendor.orders.filter(status='delivered').count(),
-        'current_status': status
-    }
+
+    try:
+        store = vendor.store
+    except Exception:
+        return render(request, 'vendors/orders/list.html', {
+            'suborders': [], 'pending_count': 0,
+            'status_filter': '', 'hide_verification_badge': True,
+        })
+
+    from apps.marketplace.models import SubOrder
+    status_filter = request.GET.get('status', '')
+
+    suborders = SubOrder.objects.filter(
+        store=store
+    ).select_related('main_order__buyer').prefetch_related('items').order_by('-created_at')
+
+    if status_filter:
+        suborders = suborders.filter(status=status_filter)
+
+    for sub in suborders:
+        sub.check_and_apply_timeout()
+
+    pending_count = SubOrder.objects.filter(store=store, status='PENDING_VENDOR').count()
 
     return render(request, 'vendors/orders/list.html', {
-        'page_obj': page_obj,
-        'orders': page_obj,
+        'suborders': suborders,
+        'status_filter': status_filter,
+        'pending_count': pending_count,
         'hide_verification_badge': True,
     })
 
@@ -1904,13 +1907,22 @@ def store_public(request, slug):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    from apps.marketplace.services.distance_service import get_distance_to_store
+    buyer_lat = request.session.get('buyer_lat')
+    buyer_lon = request.session.get('buyer_lon')
+
     context = {
         'store': store,
         'vendor': store.vendor,
         'products': page_obj,
         'total_products': products.count(),
+        'total_orders': store.vendor.orders.all().count(),
+        'orders_pending': store.vendor.orders.filter(status='pending').count(),
+        'orders_confirmed': store.vendor.orders.filter(status='confirmed').count(),
+        'orders_cancelled': store.vendor.orders.filter(status__in=['cancelled', 'refunded']).count(),
         'is_owner': is_owner,
-        'is_preview': not store.is_published and is_owner,  # Show preview banner for owners
+        'is_preview': not store.is_published and is_owner,
+        'distance': get_distance_to_store(buyer_lat, buyer_lon, store),
     }
     
     return render(request, 'vendors/store/public_storefront.html', context)
@@ -2041,3 +2053,152 @@ def get_category_attributes_ajax(request):
     
     except SubCategory.DoesNotExist:
         return JsonResponse({'error': 'Subcategory not found'}, status=404)
+    
+
+
+"""
+Vendor Order Management Views
+Add these to apps/vendors/views.py
+
+Also add to apps/vendors/urls.py:
+    path('orders/', views.vendor_order_list, name='vendor_order_list'),
+    path('orders/<int:suborder_id>/', views.vendor_order_detail, name='vendor_order_detail'),
+    path('orders/<int:suborder_id>/accept/', views.vendor_order_accept, name='vendor_order_accept'),
+    path('orders/<int:suborder_id>/reject/', views.vendor_order_reject, name='vendor_order_reject'),
+"""
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+from apps.marketplace.models import SubOrder
+
+
+@vendor_verified_required
+def vendor_order_list(request):
+    """
+    Vendor sees all SubOrders for their store.
+    Filtered by status. Lazy timeout check on each.
+    """
+    vendor = request.user.vendorprofile
+    store = vendor.store
+
+    status_filter = request.GET.get('status', '')
+
+    suborders = SubOrder.objects.filter(
+        store=store
+    ).select_related(
+        'main_order__buyer'
+    ).prefetch_related('items').order_by('-created_at')
+
+    if status_filter:
+        suborders = suborders.filter(status=status_filter)
+
+    # Lazy timeout check
+    for sub in suborders:
+        sub.check_and_apply_timeout()
+
+    # Counts for tabs
+    pending_count = SubOrder.objects.filter(store=store, status='PENDING_VENDOR').count()
+    accepted_count = SubOrder.objects.filter(store=store, status='ACCEPTED').count()
+
+    context = {
+        'suborders': suborders,
+        'status_filter': status_filter,
+        'pending_count': pending_count,
+        'accepted_count': accepted_count,
+        'status_choices': SubOrder.STATUS_CHOICES,
+        'hide_verification_badge': True,
+    }
+    return render(request, 'vendors/orders/list.html', context)
+
+
+@vendor_verified_required
+def vendor_order_detail(request, suborder_id):
+    """
+    Full detail of a single SubOrder for the vendor.
+    """
+    vendor = request.user.vendorprofile
+    sub_order = get_object_or_404(
+        SubOrder.objects.select_related(
+            'main_order__buyer',
+            'store',
+        ).prefetch_related('items__product'),
+        pk=suborder_id,
+        store=vendor.store,
+    )
+
+    # Lazy timeout check
+    sub_order.check_and_apply_timeout()
+
+    context = {
+        'sub_order': sub_order,
+        'main_order': sub_order.main_order,
+        'hide_verification_badge': True,
+    }
+    return render(request, 'vendors/orders/detail.html', context)
+
+
+@vendor_verified_required
+@require_POST
+def vendor_order_accept(request, suborder_id):
+    """
+    Vendor accepts a SubOrder.
+    - Status → ACCEPTED
+    - Buyer email sent
+    - Buyer can now see vendor contact
+    """
+    vendor = request.user.vendorprofile
+    sub_order = get_object_or_404(
+        SubOrder,
+        pk=suborder_id,
+        store=vendor.store,
+        status='PENDING_VENDOR',
+    )
+
+    sub_order.status = 'ACCEPTED'
+    sub_order.save(update_fields=['status', 'updated_at'])
+
+    # Send buyer notification
+    try:
+        from apps.marketplace.services.email_service import send_order_accepted
+        send_order_accepted(sub_order)
+    except Exception:
+        pass  # Email failure must not block order flow
+
+    messages.success(request, f'Order #{sub_order.pk} accepted. Buyer has been notified.')
+    return redirect('vendors:vendor_order_detail', suborder_id=sub_order.pk)
+
+
+@vendor_verified_required
+@require_POST
+def vendor_order_reject(request, suborder_id):
+    """
+    Vendor rejects a SubOrder.
+    - Status → REJECTED
+    - Refund triggered automatically via signal
+    - Buyer email sent
+    """
+    vendor = request.user.vendorprofile
+    sub_order = get_object_or_404(
+        SubOrder,
+        pk=suborder_id,
+        store=vendor.store,
+        status='PENDING_VENDOR',
+    )
+
+    rejection_reason = request.POST.get('rejection_reason', '').strip()
+
+    sub_order.status = 'REJECTED'
+    sub_order.rejection_reason = rejection_reason
+    sub_order.save(update_fields=['status', 'rejection_reason', 'updated_at'])
+
+    # Send buyer notification (refund triggered by signal)
+    try:
+        from apps.marketplace.services.email_service import send_order_rejected
+        send_order_rejected(sub_order)
+    except Exception:
+        pass
+
+    messages.success(request, f'Order #{sub_order.pk} rejected. Buyer will be refunded.')
+    return redirect('vendors:vendor_order_list')

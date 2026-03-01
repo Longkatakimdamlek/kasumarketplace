@@ -40,8 +40,9 @@ urlpatterns = [
     # ORDERS
     # ==========================================
     path('orders/', views.orders_list, name='orders_list'),
-    path('orders/<uuid:order_id>/', views.order_detail, name='order_detail'),
-    path('orders/<uuid:order_id>/update-status/', views.order_status_update_ajax, name='order_status_update_ajax'),
+    path('orders/<int:suborder_id>/', views.vendor_order_detail, name='vendor_order_detail'),
+    path('orders/<int:suborder_id>/accept/', views.vendor_order_accept, name='vendor_order_accept'),
+    path('orders/<int:suborder_id>/reject/', views.vendor_order_reject, name='vendor_order_reject'),
     
     # ==========================================
     # WALLET
