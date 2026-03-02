@@ -552,6 +552,7 @@ def order_detail(request, order_number):
 
     context = {
         'main_order': main_order,
+        'order': main_order,  # ← add this line
         'suborders': main_order.suborders.all(),
     }
     return render(request, 'marketplace/order_detail.html', context)

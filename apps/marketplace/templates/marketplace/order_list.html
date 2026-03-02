@@ -173,6 +173,12 @@
     {% endif %}
 
   </div>
+  <div class="px-4 pb-4">
+    <a href="{% url 'marketplace:order_detail' sub.main_order.order_number %}"
+       class="block w-full text-center py-2.5 px-4 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-700 transition">
+      View Order Details →
+    </a>
+  </div>
   {% endfor %}
 
 </div>

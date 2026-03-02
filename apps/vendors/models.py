@@ -5,6 +5,7 @@ Complete database schema for vendor verification, store management, products, or
 
 from django.db import models
 from django.contrib.auth import get_user_model
+from cloudinary.models import CloudinaryField
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.utils.text import slugify
 from django.urls import reverse
@@ -93,14 +94,14 @@ class VendorProfile(models.Model):
         validators=[RegexValidator(r'^\d{11}$', 'BVN must be 11 digits')],
         verbose_name="BVN"
     )
-    photo_from_nin = models.ImageField(upload_to='vendors/nin_photos/', blank=True, null=True)
+    photo_from_nin = CloudinaryField('photo_from_nin', blank=True, null=True)
     
     # Student Information (Optional)
     matric_number = models.CharField(max_length=50, blank=True)
     department = models.CharField(max_length=100, blank=True)
     level = models.CharField(max_length=20, blank=True)
-    student_id_image = models.ImageField(upload_to='vendors/student_ids/', blank=True, null=True)
-    selfie = models.ImageField(upload_to='vendors/selfies/', blank=True, null=True)
+    student_id_image = CloudinaryField('student_id_image', blank=True, null=True)
+    selfie = CloudinaryField('selfie', blank=True, null=True)
     
     # Verification Status
     verification_status = models.CharField(
@@ -569,8 +570,8 @@ class Store(models.Model):
     main_category_locked_at = models.DateTimeField(null=True, blank=True)
     
     # Branding
-    logo = models.ImageField(upload_to='stores/logos/', blank=True, null=True, help_text="Recommended: 400x400px, max 5MB")
-    banner = models.ImageField(upload_to='stores/banners/', blank=True, null=True, help_text="Recommended: 1200x350px, max 8MB")
+    logo = CloudinaryField('logo', blank=True, null=True, help_text="Recommended: 400x400px, max 5MB")
+    banner = CloudinaryField('banner', blank=True, null=True, help_text="Recommended: 1200x350px, max 8MB")
     primary_color = models.CharField(max_length=7, blank=True, help_text="Hex color code (e.g., #FF5733)")
     
     # Contact Info (Public)
@@ -1010,7 +1011,7 @@ class ProductImage(models.Model):
     Multiple images per product
     """
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='products/')
+    image = CloudinaryField('image')
     alt_text = models.CharField(max_length=200, blank=True)
     is_primary = models.BooleanField(default=False)
     sort_order = models.PositiveIntegerField(default=0)

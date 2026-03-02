@@ -11,30 +11,47 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-import os
-
 import dj_database_url
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+import os
 from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=BASE_DIR / ".env", override=True)
 
-# Load environment variables from .env (if present).
-# In production, you should still provide real env vars via your host/container.
-load_dotenv(dotenv_path=BASE_DIR / ".env", override=False)
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+)
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@i6_g+-rzinhvesqkch+5y(+8e#)xk)$ej7&tuxhb632af9&s)'
-
+SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    "kasumarketplace.com.ng",
+    "www.kasumarketplace.com.ng",
+    "kasumarketplace.onrender.com",
+]
 
+
+# CORS CONFIGURATION
+CORS_ALLOWED_ORIGINS = [
+    "https://kasumarketplace.com.ng",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
+
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_TRUSTED_ORIGINS = [
+    "https://kasumarketplace.com.ng",
+    "https://www.kasumarketplace.com.ng",
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -56,6 +73,8 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.facebook',
     'allauth.socialaccount.providers.apple',
     'rest_auth',
+    'cloudinary',
+    'cloudinary_storage',
 
     # local apps
     'apps.users.apps.UsersConfig',
@@ -66,6 +85,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     # capture session key before login rotates it so cart merging works
     'apps.marketplace.middleware.PreserveSessionKeyMiddleware',
@@ -76,7 +96,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'KasuMarketplace.urls'
@@ -95,12 +115,11 @@ TEMPLATES = [
                 'django.template.context_processors.static',
 
 
-                # ✅ Add these custom context processors
+                # installed apps context processors
                 'apps.users.context_processors.recaptcha_keys',
                 'apps.users.context_processors.user_role_context',
                 'apps.users.context_processors.site_settings',
                 'apps.users.context_processors.otp_settings',
-                # marketplace cart context
                 'apps.marketplace.context_processors.cart_context',
             ],
         },
@@ -108,29 +127,10 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'KasuMarketplace.wsgi.application'
-MIDDLEWARE.insert(0, 'corsheaders.middleware.CorsMiddleware')
-
-CORS_ALLOW_ALL_ORIGINS = True
-
-
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-# DATABASES = {
-#     'default': dj_database_url.config(
-#         default=os.getenv('DATABASE_URL'),
-#         conn_max_age=600,
-#         ssl_require=True
-#     )
-# }
 DATABASE_URL = os.getenv('DATABASE_URL')
+
 if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
@@ -140,14 +140,12 @@ if DATABASE_URL:
         )
     }
 else:
-    # Fallback to local SQLite for development when DATABASE_URL is not provided
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -207,7 +205,10 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
-
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # ===========================
 # DJANGO-ALLAUTH CONFIGURATION
@@ -299,14 +300,9 @@ OTP_EXPIRY_TIME = 10
 OTP_LENGTH = 6
 
 
-# ===========================
 # reCAPTCHA CONFIGURATION (PLACEHOLDER)
-# # ===========================
-# RECAPTCHA_PUBLIC_KEY = 'your-recaptcha-site-key-here'
-# RECAPTCHA_PRIVATE_KEY = 'your-recaptcha-secret-key-here'
-# For testing without actual reCAPTCHA validation
-RECAPTCHA_PUBLIC_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
-RECAPTCHA_PRIVATE_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'
+RECAPTCHA_PUBLIC_KEY = os.getenv("RECAPTCHA_PUBLIC_KEY")
+RECAPTCHA_PRIVATE_KEY = os.getenv("RECAPTCHA_PRIVATE_KEY")
 
 # Paystack
 PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', '')
@@ -335,16 +331,6 @@ DOJAH_BASE_URL = os.getenv("DOJAH_BASE_URL", "https://sandbox.dojah.io")
 DOJAH_ENV = os.getenv("DOJAH_ENV")
 
 
-# ===========================
-# CORS CONFIGURATION
-# ===========================
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-
-CORS_ALLOW_CREDENTIALS = True
-
 # Site Configuration
 # SITE_NAME = 'KasuMarketplace'
 # SITE_URL = 'https://kasumarketplace.com.ng'
@@ -356,3 +342,10 @@ CORS_ALLOW_CREDENTIALS = True
 # TWITTER_URL = 'https://twitter.com/kasumarketplace'
 # INSTAGRAM_URL = 'https://instagram.com/kasumarketplace'
 # LINKEDIN_URL = 'https://linkedin.com/company/kasumarketplace'
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv("CLOUDINARY_CLOUD_NAME"),
+    'API_KEY': os.getenv("CLOUDINARY_API_KEY"),
+    'API_SECRET': os.getenv("CLOUDINARY_API_SECRET"),
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
