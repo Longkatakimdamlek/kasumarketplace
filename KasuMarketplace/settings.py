@@ -35,6 +35,8 @@ ALLOWED_HOSTS = [
     "kasumarketplace.com.ng",
     "www.kasumarketplace.com.ng",
     "kasumarketplace.onrender.com",
+    #"127.0.0.1",
+    #"localhost",
 ]
 
 
@@ -61,6 +63,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django.contrib.sitemaps',
     # third-party apps
     'rest_framework',
     'corsheaders',
