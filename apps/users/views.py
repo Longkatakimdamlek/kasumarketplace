@@ -3,16 +3,12 @@ Authentication views for KasuMarketplace.
 Location: apps/users/views.py
 """
 
-import random
-import string
-from datetime import timedelta
 from urllib.parse import urlparse
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
-from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -45,106 +41,12 @@ from .forms import (
     PasswordResetConfirmForm,
 )
 from .models import CustomUser
+from .services import OTPService
 from apps.vendors.services.notifications import send_vendor_welcome_email
 
 
 # ===========================
-# HELPER FUNCTIONS
-# ===========================
 
-def generate_otp(length=6):
-    """
-    Generate a random OTP code.
-    
-    Args:
-        length (int): Length of OTP code (default: 6)
-    
-    Returns:
-        str: Random numeric OTP code
-    """
-    return ''.join(random.choices(string.digits, k=length))
-
-
-def send_otp_email(user, otp):
-    """
-    Send OTP verification email to user.
-    
-    Args:
-        user (CustomUser): User instance
-        otp (str): OTP code to send
-    
-    Returns:
-        bool: True if email sent successfully, False otherwise
-    """
-    try:
-        subject = 'Verify Your Email - KasuMarketplace'
-        
-        # Create HTML email content
-        html_message = render_to_string('users/emails/otp_email.html', {
-            'user': user,
-            'otp': otp,
-            'expiry_time': settings.OTP_EXPIRY_TIME,
-        })
-        
-        # Create plain text version
-        plain_message = strip_tags(html_message)
-        
-        # Send email
-        send_mail(
-            subject=subject,
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@kasumarketplace.com',
-            recipient_list=[user.email],
-            html_message=html_message,
-            fail_silently=False,
-        )
-        
-        return True
-    
-    except Exception as e:
-        print(f"Error sending OTP email: {str(e)}")
-        return False
-
-
-def save_otp_to_user(user, otp):
-    """
-    Save OTP code to user model with timestamp.
-    
-    Args:
-        user (CustomUser): User instance
-        otp (str): OTP code to save
-    """
-    user.otp_code = otp
-    user.last_login = timezone.now()  # Track when OTP was sent
-    user.save(update_fields=['otp_code', 'last_login'])
-
-
-def is_otp_valid(user, otp):
-    """
-    Check if OTP is valid and not expired.
-    
-    Args:
-        user (CustomUser): User instance
-        otp (str): OTP code to validate
-    
-    Returns:
-        bool: True if OTP is valid, False otherwise
-    """
-    if not user.otp_code or user.otp_code != otp:
-        return False
-    
-    # Check if OTP has expired
-    otp_expiry = getattr(settings, 'OTP_EXPIRY_TIME', 10)  # Default 10 minutes
-    expiry_time = user.last_login + timedelta(minutes=otp_expiry)
-    
-    if timezone.now() > expiry_time:
-        return False
-    
-    return True
-
-
-# ===========================
-# AUTHENTICATION VIEWS
 # ===========================
 
 class BuyerSignupView(View):
@@ -169,25 +71,32 @@ class BuyerSignupView(View):
             # Save user
             user = form.save()
             
-            # Generate and send OTP
-            otp = generate_otp()
-            save_otp_to_user(user, otp)
+            # Generate and send OTP using OTPService
+            otp_instance, otp_code = OTPService.create_otp(user)
             
-            if send_otp_email(user, otp):
+            # Check if OTP creation failed (rate limit or other issues)
+            if otp_instance is None:
+                # otp_code contains the error message
+                messages.error(request, otp_code)
+                request.session['verify_email'] = user.email
+                return redirect('users:verify_otp')
+            
+            success, message = OTPService.send_otp_email(user, otp_code)
+            
+            if success:
                 messages.success(
                     request,
                     'Registration successful! Please check your email for the verification code.'
                 )
-                # Store email in session for OTP verification
-                request.session['verify_email'] = user.email
-                return redirect('users:verify_otp')
             else:
-                messages.error(
+                messages.warning(
                     request,
-                    'Registration successful, but we couldn\'t send the verification email. Please try resending.'
+                    f'Registration successful, but verification email failed to send. {message}'
                 )
-                request.session['verify_email'] = user.email
-                return redirect('users:verify_otp')
+            
+            # Store email in session for OTP verification
+            request.session['verify_email'] = user.email
+            return redirect('users:verify_otp')
         
         return render(request, self.template_name, {'form': form})
 
@@ -222,25 +131,32 @@ class VendorSignupView(View):
             except Exception as e:
                 print(f"Error sending vendor welcome email: {str(e)}")
 
-            # Generate and send OTP
-            otp = generate_otp()
-            save_otp_to_user(user, otp)
+            # Generate and send OTP using OTPService
+            otp_instance, otp_code = OTPService.create_otp(user)
             
-            if send_otp_email(user, otp):
+            # Check if OTP creation failed (rate limit or other issues)
+            if otp_instance is None:
+                # otp_code contains the error message
+                messages.error(request, otp_code)
+                request.session['verify_email'] = user.email
+                return redirect('users:verify_otp')
+            
+            success, message = OTPService.send_otp_email(user, otp_code)
+            
+            if success:
                 messages.success(
                     request,
                     'Registration successful! Please check your business email for the verification code.'
                 )
-                # Store email in session for OTP verification
-                request.session['verify_email'] = user.email
-                return redirect('users:verify_otp')
             else:
-                messages.error(
+                messages.warning(
                     request,
-                    'Registration successful, but we couldn\'t send the verification email. Please try resending.'
+                    f'Registration successful, but verification email failed to send. {message}'
                 )
-                request.session['verify_email'] = user.email
-                return redirect('users:verify_otp')
+            
+            # Store email in session for OTP verification
+            request.session['verify_email'] = user.email
+            return redirect('users:verify_otp')
         
         return render(request, self.template_name, {'form': form})
 
@@ -318,9 +234,24 @@ class OTPVerificationView(View):
             return redirect('users:login')
         
         form = self.form_class()
+        
+        # Get OTP info if available
+        otp_info = None
+        try:
+            user = CustomUser.objects.get(email=email)
+            otp = OTPService.get_otp(user)
+            if otp:
+                otp_info = {
+                    'time_remaining': otp.time_remaining,
+                    'remaining_attempts': otp.remaining_attempts,
+                }
+        except CustomUser.DoesNotExist:
+            pass
+        
         return render(request, self.template_name, {
             'form': form,
             'email': email,
+            'otp_info': otp_info,
         })
     
     def post(self, request):
@@ -333,23 +264,27 @@ class OTPVerificationView(View):
         form = self.form_class(request.POST)
         
         if form.is_valid():
-            otp = form.cleaned_data['otp_code']
+            otp_code = form.cleaned_data['otp_code']
             
             try:
                 user = CustomUser.objects.get(email=email)
                 
-                # Validate OTP
-                if is_otp_valid(user, otp):
+                # Verify OTP using OTPService
+                result = OTPService.verify_otp(user, otp_code)
+                
+                if result['success']:
                     # Mark user as verified
                     user.is_verified = True
-                    user.otp_code = None  # Clear OTP
-                    user.save(update_fields=['is_verified', 'otp_code'])
+                    user.save(update_fields=['is_verified'])
+                    
+                    # Clear OTP
+                    OTPService.delete_otp(user)
                     
                     # Clear session
                     if 'verify_email' in request.session:
                         del request.session['verify_email']
                     
-                    # Log user in (explicit backend required when multiple auth backends are configured)
+                    # Log user in
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     
                     messages.success(
@@ -362,18 +297,33 @@ class OTPVerificationView(View):
                         return redirect('vendors:dashboard')
                     return redirect('users:buyer_dashboard')
                 else:
-                    messages.error(
-                        request,
-                        'Invalid or expired verification code. Please try again or request a new code.'
-                    )
+                    # OTP verification failed
+                    error_msg = result['error']
+                    if result['remaining_attempts'] > 0:
+                        error_msg += f" ({result['remaining_attempts']} attempts remaining)"
+                    messages.error(request, error_msg)
             
             except CustomUser.DoesNotExist:
                 messages.error(request, 'User not found. Please sign up again.')
                 return redirect('users:buyer_signup')
         
+        # Re-render form with error
+        otp_info = None
+        try:
+            user = CustomUser.objects.get(email=email)
+            otp = OTPService.get_otp(user)
+            if otp:
+                otp_info = {
+                    'time_remaining': otp.time_remaining,
+                    'remaining_attempts': otp.remaining_attempts,
+                }
+        except CustomUser.DoesNotExist:
+            pass
+        
         return render(request, self.template_name, {
             'form': form,
             'email': email,
+            'otp_info': otp_info,
         })
 
 
@@ -400,23 +350,32 @@ class ResendOTPView(View):
             try:
                 user = CustomUser.objects.get(email=email)
                 
-                # Generate and send new OTP
-                otp = generate_otp()
-                save_otp_to_user(user, otp)
+                # Generate and send new OTP using OTPService
+                otp_instance, otp_code = OTPService.create_otp(user)
                 
-                if send_otp_email(user, otp):
+                # Check if OTP creation failed (rate limit or other issues)
+                if otp_instance is None:
+                    # otp_code contains the error message
+                    messages.error(request, otp_code)
+                    request.session['verify_email'] = email
+                    return redirect('users:verify_otp')
+                
+                success, message = OTPService.send_otp_email(user, otp_code)
+                
+                if success:
                     messages.success(
                         request,
                         'A new verification code has been sent to your email.'
                     )
-                    # Store email in session
-                    request.session['verify_email'] = email
-                    return redirect('users:verify_otp')
                 else:
                     messages.error(
                         request,
-                        'Failed to send verification email. Please try again later.'
+                        f'Failed to send verification email. {message}'
                     )
+                
+                # Store email in session
+                request.session['verify_email'] = email
+                return redirect('users:verify_otp')
             
             except CustomUser.DoesNotExist:
                 # Don't reveal if email exists for security

@@ -3,9 +3,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}KasuMarketplace{% endblock %}</title>
+  <!-- Primary SEO -->
+<title>KasuMarketplace – Official Multi-Vendor Marketplace for KASU Students</title>
 
+<meta name="title" content="KasuMarketplace – Official Multi-Vendor Marketplace for KASU Students">
+<meta name="description" content="KasuMarketplace is the leading multi-vendor eCommerce platform for Kaduna State University (KASU). Buy, sell, and promote products within the trusted KASU student community. Secure payments, verified vendors, fast campus delivery.">
+<meta name="keywords" content="KASU marketplace, Kaduna State University marketplace, KASU online store, student marketplace Nigeria, campus eCommerce, buy and sell in KASU, multivendor marketplace KASU">
+<meta name="author" content="KasuMarketplace">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://kasumarketplace.com.ng/">
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kasumarketplace.com.ng/">
+<meta property="og:title" content="KasuMarketplace – Official KASU Student Marketplace">
+<meta property="og:description" content="Nigeria’s fastest-growing campus marketplace. Buy and sell safely within Kaduna State University.">
+<meta property="og:image" content="https://kasumarketplace.com.ng/static/images/kasu-logo.png">
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="KasuMarketplace – KASU Multi-Vendor eCommerce">
+<meta name="twitter:description" content="The official online marketplace for Kaduna State University students.">
+<meta name="twitter:image" content="https://kasumarketplace.com.ng/static/images/kasu-logo.png">
+<!-- Theme Color (Mobile Chrome Branding) -->
+<meta name="theme-color" content="#047857">
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -104,7 +123,20 @@
       to   { opacity: 1; transform: translateY(0); }
     }
   </style>
-
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "KasuMarketplace",
+    "url": "https://kasumarketplace.com.ng/",
+    "description": "Multi-vendor eCommerce marketplace for Kaduna State University students.",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://kasumarketplace.com.ng/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
   {% block extra_head %}{% endblock %}
 </head>
 

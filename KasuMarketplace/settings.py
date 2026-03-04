@@ -29,15 +29,13 @@ cloudinary.config(
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv("DEBUG", "False").lower() in {"true", "1", "yes"}
 
-ALLOWED_HOSTS = [
-    "kasumarketplace.com.ng",
-    "www.kasumarketplace.com.ng",
-    "kasumarketplace.onrender.com",
-    #"127.0.0.1",
-    #"localhost",
-]
+# allow hosts from environment, comma-separated; fallback to known domains
+ALLOWED_HOSTS = os.getenv(
+    "ALLOWED_HOSTS",
+    "kasumarketplace.com.ng,www.kasumarketplace.com.ng,kasumarketplace.onrender.com",
+).split(",")
 
 
 # CORS CONFIGURATION
@@ -50,10 +48,10 @@ CORS_ALLOW_CREDENTIALS = True
 
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-CSRF_TRUSTED_ORIGINS = [
-    "https://kasumarketplace.com.ng",
-    "https://www.kasumarketplace.com.ng",
-]
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    "CSRF_TRUSTED_ORIGINS",
+    "https://kasumarketplace.com.ng,https://www.kasumarketplace.com.ng",
+).split(",")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -221,8 +219,8 @@ ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_UNIQUE_EMAIL = True
-LOGIN_REDIRECT_URL = '/login/'
-LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = os.getenv('LOGIN_REDIRECT_URL', '/')  # safe default to home or dashboard
+LOGOUT_REDIRECT_URL = os.getenv('LOGOUT_REDIRECT_URL', '/')
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT = True
 ACCOUNT_LOGOUT_ON_GET = False
 # Email confirmation settings
@@ -299,7 +297,12 @@ DEFAULT_REPLY_TO_EMAIL = os.getenv("DEFAULT_REPLY_TO_EMAIL", "support@kasumarket
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
 # Admin emails
 ADMIN_EMAILS = os.getenv('ADMIN_EMAILS', 'admin@kasumarketplace.com.ng').split(',')
-OTP_EXPIRY_TIME = 10
+
+# ===========================
+# OTP CONFIGURATION
+# ===========================
+# OTP Expiry time in minutes (production: 5 minutes)
+OTP_EXPIRY_TIME = 5
 OTP_LENGTH = 6
 
 

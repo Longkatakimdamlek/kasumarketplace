@@ -1,7 +1,6 @@
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
-from apps.marketplace.models import Product, Category
-from apps.vendors.models import Vendor
+from apps.vendors.models import Product, Store
 
 # ----------------------------
 # Static pages (like homepage)
@@ -35,21 +34,6 @@ class ProductSitemap(Sitemap):
 
 
 # ----------------------------
-# Category pages
-# ----------------------------
-class CategorySitemap(Sitemap):
-    changefreq = 'weekly'
-    priority = 0.8
-
-    def items(self):
-        return Category.objects.all()
-
-    def location(self, obj):
-        # Assuming you have a category detail view
-        return reverse('marketplace:category_detail', args=[obj.slug])
-
-
-# ----------------------------
 # Vendor store pages
 # ----------------------------
 class VendorSitemap(Sitemap):
@@ -57,7 +41,7 @@ class VendorSitemap(Sitemap):
     priority = 0.8
 
     def items(self):
-        return Vendor.objects.filter(is_active=True)
+        return Store.objects.filter(vendor__verification_status='approved')
 
     def location(self, obj):
         # Public store page
@@ -70,6 +54,5 @@ class VendorSitemap(Sitemap):
 sitemaps = {
     'static': StaticViewSitemap,
     'products': ProductSitemap,
-    'categories': CategorySitemap,
     'vendors': VendorSitemap,
 }
