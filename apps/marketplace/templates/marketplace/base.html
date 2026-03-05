@@ -228,7 +228,16 @@
           {{ user.email|first|upper }}
         </a>
         {% else %}
-        <a href="{% url 'users:login' %}?next={{ request.get_full_path }}" class="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-dark transition">Sign in</a>
+        <div class="flex items-center gap-2">
+          <a href="{% url 'users:vendor_signup' %}"
+             class="px-3 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition">
+            Become a Vendor
+          </a>
+          <a href="{% url 'users:login' %}?next={{ request.get_full_path }}"
+             class="px-3 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition">
+            Login
+          </a>
+        </div>
         {% endif %}
       </div>
     </div>
@@ -268,6 +277,19 @@
         <span id="mobile-cart-badge" class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ cart_count }}</span>
         {% endif %}
       </a>
+
+      <!-- Profile icon (mobile) -->
+      {% if user.is_authenticated %}
+      <a href="{% url 'marketplace:profile' %}" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0">
+        {{ user.email|first|upper }}
+      </a>
+      {% else %}
+      <button onclick="toggleAuthModal()" class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-sm font-bold shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+        </svg>
+      </button>
+      {% endif %}
     </div>
   </header>
 
@@ -285,6 +307,44 @@
 
   <!-- Toast UI -->
   <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-medium shadow-xl max-w-xs text-center pointer-events-none">
+  </div>
+
+  <!-- ===================== AUTHENTICATION MODAL (MOBILE) ===================== -->
+  <div id="auth-modal" class="fixed inset-0 z-50 hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/50" onclick="toggleAuthModal()"></div>
+
+    <!-- Modal Content -->
+    <div id="auth-modal-content" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl transform translate-y-full transition-transform duration-300 ease-out">
+      <div class="p-6">
+        <!-- Handle -->
+        <div class="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6"></div>
+
+        <!-- Title -->
+        <h3 class="text-lg font-semibold text-center text-dark mb-6">Welcome to KasuMarketplace</h3>
+
+        <!-- Options -->
+        <div class="space-y-3">
+          <a href="{% url 'users:login' %}?next={{ request.get_full_path }}"
+             class="block w-full py-4 px-6 bg-primary text-white text-center font-medium rounded-xl hover:bg-primary-dark transition">
+            Login
+          </a>
+          <a href="{% url 'users:buyer_signup' %}"
+             class="block w-full py-4 px-6 bg-purple-600 text-white text-center font-medium rounded-xl hover:bg-purple-700 transition">
+            Sign Up as Buyer
+          </a>
+          <a href="{% url 'users:vendor_signup' %}"
+             class="block w-full py-4 px-6 bg-primary text-white text-center font-medium rounded-xl hover:bg-primary-dark transition">
+            Become a Vendor
+          </a>
+        </div>
+
+        <!-- Close button -->
+        <button onclick="toggleAuthModal()" class="w-full mt-4 py-3 px-6 text-gray-500 text-center font-medium rounded-xl hover:bg-gray-50 transition">
+          Cancel
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- ===================== MAIN CONTENT ===================== -->
@@ -382,6 +442,30 @@
     if (!sessionStorage.getItem('loc_requested')) {
       sessionStorage.setItem('loc_requested', '1');
       setTimeout(requestLocation, 2000);
+    }
+
+    // ---- Authentication Modal ----
+    function toggleAuthModal() {
+      const modal = document.getElementById('auth-modal');
+      const modalContent = document.getElementById('auth-modal-content');
+
+      if (modal.classList.contains('hidden')) {
+        // Show modal
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        // Trigger animation
+        setTimeout(() => {
+          modalContent.classList.remove('translate-y-full');
+        }, 10);
+      } else {
+        // Hide modal
+        modalContent.classList.add('translate-y-full');
+        document.body.style.overflow = '';
+        // Wait for animation to complete before hiding
+        setTimeout(() => {
+          modal.classList.add('hidden');
+        }, 300);
+      }
     }
   </script>
 

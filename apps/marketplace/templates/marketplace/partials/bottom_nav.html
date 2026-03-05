@@ -35,13 +35,23 @@
     </a>
 
     <!-- Profile -->
-    <a href="{% if user.is_authenticated %}{% url 'marketplace:profile' %}{% else %}{% url 'users:login' %}?next={{ request.get_full_path }}{% endif %}"
+    {% if user.is_authenticated %}
+    <a href="{% url 'marketplace:profile' %}"
        class="flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'profile' %}text-primary{% else %}text-muted{% endif %} transition">
       <svg class="w-6 h-6" fill="{% if request.resolver_match.url_name == 'profile' %}currentColor{% else %}none{% endif %}" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zm-4 7a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"/>
       </svg>
       <span class="text-xs font-medium">Profile</span>
     </a>
+    {% else %}
+    <button onclick="toggleAuthModal()"
+       class="flex flex-col items-center justify-center gap-1 text-muted transition active:text-primary">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zm-4 7a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"/>
+      </svg>
+      <span class="text-xs font-medium">Profile</span>
+    </button>
+    {% endif %}
 
   </div>
 </nav>
