@@ -22,26 +22,61 @@ site.save()
 print("Site domain set to:", site.domain)
 
 # -------------------------------------------------------
-# Fix duplicate SocialApp records (the cause of the 500)
-# Delete ALL existing Google SocialApp entries and
-# recreate a single clean one.
+# Cleanly recreate all SocialApp records.
+# Deletes ALL existing records for each provider first
+# to prevent MultipleObjectsReturned errors from allauth.
+# This is safe because credentials come from env vars.
 # -------------------------------------------------------
-deleted_count, _ = SocialApp.objects.filter(provider='google').delete()
-print(f"Deleted {deleted_count} existing Google SocialApp record(s).")
 
-google_app = SocialApp.objects.create(
-    provider='google',
-    name='Google',
-    client_id=os.environ.get('GOOGLE_CLIENT_ID', ''),
-    secret=os.environ.get('GOOGLE_CLIENT_SECRET', ''),
-)
-google_app.sites.add(site)
-print("Google SocialApp created and linked to:", site.domain)
+# --- Google ---
+count, _ = SocialApp.objects.filter(provider='google').delete()
+print(f"Deleted {count} existing Google SocialApp record(s).")
+google_client_id = os.environ.get('GOOGLE_CLIENT_ID', '')
+google_secret = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+if google_client_id and google_secret:
+    google_app = SocialApp.objects.create(
+        provider='google',
+        name='Google',
+        client_id=google_client_id,
+        secret=google_secret,
+    )
+    google_app.sites.add(site)
+    print("Google SocialApp created and linked to:", site.domain)
+else:
+    print("WARNING: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not set — skipping Google SocialApp.")
 
-# Also clean up any duplicate Facebook/Apple entries just in case
-for provider in ['facebook', 'apple']:
-    apps = SocialApp.objects.filter(provider=provider)
-    if apps.count() > 1:
-        first_id = apps.first().id
-        dupes_deleted, _ = apps.exclude(id=first_id).delete()
-        print(f"Cleaned up {dupes_deleted} duplicate {provider} SocialApp record(s).")
+# --- Facebook ---
+count, _ = SocialApp.objects.filter(provider='facebook').delete()
+print(f"Deleted {count} existing Facebook SocialApp record(s).")
+fb_client_id = os.environ.get('FACEBOOK_CLIENT_ID', '')
+fb_secret = os.environ.get('FACEBOOK_CLIENT_SECRET', '')
+if fb_client_id and fb_secret:
+    fb_app = SocialApp.objects.create(
+        provider='facebook',
+        name='Facebook',
+        client_id=fb_client_id,
+        secret=fb_secret,
+    )
+    fb_app.sites.add(site)
+    print("Facebook SocialApp created and linked to:", site.domain)
+else:
+    print("WARNING: FACEBOOK_CLIENT_ID or FACEBOOK_CLIENT_SECRET not set — skipping Facebook SocialApp.")
+
+# --- Apple ---
+count, _ = SocialApp.objects.filter(provider='apple').delete()
+print(f"Deleted {count} existing Apple SocialApp record(s).")
+apple_client_id = os.environ.get('APPLE_CLIENT_ID', '')
+apple_secret = os.environ.get('APPLE_TEAM_ID', '')
+apple_key = os.environ.get('APPLE_KEY_ID', '')
+if apple_client_id and apple_secret:
+    apple_app = SocialApp.objects.create(
+        provider='apple',
+        name='Apple',
+        client_id=apple_client_id,
+        secret=apple_secret,
+        key=apple_key,
+    )
+    apple_app.sites.add(site)
+    print("Apple SocialApp created and linked to:", site.domain)
+else:
+    print("WARNING: APPLE_CLIENT_ID or APPLE_TEAM_ID not set — skipping Apple SocialApp.")

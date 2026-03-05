@@ -254,13 +254,7 @@ SOCIALACCOUNT_PROVIDERS = {
             'access_type': 'online',
             'prompt': 'select_account'
         },
-        'APP': {
-            'client_id': os.getenv("GOOGLE_CLIENT_ID"),
-            'secret': os.getenv("GOOGLE_CLIENT_SECRET"),
-            'key': ''
-        }
     },
-
     'facebook': {
         'METHOD': 'oauth2',
         'SCOPE': ['email', 'public_profile'],
@@ -272,23 +266,11 @@ SOCIALACCOUNT_PROVIDERS = {
         'EXCHANGE_TOKEN': True,
         'VERIFIED_EMAIL': False,
         'VERSION': 'v13.0',
-        'APP': {
-            'client_id': os.getenv("FACEBOOK_CLIENT_ID"),
-            'secret': os.getenv("FACEBOOK_CLIENT_SECRET"),
-            'key': ''
-        }
     },
-
     'apple': {
-        'APP': {
-            'client_id': os.getenv("APPLE_CLIENT_ID"),
-            'secret': os.getenv("APPLE_TEAM_ID"),
-            'key': os.getenv("APPLE_KEY_ID"),
-            'certificate_key': os.getenv("APPLE_PRIVATE_KEY")
-        }
+        'SCOPE': ['email', 'name'],
     }
 }
-
 
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
