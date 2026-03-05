@@ -45,7 +45,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
 ]
 CORS_ALLOW_CREDENTIALS = True
-
+SITE_ID = 1
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -307,7 +307,7 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "emailapikey")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@kasumarketplace.com.ng")
 DEFAULT_REPLY_TO_EMAIL = os.getenv("DEFAULT_REPLY_TO_EMAIL", "support@kasumarketplace.com.ng")
-SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
+SITE_URL = os.getenv('SITE_URL', 'https://kasumarketplace.com.ng')
 # Admin emails
 ADMIN_EMAILS = os.getenv('ADMIN_EMAILS', 'admin@kasumarketplace.com.ng').split(',')
 
