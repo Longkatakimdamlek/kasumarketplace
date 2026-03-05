@@ -29,20 +29,20 @@ cloudinary.config(
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "False").lower() in {"true", "1", "yes"}
+DEBUG = os.getenv("DEBUG", "true").lower() in {"true", "1", "yes"}
 
 # allow hosts from environment, comma-separated; fallback to known domains
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
-    "kasumarketplace.com.ng,www.kasumarketplace.com.ng,kasumarketplace.onrender.com",
+    "kasumarketplace.com.ng,www.kasumarketplace.com.ng,kasumarketplace.onrender.com,localhost,127.0.0.1,",
 ).split(",")
 
 
 # CORS CONFIGURATION
 CORS_ALLOWED_ORIGINS = [
     "https://kasumarketplace.com.ng",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
@@ -206,11 +206,11 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECRET_KEY = os.getenv("SECRET_KEY")
-
+ 
 # ===========================
 # DJANGO-ALLAUTH CONFIGURATION
 # ===========================

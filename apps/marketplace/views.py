@@ -705,3 +705,8 @@ def profile(request):
         return redirect('marketplace:profile')
 
     return render(request, 'marketplace/profile.html', {'profile': profile})
+
+
+def about_page(request):
+    """About KasuMarketplace page."""
+    return render(request, 'marketplace/about.html')

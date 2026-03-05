@@ -1,0 +1,163 @@
+{% extends 'marketplace/base.html' %}
+
+{% block title %}About KasuMarketplace — Student Marketplace for KASU{% endblock %}
+
+{% block content %}
+<div class="bg-gradient-to-br from-primary via-emerald-600 to-emerald-800 text-white min-h-screen flex flex-col">
+  <!-- Hero Section -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-20 flex-1 flex items-center">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+      <div>
+        <span class="inline-block bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full mb-3 md:mb-4">🎓 About Us</span>
+        <h1 class="font-display font-bold text-3xl md:text-4xl lg:text-5xl leading-tight mb-4 md:mb-6">
+          KasuMarketplace: The Official KASU Student Marketplace
+        </h1>
+        <p class="text-white/90 text-base md:text-lg leading-relaxed mb-6 md:mb-8">
+          We're building a trusted, campus-focused marketplace where Kaduna State University (KASU) students and verified vendors can safely buy and sell everything they need.
+        </p>
+      </div>
+
+      <!-- Decorative Shapes -->
+      <div class="hidden md:flex relative h-96 items-center justify-center">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-56 h-56 rounded-3xl bg-white/10 rotate-12 absolute"></div>
+          <div class="w-40 h-40 rounded-2xl bg-white/15 -rotate-6 translate-x-12 -translate-y-8 absolute"></div>
+          <div class="text-8xl relative z-10">🛍️</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-16 lg:py-20">
+  <!-- Mission Section -->
+  <div class="mb-12 md:mb-16 lg:mb-20">
+    <h2 class="font-display font-bold text-2xl md:text-3xl lg:text-4xl text-dark mb-4 md:mb-6">Our Mission</h2>
+    <p class="text-base md:text-lg text-muted leading-relaxed max-w-3xl">
+      KasuMarketplace is the leading multi-vendor marketplace serving Kaduna State University (KASU).
+      Our platform connects student buyers and sellers in a safe, secure campus-focused environment.
+      Whether you're looking for gadgets, fashion, academic materials, or everyday essentials,
+      KasuMarketplace makes buying and selling within KASU simple and reliable.
+    </p>
+  </div>
+
+  <!-- Why Choose Us -->
+  <div class="mb-12 md:mb-16 lg:mb-20">
+    <h2 class="font-display font-bold text-2xl md:text-3xl lg:text-4xl text-dark mb-6 md:mb-8">Why Choose KasuMarketplace?</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+      <!-- Feature 1 -->
+      <div class="bg-card rounded-2xl p-4 md:p-6 shadow-card">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3 md:mb-4">
+          <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m7 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <h3 class="font-display font-bold text-lg md:text-xl text-dark mb-2">Verified Vendors</h3>
+        <p class="text-muted text-sm md:text-base">All sellers are verified students or campus partners, ensuring quality and trustworthiness in every transaction.</p>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="bg-card rounded-2xl p-4 md:p-6 shadow-card">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3 md:mb-4">
+          <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <h3 class="font-display font-bold text-lg md:text-xl text-dark mb-2">Secure Payments</h3>
+        <p class="text-muted text-sm md:text-base">Secure payment gateway with buyer protection ensures every transaction is safe and protected.</p>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="bg-card rounded-2xl p-4 md:p-6 shadow-card">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3 md:mb-4">
+          <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </div>
+        <h3 class="font-display font-bold text-lg md:text-xl text-dark mb-2">Fast Delivery</h3>
+        <p class="text-muted text-sm md:text-base">Campus-focused logistics means faster delivery times and convenient pickup options for students.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Values Section -->
+  <div class="mb-12 md:mb-16 lg:mb-20">
+    <h2 class="font-display font-bold text-2xl md:text-3xl lg:text-4xl text-dark mb-6 md:mb-8">Our Values</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <div class="flex gap-3 md:gap-4">
+        <div class="flex-shrink-0">
+          <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <svg class="w-5 h-5 md:w-6 md:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m9.172-9.172a2 2 0 00-2.828 0L9.172 9.172m0 0L5.636 5.636m3.536 3.536L3 3m0 0L9 9"></path>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <h4 class="font-display font-bold text-lg md:text-xl text-dark mb-1">Trust & Transparency</h4>
+          <p class="text-muted text-sm md:text-base">Complete transparency in pricing, seller information, and transaction history.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 md:gap-4">
+        <div class="flex-shrink-0">
+          <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <svg class="w-5 h-5 md:w-6 md:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <h4 class="font-display font-bold text-lg md:text-xl text-dark mb-1">Affordability</h4>
+          <p class="text-muted text-sm md:text-base">Competitive pricing and student-friendly rates because we understand budget constraints.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 md:gap-4">
+        <div class="flex-shrink-0">
+          <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <svg class="w-5 h-5 md:w-6 md:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm0 4c-2.667 0-8 1.34-8 4v2h16v-2c0-2.66-5.333-4-8-4z"></path>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <h4 class="font-display font-bold text-lg md:text-xl text-dark mb-1">Community First</h4>
+          <p class="text-muted text-sm md:text-base">We're dedicated to supporting the KASU student community and local campus vendors.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 md:gap-4">
+        <div class="flex-shrink-0">
+          <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <svg class="w-5 h-5 md:w-6 md:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <h4 class="font-display font-bold text-lg md:text-xl text-dark mb-1">Innovation</h4>
+          <p class="text-muted text-sm md:text-base">Continuously improving features to make campus shopping easier, safer, and more enjoyable.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA Section -->
+  <div class="bg-gradient-to-br from-primary to-emerald-700 text-white rounded-2xl md:rounded-3xl p-6 md:p-12 text-center">
+    <h2 class="font-display font-bold text-2xl md:text-3xl lg:text-4xl mb-3 md:mb-4">Ready to Join the KasuMarketplace Community?</h2>
+    <p class="text-white/80 text-base md:text-lg mb-6 md:mb-8 max-w-2xl mx-auto">
+      Whether you're looking to shop or sell, KasuMarketplace is your go-to destination for all things campus.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
+      <a href="{% url 'marketplace:product_list' %}" class="px-6 md:px-8 py-3 bg-white text-primary font-bold rounded-xl hover:bg-surface transition text-sm md:text-base">
+        Shop Now
+      </a>
+      <a href="{% url 'vendors:verification_center' %}" class="px-6 md:px-8 py-3 bg-white/20 text-white font-semibold rounded-xl hover:bg-white/30 transition text-sm md:text-base">
+        Become a Seller
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

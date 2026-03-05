@@ -18,6 +18,11 @@ urlpatterns = [
         name='product_list'
     ),
     path(
+        'about/',
+        views.about_page,
+        name='about'
+    ),
+    path(
         'product/<slug:slug>/',
         views.product_detail,
         name='product_detail'

@@ -37,11 +37,11 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
       </div>
 
       <!-- Slide 3 -->
-      <div class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center px-6">
+      <div class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center px-6">
         <div class="z-10">
           <p class="text-white/80 text-xs font-medium mb-1">Campus Essentials</p>
           <h2 class="text-white font-display font-bold text-xl leading-tight mb-3">Everything You<br/>Need on KasuMarketplace</h2>
-          <a href="{% url 'marketplace:product_list' %}" class="inline-block bg-white text-emerald-600 text-xs font-bold px-4 py-2 rounded-xl">Explore</a>
+          <a href="{% url 'marketplace:about' %}" class="inline-block bg-white text-emerald-600 text-xs font-bold px-4 py-2 rounded-xl">See About</a>
         </div>
         <div class="absolute right-4 top-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-white/10"></div>
       </div>
@@ -59,15 +59,15 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
   <!-- CATEGORIES GRID -->
   <div class="px-4 mt-6">
     <h2 class="font-display font-bold text-base text-dark mb-3">Categories</h2>
-    <div class="grid grid-cols-3 gap-3">
+    <div class="flex gap-3 overflow-x-auto scroll-hidden pb-1" id="categories-container">
       {% for category in categories %}
       <a href="{% url 'marketplace:product_list' %}?category={{ category.slug }}"
-         class="flex flex-col items-center gap-2 bg-card rounded-2xl p-3 shadow-card active:scale-95 transition-transform">
-        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+         class="flex flex-col items-center gap-2 bg-card rounded-2xl p-3 shadow-card active:scale-95 transition-transform flex-shrink-0 w-24">
+        <div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
           {% if category.icon %}
-            <span class="text-2xl">{{ category.icon }}</span>
+            <span class="text-3xl">{{ category.icon }}</span>
           {% else %}
-            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 10V7"/>
             </svg>
           {% endif %}
@@ -173,6 +173,7 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
         <div class="flex gap-3">
           <a href="#products" class="px-6 py-3 bg-white text-primary font-bold rounded-xl hover:bg-surface transition">Shop Now</a>
           <button onclick="toggleDrawer()" class="px-6 py-3 bg-white/20 text-white font-semibold rounded-xl hover:bg-white/30 transition">Browse Categories</button>
+          <a href="{% url 'marketplace:about' %}" class="px-6 py-3 bg-white/20 text-white font-semibold rounded-xl hover:bg-white/30 transition">About Us</a>
         </div>
       </div>
       <!-- Decorative shapes -->
@@ -184,17 +185,6 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
         </div>
       </div>
     </div>
-    <section class="max-w-5xl mx-auto px-6 pb-16">
-      <h2 class="font-display font-bold text-2xl text-dark mb-4">
-        About KasuMarketplace
-      </h2>
-      <p class="text-muted leading-relaxed">
-        KasuMarketplace is the leading multi-vendor marketplace serving Kaduna State University (KASU). 
-        Our platform connects student buyers and sellers in a safe, secure campus-focused environment. 
-        Whether you're looking for gadgets, fashion, academic materials, or everyday essentials, 
-        KasuMarketplace makes buying and selling within KASU simple and reliable.
-      </p>
-    </section>
   </div>
 
   <!-- CATEGORY ROW -->
@@ -286,5 +276,25 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
   setInterval(() => {
     goSlide((currentSlide + 1) % totalSlides);
   }, 4000);
+
+  // ---- Auto-scroll categories ----
+  const categoriesContainer = document.getElementById('categories-container');
+  if (categoriesContainer) {
+    let scrollAmount = 0;
+    const scrollStep = 2; // pixels to scroll per frame
+    const scrollSpeed = 50; // milliseconds between scrolls
+
+    function autoScroll() {
+      if (scrollAmount >= categoriesContainer.scrollWidth - categoriesContainer.clientWidth) {
+        scrollAmount = 0; // Reset to start
+      } else {
+        scrollAmount += scrollStep;
+      }
+      categoriesContainer.scrollLeft = scrollAmount;
+    }
+
+    // Start auto-scrolling
+    setInterval(autoScroll, scrollSpeed);
+  }
 </script>
 {% endblock %}
