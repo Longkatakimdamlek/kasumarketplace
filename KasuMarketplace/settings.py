@@ -31,14 +31,16 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "true").lower() in {"true", "1", "yes"}
 
-# allow hosts from environment, comma-separated; fallback to known domains
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
     "kasumarketplace.com.ng,www.kasumarketplace.com.ng,kasumarketplace.onrender.com,localhost,127.0.0.1,",
 ).split(",")
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://kasumarketplace.com.ng',
+    'https://www.kasumarketplace.com.ng',
+]
 
-# CORS CONFIGURATION
 CORS_ALLOWED_ORIGINS = [
     "https://kasumarketplace.com.ng",
     "http://localhost:8000",
@@ -275,7 +277,7 @@ SOCIALACCOUNT_PROVIDERS = {
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
 SOCIALACCOUNT_QUERY_EMAIL = True
-SOCIALACCOUNT_LOGIN_ON_GET = True
+#SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_EMAIL_REQUIRED = False
 SOCIALACCOUNT_USERNAME_REQUIRED = False
 SOCIALACCOUNT_STORE_TOKENS = True
