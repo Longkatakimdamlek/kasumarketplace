@@ -21,19 +21,27 @@ site.name = 'KasuMarketplace'
 site.save()
 print("Site domain set to:", site.domain)
 
-# Create or update Google SocialApp
-google_app, created = SocialApp.objects.get_or_create(
-    provider='google',
-    defaults={
-        'name': 'Google',
-        'client_id': os.environ.get('GOOGLE_CLIENT_ID', ''),
-        'secret': os.environ.get('GOOGLE_CLIENT_SECRET', ''),
-    }
-)
-if not created:
-    google_app.client_id = os.environ.get('GOOGLE_CLIENT_ID', '')
-    google_app.secret = os.environ.get('GOOGLE_CLIENT_SECRET', '')
-    google_app.save()
+# -------------------------------------------------------
+# Fix duplicate SocialApp records (the cause of the 500)
+# Delete ALL existing Google SocialApp entries and
+# recreate a single clean one.
+# -------------------------------------------------------
+deleted_count, _ = SocialApp.objects.filter(provider='google').delete()
+print(f"Deleted {deleted_count} existing Google SocialApp record(s).")
 
+google_app = SocialApp.objects.create(
+    provider='google',
+    name='Google',
+    client_id=os.environ.get('GOOGLE_CLIENT_ID', ''),
+    secret=os.environ.get('GOOGLE_CLIENT_SECRET', ''),
+)
 google_app.sites.add(site)
-print("Google SocialApp linked to:", site.domain)
+print("Google SocialApp created and linked to:", site.domain)
+
+# Also clean up any duplicate Facebook/Apple entries just in case
+for provider in ['facebook', 'apple']:
+    apps = SocialApp.objects.filter(provider=provider)
+    if apps.count() > 1:
+        first_id = apps.first().id
+        dupes_deleted, _ = apps.exclude(id=first_id).delete()
+        print(f"Cleaned up {dupes_deleted} duplicate {provider} SocialApp record(s).")
