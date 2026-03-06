@@ -1,25 +1,36 @@
 {% extends 'base.html' %}
-{% load socialaccount %}
+{% load static socialaccount %}
 
 {% block title %}Sign Up as Vendor - KasuMarketplace{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h2>Kasu Marketplace</h2>
+    <div class="mb-4">
+        <img src="{% static 'images/kasu_logo1.png' %}" alt="KasuMarketplace logo" class="mx-auto w-24 h-auto" />
+    </div>
     <p class="subtitle">Start selling on KasuMarketplace</p>
     
     <!-- Social Login Buttons -->
     <div class="social-icons">
-        <a href="{% provider_login_url 'facebook' %}" class="social-btn" aria-label="Facebook">
-            <i class="fab fa-facebook-f" style="color:#1877f2;"></i>
-        </a>
-        <a href="{% provider_login_url 'apple' %}" class="social-btn" aria-label="Apple">
+        {% get_providers as socialaccount_providers %}
+        {% for provider in socialaccount_providers %}
+            {% if provider.id == 'google' %}
+            <a href="{% provider_login_url 'google' %}?next={{ request.path }}" class="social-btn" aria-label="Google">
+                <i class="fab fa-google" style="color:#db4437;"></i>
+            </a>
+            {% endif %}
+            {% if provider.id == 'facebook' %}
+            <a href="{% provider_login_url 'facebook' %}?next={{ request.path }}" class="social-btn" aria-label="Facebook">
+                <i class="fab fa-facebook-f" style="color:#1877f2;"></i>
+            </a>
+            {% endif %}
+            {# skip built-in apple link; show a placeholder below #}
+            {% comment %}apple handled after loop{% endcomment %}
+        {% endfor %}
+        {# always show Apple icon with coming-soon behavior #}
+        <a href="#" class="social-btn" aria-label="Apple" onclick="showToast('Apple login coming soon', 'warning'); return false;">
             <i class="fab fa-apple" style="color:#333;"></i>
         </a>
-        <a href="{% provider_login_url 'google' process='signup' next='/signup/vendor/' %}" ...> class="social-btn" aria-label="Google">
-            <i class="fab fa-google" style="color:#db4437;"></i>
-        </a>
-
     </div>
     
     <div class="separator">or sign up with email</div>
@@ -78,13 +89,14 @@
             </label>
         </div>
         
+        {{ form.recaptcha }}
         <!-- reCAPTCHA -->
         <div class="recaptcha-container">
-            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}"></div>
+            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}" data-callback="onRecaptchaSuccess"></div>
         </div>
         
         <!-- Submit Button -->
-        <button type="submit" class="btn btn-primary">Create vendor account</button>
+        <button id="submitButton" type="submit" class="btn btn-primary" disabled>Create vendor account</button>
     </form>
     
     <!-- Links -->
@@ -104,6 +116,14 @@
             field.type = 'password';
             icon.classList.replace('fa-eye-slash', 'fa-eye');
         }
+    }
+</script>
+<script>
+    function onRecaptchaSuccess(token) {
+        const btn = document.getElementById('submitButton');
+        if (btn) btn.disabled = false;
+        const recaptchaInput = document.getElementById('id_recaptcha');
+        if (recaptchaInput) recaptchaInput.value = token;
     }
 </script>
 {% endblock %}

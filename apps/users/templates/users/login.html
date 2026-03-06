@@ -1,11 +1,14 @@
 {% extends 'base.html' %}
-{% load socialaccount %}
+{% load static socialaccount %}
 
 {% block title %}Login - KasuMarketplace{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h2>Kasu Marketplace</h2>
+    <!-- logo header -->
+    <div class="mb-4">
+        <img src="{% static 'images/kasu_logo1.png' %}" alt="KasuMarketplace logo" class="mx-auto w-24 h-auto" />
+    </div>
     <p class="subtitle">Log in to your account</p>
     
     <!-- Error Messages -->
@@ -52,27 +55,37 @@
             </div>
         </div>
         
+        {{ form.recaptcha }}
         <!-- reCAPTCHA -->
         <div class="recaptcha-container">
-            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}"></div>
+            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}" data-callback="onRecaptchaSuccess"></div>
         </div>
         
         <!-- Submit Button -->
-        <button type="submit" class="btn btn-primary">Login</button>
+        <button id="submitButton" type="submit" class="btn btn-primary" disabled>Login</button>
     </form>
     
     <div class="separator">or sign in with</div>
     
     <!-- Social Login Buttons -->
     <div class="social-icons">
-        <a href="{% provider_login_url 'facebook' %}" class="social-btn" aria-label="Facebook">
-            <i class="fab fa-facebook-f" style="color:#1877f2;"></i>
-        </a>
-        <a href="{% provider_login_url 'apple' %}" class="social-btn" aria-label="Apple">
+        {% get_providers as socialaccount_providers %}
+        {% for provider in socialaccount_providers %}
+            {% if provider.id == 'google' %}
+            <a href="{% provider_login_url 'google' %}" class="social-btn" aria-label="Google">
+                <i class="fab fa-google" style="color:#db4437;"></i>
+            </a>
+            {% endif %}
+            {% if provider.id == 'facebook' %}
+            <a href="{% provider_login_url 'facebook' %}" class="social-btn" aria-label="Facebook">
+                <i class="fab fa-facebook-f" style="color:#1877f2;"></i>
+            </a>
+            {% endif %}
+            {# apple login not functional, show below #}
+            {% comment %}handled after loop{% endcomment %}
+        {% endfor %}
+        <a href="#" class="social-btn" aria-label="Apple" onclick="showToast('Apple login coming soon', 'warning'); return false;">
             <i class="fab fa-apple" style="color:#333;"></i>
-        </a>
-        <a href="{% provider_login_url 'google' %}" class="social-btn" aria-label="Google">
-            <i class="fab fa-google" style="color:#db4437;"></i>
         </a>
     </div>
     
@@ -93,6 +106,14 @@
             passwordInput.type = 'password';
             toggleIcon.classList.replace('fa-eye-slash', 'fa-eye');
         }
+    }
+</script>
+<script>
+    function onRecaptchaSuccess(token) {
+        const btn = document.getElementById('submitButton');
+        if (btn) btn.disabled = false;
+        const recaptchaInput = document.getElementById('id_recaptcha');
+        if (recaptchaInput) recaptchaInput.value = token;
     }
 </script>
 {% endblock %}

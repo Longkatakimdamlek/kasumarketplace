@@ -30,7 +30,7 @@
       <!-- Icon placeholder circle -->
       <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition">
         {% if category.icon %}
-          <span class="text-lg">{{ category.icon }}</span>
+          <span class="text-lg">{{ category.icon|safe }}</span>
         {% else %}
           <!-- Default grid icon -->
           <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -5,6 +5,9 @@ Location: apps/users/context_processors.py
 """
 
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def recaptcha_keys(request):
@@ -15,10 +18,17 @@ def recaptcha_keys(request):
     Usage in templates:
         <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}"></div>
     """
-    return {
-        'RECAPTCHA_PUBLIC_KEY': getattr(settings, 'RECAPTCHA_PUBLIC_KEY', ''),
-        'RECAPTCHA_PRIVATE_KEY': getattr(settings, 'RECAPTCHA_PRIVATE_KEY', ''),
-    }
+    try:
+        return {
+            'RECAPTCHA_PUBLIC_KEY': getattr(settings, 'RECAPTCHA_PUBLIC_KEY', ''),
+            'RECAPTCHA_PRIVATE_KEY': getattr(settings, 'RECAPTCHA_PRIVATE_KEY', ''),
+        }
+    except Exception as e:
+        logger.error(f"Error in recaptcha_keys context processor: {str(e)}", exc_info=True)
+        return {
+            'RECAPTCHA_PUBLIC_KEY': '',
+            'RECAPTCHA_PRIVATE_KEY': '',
+        }
 
 
 def user_role_context(request):
@@ -35,13 +45,17 @@ def user_role_context(request):
             <!-- Vendor-specific content -->
         {% endif %}
     """
-    if request.user.is_authenticated:
-        return {
-            'is_buyer': request.user.is_buyer,
-            'is_vendor': request.user.is_vendor,
-            'is_admin': request.user.is_admin_role,
-            'user_role': request.user.role,
-        }
+    try:
+        if request.user.is_authenticated:
+            return {
+                'is_buyer': getattr(request.user, 'is_buyer', False),
+                'is_vendor': getattr(request.user, 'is_vendor', False),
+                'is_admin': getattr(request.user, 'is_admin_role', False),
+                'user_role': getattr(request.user, 'role', None),
+            }
+    except Exception as e:
+        logger.error(f"Error in user_role_context processor: {str(e)}", exc_info=True)
+    
     return {
         'is_buyer': False,
         'is_vendor': False,
@@ -59,12 +73,21 @@ def site_settings(request):
         {{ SITE_URL }}
         {{ SUPPORT_EMAIL }}
     """
-    return {
-        'SITE_NAME': getattr(settings, 'SITE_NAME', 'KasuMarketplace'),
-        'SITE_URL': getattr(settings, 'SITE_URL', 'https://kasumarketplace.com'),
-        'SUPPORT_EMAIL': getattr(settings, 'SUPPORT_EMAIL', 'support@kasumarketplace.com'),
-        'CONTACT_EMAIL': getattr(settings, 'CONTACT_EMAIL', 'contact@kasumarketplace.com'),
-    }
+    try:
+        return {
+            'SITE_NAME': getattr(settings, 'SITE_NAME', 'KasuMarketplace'),
+            'SITE_URL': getattr(settings, 'SITE_URL', 'https://kasumarketplace.com'),
+            'SUPPORT_EMAIL': getattr(settings, 'SUPPORT_EMAIL', 'support@kasumarketplace.com'),
+            'CONTACT_EMAIL': getattr(settings, 'CONTACT_EMAIL', 'contact@kasumarketplace.com'),
+        }
+    except Exception as e:
+        logger.error(f"Error in site_settings context processor: {str(e)}", exc_info=True)
+        return {
+            'SITE_NAME': 'KasuMarketplace',
+            'SITE_URL': 'https://kasumarketplace.com',
+            'SUPPORT_EMAIL': 'support@kasumarketplace.com',
+            'CONTACT_EMAIL': 'contact@kasumarketplace.com',
+        }
 
 
 def otp_settings(request):
@@ -74,7 +97,14 @@ def otp_settings(request):
     Usage in templates:
         Code expires in {{ OTP_EXPIRY_TIME }} minutes
     """
-    return {
-        'OTP_EXPIRY_TIME': getattr(settings, 'OTP_EXPIRY_TIME', 10),
-        'OTP_LENGTH': getattr(settings, 'OTP_LENGTH', 6),
-    }
+    try:
+        return {
+            'OTP_EXPIRY_TIME': getattr(settings, 'OTP_EXPIRY_TIME', 10),
+            'OTP_LENGTH': getattr(settings, 'OTP_LENGTH', 6),
+        }
+    except Exception as e:
+        logger.error(f"Error in otp_settings context processor: {str(e)}", exc_info=True)
+        return {
+            'OTP_EXPIRY_TIME': 10,
+            'OTP_LENGTH': 6,
+        }

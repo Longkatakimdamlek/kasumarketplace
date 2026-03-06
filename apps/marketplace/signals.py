@@ -10,15 +10,24 @@ from django.db.models.signals import post_save
 from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
+import logging
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
 
 @receiver(post_save, sender=User)
 def create_buyer_profile(sender, instance, created, **kwargs):
-    if created and instance.role == 'buyer':
-        from apps.users.models import BuyerProfile
-        BuyerProfile.objects.get_or_create(user=instance)
+    try:
+        if created and instance.role == 'buyer':
+            from apps.users.models import BuyerProfile
+            profile, new = BuyerProfile.objects.get_or_create(user=instance)
+            if new:
+                logger.info(f"BuyerProfile created for {instance.email}")
+    except Exception as e:
+        logger.error(f"Error creating BuyerProfile for {instance.email}: {str(e)}", exc_info=True)
+        # Don't re-raise to prevent breaking user creation
 
 
 @receiver(user_logged_in)
@@ -34,35 +43,40 @@ def merge_cart_on_login(sender, request, user, **kwargs):
     (``PreserveSessionKeyMiddleware``) and fall back to it when available.
     This covers both the custom login view and social / allauth logins.
     """
-    from apps.marketplace.models import Cart
-
-    # prefer the original key stored by middleware
-    session_key = getattr(request, '_pre_login_session_key', None) or request.session.session_key
-    if not session_key:
-        return
-
     try:
-        anon_cart = Cart.objects.get(session_key=session_key, user__isnull=True)
-    except Cart.DoesNotExist:
-        return
+        from apps.marketplace.models import Cart
 
-    try:
-        user_cart = Cart.objects.get(user=user)
-    except Cart.DoesNotExist:
-        anon_cart.user = user
-        anon_cart.save(update_fields=['user'])
-        return
+        # prefer the original key stored by middleware
+        session_key = getattr(request, '_pre_login_session_key', None) or request.session.session_key
+        if not session_key:
+            return
 
-    for anon_item in anon_cart.items.all():
-        existing = user_cart.items.filter(product=anon_item.product).first()
-        if existing:
-            existing.quantity += anon_item.quantity
-            existing.save(update_fields=['quantity'])
-        else:
-            anon_item.cart = user_cart
-            anon_item.save(update_fields=['cart'])
+        try:
+            anon_cart = Cart.objects.get(session_key=session_key, user__isnull=True)
+        except Cart.DoesNotExist:
+            return
 
-    anon_cart.delete()
+        try:
+            user_cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
+            anon_cart.user = user
+            anon_cart.save(update_fields=['user'])
+            return
+
+        for anon_item in anon_cart.items.all():
+            existing = user_cart.items.filter(product=anon_item.product).first()
+            if existing:
+                existing.quantity += anon_item.quantity
+                existing.save(update_fields=['quantity'])
+            else:
+                anon_item.cart = user_cart
+                anon_item.save(update_fields=['cart'])
+
+        anon_cart.delete()
+        logger.info(f"Cart merged for user {user.email}")
+    except Exception as e:
+        logger.error(f"Error merging cart for {user.email}: {str(e)}", exc_info=True)
+        # Don't re-raise to prevent breaking login
 
 
 @receiver(post_save, sender='marketplace.SubOrder')

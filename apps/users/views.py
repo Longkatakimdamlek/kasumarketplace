@@ -4,6 +4,7 @@ Location: apps/users/views.py
 """
 
 from urllib.parse import urlparse
+import logging
 
 from django.conf import settings
 from django.contrib import messages
@@ -112,6 +113,8 @@ class VendorSignupView(View):
         if request.user.is_authenticated:
             return redirect('vendors:dashboard')
         
+        # store intended role in session so social callbacks know
+        request.session['signup_role'] = 'vendor'
         form = self.form_class()
         return render(request, self.template_name, {'form': form})
     
@@ -195,8 +198,29 @@ class LoginView(View):
             
             # Login user (explicit backend required when multiple auth backends are configured)
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            # clear any leftover signup hint so normal login can't influence anything
+            request.session.pop('signup_role', None)
+            # explicitly persist the modified session before redirecting
+            try:
+                request.session.save()
+            except Exception:
+                pass
             
-            # Handle "remember me" functionality
+            # ensure role hasn't been accidentally overwritten elsewhere;
+            # if user has a vendorprofile we force a vendor role so they remain
+            # on the correct dashboard.
+            try:
+                if hasattr(user, 'vendorprofile') and user.role != 'vendor':
+                    logger = logging.getLogger(__name__)
+                    logger.warning(
+                        "User %s logged in and has vendorprofile but role '%s'; correcting to 'vendor'",
+                        user.email, user.role
+                    )
+                    user.role = 'vendor'
+                    user.save(update_fields=['role'])
+            except Exception:
+                pass
+
             if not form.cleaned_data.get('remember_me'):
                 request.session.set_expiry(0)
             
@@ -214,7 +238,9 @@ class LoginView(View):
             elif user.is_buyer:
                 return redirect('users:buyer_dashboard')
             else:
-                return redirect('home')
+                # no specific dashboard for unknown role; send to marketplace listing
+                # DO NOT change this to redirect('home') - that URL name no longer exists
+                return redirect('/')
         
         return render(request, self.template_name, {'form': form, 'next': next_url})
 

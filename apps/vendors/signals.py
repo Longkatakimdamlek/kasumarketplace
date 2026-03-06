@@ -8,6 +8,9 @@ from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db.models import Sum, Avg, F
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     VendorProfile, Wallet, Store, Product, Order, OrderItem,
@@ -27,10 +30,15 @@ def create_vendor_profile_for_vendor_users(sender, instance, created, **kwargs):
     Automatically create VendorProfile when a vendor User is created
     This runs AFTER the user is saved to the database
     """
-    if created and hasattr(instance, 'role') and instance.role == 'vendor':
-        # Create VendorProfile
-        vendor_profile = VendorProfile.objects.create(user=instance)
-        print(f"✅ VendorProfile created for vendor: {instance.email}")
+    try:
+        if created and hasattr(instance, 'role') and instance.role == 'vendor':
+            # Create VendorProfile
+            vendor_profile = VendorProfile.objects.create(user=instance)
+            print(f"✅ VendorProfile created for vendor: {instance.email}")
+            logger.info(f"VendorProfile created for vendor: {instance.email}")
+    except Exception as e:
+        logger.error(f"Error creating VendorProfile for {instance.email}: {str(e)}", exc_info=True)
+        # Don't re-raise to prevent breaking user creation
 
 
 # ==========================================
@@ -42,12 +50,17 @@ def create_vendor_wallet(sender, instance, created, **kwargs):
     """
     Automatically create a Wallet when VendorProfile is created
     """
-    if created:
-        Wallet.objects.create(
-            vendor=instance,
-            commission_rate=10.00  # Default 10% commission
-        )
-        print(f"✓ Wallet created for vendor: {instance.full_name or instance.user.email}")
+    try:
+        if created:
+            Wallet.objects.create(
+                vendor=instance,
+                commission_rate=10.00  # Default 10% commission
+            )
+            print(f"✓ Wallet created for vendor: {instance.full_name or instance.user.email}")
+            logger.info(f"Wallet created for vendor: {instance.user.email}")
+    except Exception as e:
+        logger.error(f"Error creating Wallet for vendor {instance.user.email}: {str(e)}", exc_info=True)
+        # Don't re-raise
 
 
 @receiver(post_save, sender=VendorProfile)
@@ -55,29 +68,31 @@ def send_verification_notifications(sender, instance, created, **kwargs):
     """
     Send notifications when verification status changes
     """
-    if not created:
-        # Check if verification status changed to approved
-        if instance.verification_status == 'approved' and instance.approved_at:
-            # Create notification
-            Notification.objects.get_or_create(
-                vendor=instance,
-                notification_type='verification',
-                title='Verification Approved! 🎉',
-                defaults={
-                    'message': 'Congratulations! Your vendor account has been approved. You can now start listing products and selling on KasuMarketplace.',
-                    'link': '/vendors/dashboard/'
-                }
-            )
-            print(f"✓ Approval notification sent to: {instance.full_name}")
+    try:
+        if not created:
+            # Check if verification status changed to approved
+            if instance.verification_status == 'approved' and instance.approved_at:
+                # Create notification
+                Notification.objects.get_or_create(
+                    vendor=instance,
+                    notification_type='verification',
+                    title='Verification Approved! 🎉',
+                    defaults={
+                        'message': 'Congratulations! Your vendor account has been approved. You can now start listing products and selling on KasuMarketplace.',
+                        'link': '/vendors/dashboard/'
+                    }
+                )
+                print(f"✓ Approval notification sent to: {instance.full_name}")
+                logger.info(f"Approval notification sent to: {instance.user.email}")
+                
+                # TODO: Send email notification
+                # from .services.notifications import send_verification_approved_email
+                # send_verification_approved_email(instance)
             
-            # TODO: Send email notification
-            # from .services.notifications import send_verification_approved_email
-            # send_verification_approved_email(instance)
-        
-        # Check if verification status changed to rejected
-        elif instance.verification_status == 'rejected':
-            Notification.objects.get_or_create(
-                vendor=instance,
+            # Check if verification status changed to rejected
+            elif instance.verification_status == 'rejected':
+                Notification.objects.get_or_create(
+                    vendor=instance,
                 notification_type='verification',
                 title='Verification Rejected',
                 defaults={
@@ -86,6 +101,10 @@ def send_verification_notifications(sender, instance, created, **kwargs):
                 }
             )
             print(f"✓ Rejection notification sent to: {instance.full_name}")
+            logger.info(f"Rejection notification sent to: {instance.user.email}")
+    except Exception as e:
+        logger.error(f"Error in send_verification_notifications for {instance.user.email}: {str(e)}", exc_info=True)
+        # Don't re-raise
 
 
 # ==========================================
@@ -98,17 +117,22 @@ def update_store_stats(sender, instance, created, **kwargs):
     Update store statistics when products or orders change
     This is called when store is saved, but real updates happen in product/order signals
     """
-    if created:
-        print(f"✓ Store created: {instance.store_name}")
-        
-        # Send notification to vendor
-        Notification.objects.create(
-            vendor=instance.vendor,
-            notification_type='system',
-            title='Store Created! 🏪',
-            message=f'Your store "{instance.store_name}" has been created successfully. You can now add products.',
-            link=f'/vendors/store/settings/'
-        )
+    try:
+        if created:
+            print(f"✓ Store created: {instance.store_name}")
+            
+            # Send notification to vendor
+            Notification.objects.create(
+                vendor=instance.vendor,
+                notification_type='system',
+                title='Store Created! 🏪',
+                message=f'Your store "{instance.store_name}" has been created successfully. You can now add products.',
+                link=f'/vendors/store/settings/'
+            )
+            logger.info(f"Store created: {instance.store_name}")
+    except Exception as e:
+        logger.error(f"Error in update_store_stats for store {instance.store_name}: {str(e)}", exc_info=True)
+        # Don't re-raise
 
 
 @receiver(post_save, sender=Store)
@@ -116,17 +140,22 @@ def notify_category_lock(sender, instance, created, **kwargs):
     """
     Notify vendor when main category is locked
     """
-    if not created and instance.main_category_locked:
-        # Check if lock status just changed
-        old_instance = Store.objects.filter(pk=instance.pk).first()
-        if old_instance and not old_instance.main_category_locked:
-            Notification.objects.create(
-                vendor=instance.vendor,
-                notification_type='system',
-                title='Category Locked 🔒',
-                message=f'Your main category "{instance.main_category.name}" has been locked. To change it, submit a category change request.',
-                link='/vendors/store/settings/'
-            )
+    try:
+        if not created and instance.main_category_locked:
+            # Check if lock status just changed
+            old_instance = Store.objects.filter(pk=instance.pk).first()
+            if old_instance and not old_instance.main_category_locked:
+                Notification.objects.create(
+                    vendor=instance.vendor,
+                    notification_type='system',
+                    title='Category Locked 🔒',
+                    message=f'Your main category "{instance.main_category.name}" has been locked. To change it, submit a category change request.',
+                    link='/vendors/store/settings/'
+                )
+                logger.info(f"Category lock notification sent for store {instance.store_name}")
+    except Exception as e:
+        logger.error(f"Error in notify_category_lock for store {instance.store_name}: {str(e)}", exc_info=True)
+        # Don't re-raise
 
 
 # ==========================================

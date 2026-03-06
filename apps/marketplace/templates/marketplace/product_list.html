@@ -65,7 +65,7 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
          class="flex flex-col items-center gap-2 bg-card rounded-2xl p-3 shadow-card active:scale-95 transition-transform flex-shrink-0 w-24">
         <div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
           {% if category.icon %}
-            <span class="text-3xl">{{ category.icon }}</span>
+            <span class="text-3xl">{{ category.icon|safe }}</span>
           {% else %}
             <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 10V7"/>
@@ -198,7 +198,7 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
       {% for category in categories %}
       <a href="{% url 'marketplace:product_list' %}?category={{ category.slug }}"
          class="flex items-center gap-2 px-4 py-2.5 {% if selected_category == category.slug %}bg-primary text-white{% else %}bg-card text-dark hover:bg-primary/10{% endif %} rounded-xl text-sm font-semibold shrink-0 shadow-card transition">
-        {% if category.icon %}<span>{{ category.icon }}</span>{% endif %}
+        {% if category.icon %}<span class="inline-block">{{ category.icon|safe }}</span>{% endif %}
         {{ category.name }}
       </a>
       {% endfor %}

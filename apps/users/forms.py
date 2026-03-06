@@ -10,6 +10,10 @@ from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
 from django.utils.translation import gettext_lazy as _
 import re
+import logging
+import requests
+
+from django.conf import settings
 
 from .models import CustomUser
 
@@ -144,11 +148,14 @@ class BaseSignupForm(forms.ModelForm):
                 'password2': _('Passwords do not match. Please try again.')
             })
         
-        # TODO: Add actual reCAPTCHA validation in production
-        # recaptcha_response = cleaned_data.get('recaptcha')
-        # if not self._validate_recaptcha(recaptcha_response):
-        #     raise ValidationError(_('reCAPTCHA validation failed.'))
-        
+        # reCAPTCHA: if a private key is configured, require a successful
+        # challenge.  We deliberately keep the field non‑required so forms
+        # still render during development; enforcement happens here.
+        recaptcha_response = cleaned_data.get('recaptcha')
+        if getattr(settings, 'RECAPTCHA_PRIVATE_KEY', ''):
+            if not recaptcha_response or not self._validate_recaptcha(recaptcha_response):
+                raise ValidationError({'recaptcha': _('reCAPTCHA validation failed.')})
+
         return cleaned_data
     
     def _validate_recaptcha(self, response):
@@ -156,8 +163,25 @@ class BaseSignupForm(forms.ModelForm):
         Validate reCAPTCHA response with Google's API.
         Implement this method when using actual reCAPTCHA in production.
         """
-        # Placeholder for reCAPTCHA validation
-        return True
+        # if running tests or debug with Google test keys, we trust the
+        # response automatically (the public key in .env is the Google test
+        # site key which always returns success).  Otherwise make a request.
+        secret = getattr(settings, 'RECAPTCHA_PRIVATE_KEY', '')
+        if not secret:
+            return True
+        if secret.startswith('6LeIx'):  # google test secret always passes
+            return True
+
+        try:
+            payload = {'secret': secret, 'response': response}
+            r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload, timeout=5)
+            result = r.json()
+            logging.getLogger(__name__).debug("reCAPTCHA verify response: %s", result)
+            return result.get('success', False)
+        except Exception as exc:
+            logging.getLogger(__name__).error("reCAPTCHA validation error: %s", exc)
+            # if verification endpoint cannot be reached treat as failure
+            return False
 
 
 class BuyerSignupForm(BaseSignupForm):
@@ -290,6 +314,12 @@ class LoginForm(forms.Form):
         email = cleaned_data.get('email', '').lower().strip()
         password = cleaned_data.get('password')
         
+        # enforce reCAPTCHA when configured
+        recaptcha_response = cleaned_data.get('recaptcha')
+        if getattr(settings, 'RECAPTCHA_PRIVATE_KEY', ''):
+            if not recaptcha_response or not self._validate_recaptcha(recaptcha_response):
+                raise ValidationError({'recaptcha': _('reCAPTCHA validation failed.')})
+
         if email and password:
             # Check if user exists
             try:
@@ -328,6 +358,15 @@ class LoginForm(forms.Form):
     def get_user(self):
         """Return authenticated user."""
         return self.user_cache
+
+    def _validate_recaptcha(self, response):
+        """Delegate to the signup form helper so both forms behave consistently."""
+        return BaseSignupForm._validate_recaptcha(self, response)
+
+    # replicate the recaptcha validator so tests can patch this class as well
+    def _validate_recaptcha(self, response):
+        """Delegate to the same helper used by signup forms."""
+        return BaseSignupForm._validate_recaptcha(self, response)
 
 
 class OTPVerificationForm(forms.Form):

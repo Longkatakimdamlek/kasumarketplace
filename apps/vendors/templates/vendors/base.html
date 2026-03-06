@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-gray-50">
 <head>
@@ -5,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}KasuMarketplace Vendor{% endblock %}</title>
     
+    <!-- Favicons -->
+    <link rel="icon" href="{% static 'images/favicon/favicon.ico' %}" />
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon/favicon_16x16.png' %}" />
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon/favicon_32x32.png' %}" />
+    <link rel="icon" type="image/png" sizes="48x48" href="{% static 'images/favicon/favicon_48x48.png' %}" />
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicon/favicon_180x180.png' %}" />
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'images/favicon/favicon_192x192.png' %}" />
+    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'images/favicon/favicon_512x512.png' %}" />
+    <meta name="theme-color" content="#ffffff" />
+
     <!-- Tailwind CSS CDN (JIT) -->
     <script src="https://cdn.tailwindcss.com"></script>
     

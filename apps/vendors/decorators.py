@@ -1,6 +1,11 @@
 """
 Vendor App Decorators
 Access control decorators for vendor views
+
+IMPORTANT: the project does not define a URL pattern named "home". earlier
+implementations mistakenly redirected there which caused NoReverseMatch errors
+(see #issues). All redirects now use '/' or named routes - do **not** revert to
+redirect('home').
 """
 
 from functools import wraps
@@ -37,7 +42,7 @@ def vendor_required(view_func):
         # Check if user has vendor profile
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor to access this page.')
-            return redirect('home')  # Or wherever you want to redirect
+            return redirect('/')
         
         # User is authenticated and has vendor profile
         return view_func(request, *args, **kwargs)
@@ -64,7 +69,7 @@ def vendor_verified_required(view_func):
         
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor.')
-            return redirect('home')
+            return redirect('/')
         
         vendor = request.user.vendorprofile
         
@@ -101,7 +106,7 @@ def vendor_approved_required(view_func):
         
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor.')
-            return redirect('home')
+            return redirect('/')
         
         vendor = request.user.vendorprofile
         
@@ -146,7 +151,7 @@ def store_setup_required(view_func):
         
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor.')
-            return redirect('home')
+            return redirect('/')
         
         vendor = request.user.vendorprofile
         
@@ -396,7 +401,7 @@ class VendorRequiredMixin:
         # Check vendor profile
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor.')
-            return redirect('home')
+            return redirect('/')
         
         return super().dispatch(request, *args, **kwargs)
 
@@ -419,7 +424,7 @@ class VendorVerifiedRequiredMixin:
         # Check vendor profile
         if not hasattr(request.user, 'vendorprofile'):
             messages.error(request, 'You need to be a registered vendor.')
-            return redirect('home')
+            return redirect('/')
         
         # Check verification
         vendor = request.user.vendorprofile
