@@ -7,11 +7,13 @@ from apps.vendors.models import Product, Store
 # ----------------------------
 class StaticViewSitemap(Sitemap):
     priority = 1.0
-    changefreq = 'weekly'
+    changefreq = "weekly"
 
     def items(self):
-        # Replace with all static pages if you have more
-        return ['marketplace:product_list']
+        return [
+            "marketplace:product_list",
+            "marketplace:about",
+        ]
 
     def location(self, item):
         # Only return the path; Django will handle domain/scheme
@@ -22,37 +24,40 @@ class StaticViewSitemap(Sitemap):
 # Product pages
 # ----------------------------
 class ProductSitemap(Sitemap):
-    changefreq = 'weekly'
+    changefreq = "weekly"
     priority = 0.9
 
     def items(self):
-        return Product.objects.filter(is_active=True)
+        return Product.objects.filter(status="published")
+
+    def lastmod(self, obj):
+        return obj.updated_at
 
     def location(self, obj):
         # Use the marketplace namespace for product detail
-        return reverse('marketplace:product_detail', args=[obj.slug])
+        return reverse("marketplace:product_detail", args=[obj.slug])
 
 
 # ----------------------------
 # Vendor store pages
 # ----------------------------
 class VendorSitemap(Sitemap):
-    changefreq = 'weekly'
+    changefreq = "weekly"
     priority = 0.8
 
     def items(self):
-        return Store.objects.filter(vendor__verification_status='approved')
+        return Store.objects.filter(vendor__verification_status="approved")
 
     def location(self, obj):
         # Public store page
-        return reverse('vendors:store_public', args=[obj.slug])
+        return reverse("vendors:store_public", args=[obj.slug])
 
 
 # ----------------------------
 # Sitemaps dictionary
 # ----------------------------
 sitemaps = {
-    'static': StaticViewSitemap,
-    'products': ProductSitemap,
-    'vendors': VendorSitemap,
+    "static": StaticViewSitemap,
+    "products": ProductSitemap,
+    "vendors": VendorSitemap,
 }
