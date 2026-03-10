@@ -1,0 +1,116 @@
+[INFO] 2026-03-07 09:47:54,713 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-07 09:47:55,465 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-07 09:48:17,220 django.server log_message:213 - code 400, message Bad request version ("¯'R±~b´Ác]G\x1b\x8dâg7¹\x99ÆÛø")
+[ERROR] 2026-03-07 09:48:17,221 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:17,221 django.server log_message:213 - code 400, message Bad request version ('\x00\x02\x01\x00\x00')
+[ERROR] 2026-03-07 09:48:17,224 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:17,243 django.server log_message:213 - code 400, message Bad request syntax ('\x16\x03\x01\x06à\x01\x00\x06Ü\x03\x039ùX»À ')
+[ERROR] 2026-03-07 09:48:17,244 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:17,245 django.server log_message:213 - code 400, message Bad request version ('::\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x06S')
+[ERROR] 2026-03-07 09:48:17,246 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:21,064 django.server log_message:213 - code 400, message Bad request version ('Ì\xad\x0f\x1b)ØiÚ\x11(F]\x9c\x13¤Ü')
+[ERROR] 2026-03-07 09:48:21,067 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:21,067 django.server log_message:213 - code 400, message Bad request version ('+×\xad\x8a\x0e¶=Mð\x88ybæü')
+[ERROR] 2026-03-07 09:48:21,075 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:21,082 django.server log_message:213 - code 400, message Bad request version ('c\x90ÖÊ`dÆ\x8d~6')
+[ERROR] 2026-03-07 09:48:21,084 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:21,085 django.server log_message:213 - code 400, message Bad request version ('qU\'¬È[Ï*©"\x06\x935ö')
+[ERROR] 2026-03-07 09:48:21,088 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:21,867 django.server log_message:213 - code 400, message Bad request version ('\x02h2\x08http/1.1\x00+\x00\x07\x06zz\x03\x04\x03\x03\x00\x1b\x00\x03\x02\x00\x02\x00')
+[ERROR] 2026-03-07 09:48:21,871 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:21,872 django.server log_message:213 - code 400, message Bad request version ('hÛÊ\x9a+Ëë\x16^dd®¦B$3Õjg¥0\x94')
+[ERROR] 2026-03-07 09:48:21,876 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:21,877 django.server log_message:213 - code 400, message Bad request version ('¼\x12,Kø_*X\x11\x15')
+[ERROR] 2026-03-07 09:48:21,881 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:21,882 django.server log_message:213 - code 400, message Bad request version ('ª¦%A\x00èaf-\x9be')
+[ERROR] 2026-03-07 09:48:21,884 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-07 09:48:42,335 django.server log_message:213 - "GET /sitemap.xml HTTP/1.1" 200 667
+[WARNING] 2026-03-07 09:48:53,679 django.request log_response:253 - Not Found: /favicon.ico
+[WARNING] 2026-03-07 09:48:53,681 django.server log_message:213 - "GET /favicon.ico HTTP/1.1" 404 11649
+[INFO] 2026-03-10 05:19:42,704 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 05:19:43,075 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-10 05:20:32,558 django.server log_message:213 - code 400, message Bad request version ('\x02h2\x08http/1.1\x00\x1b\x00\x03\x02\x00\x02\x00+\x00\x07\x06úú\x03\x04\x03\x03\x00-\x00\x02\x01\x01\x00')
+[ERROR] 2026-03-10 05:20:32,559 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-10 05:20:32,560 django.server log_message:213 - code 400, message Bad request version ('¤Kõ@JT\x82Av')
+[ERROR] 2026-03-10 05:20:32,562 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-10 05:20:32,629 django.server log_message:213 - code 400, message Bad request version ('¶Z\x95\x92ø\x860Êº\x13¤')
+[ERROR] 2026-03-10 05:20:32,634 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-10 05:20:32,634 django.server log_message:213 - code 400, message Bad request version ('6(uý\x8a?')
+[ERROR] 2026-03-10 05:20:32,635 django.server log_message:193 - You're accessing the development server over HTTPS, but it only supports HTTP.
+[INFO] 2026-03-10 05:20:48,507 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:20:48,730 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 80102
+[INFO] 2026-03-10 05:20:52,003 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-03-10 05:20:52,027 django.server log_message:213 - "GET /static/images/favicon/favicon_32x32.png HTTP/1.1" 200 2152
+[WARNING] 2026-03-10 05:21:01,445 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /location/update/
+[WARNING] 2026-03-10 05:21:01,449 django.server log_message:213 - "POST /location/update/ HTTP/1.1" 403 2855
+[INFO] 2026-03-10 05:21:02,202 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:21:39,978 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:21:51,307 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:21:51,353 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 80102
+[INFO] 2026-03-10 05:21:51,750 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:21:51,935 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:21:52,144 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:21:52,259 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 80102
+[INFO] 2026-03-10 05:21:56,816 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 80102
+[INFO] 2026-03-10 05:21:57,308 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-03-10 05:26:04,963 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:26:27,147 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:28:46,708 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:30:07,412 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:40:07,010 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 05:40:07,061 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-10 05:40:36,771 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[WARNING] 2026-03-10 05:40:53,387 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /location/update/
+[WARNING] 2026-03-10 05:40:53,390 django.server log_message:213 - "POST /location/update/ HTTP/1.1" 403 2855
+[INFO] 2026-03-10 05:40:55,975 django.server log_message:213 - "GET /shop/brotherly/products/almon-handbags/ HTTP/1.1" 200 16835
+[WARNING] 2026-03-10 05:41:03,931 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:41:03,933 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:41:05,985 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:41:05,986 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:41:07,020 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:41:07,064 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:41:07,383 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:41:07,385 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:42:05,758 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:42:05,761 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[INFO] 2026-03-10 05:42:10,162 django.server log_message:213 - "GET /shop/brotherly/products/almon-handbags/ HTTP/1.1" 200 16835
+[INFO] 2026-03-10 05:42:10,448 django.server log_message:213 - "GET /shop/brotherly/products/almon-handbags/ HTTP/1.1" 200 16835
+[INFO] 2026-03-10 05:42:11,837 django.server handle_error:81 - - Broken pipe from ('127.0.0.1', 50650)
+[INFO] 2026-03-10 05:42:11,886 django.server log_message:213 - "GET /shop/brotherly/products/almon-handbags/ HTTP/1.1" 200 16835
+[INFO] 2026-03-10 05:42:12,419 django.server handle_error:81 - - Broken pipe from ('127.0.0.1', 50670)
+[INFO] 2026-03-10 05:42:12,422 django.server handle_error:81 - - Broken pipe from ('127.0.0.1', 50654)
+[INFO] 2026-03-10 05:42:12,424 django.server handle_error:81 - - Broken pipe from ('127.0.0.1', 50666)
+[INFO] 2026-03-10 05:42:12,439 django.server handle_error:81 - - Broken pipe from ('127.0.0.1', 50668)
+[WARNING] 2026-03-10 05:42:19,820 django.request log_response:253 - Not Found: /favicon.ico
+[WARNING] 2026-03-10 05:42:19,822 django.server log_message:213 - "GET /favicon.ico HTTP/1.1" 404 11649
+[INFO] 2026-03-10 05:50:32,971 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-10 05:50:38,407 django.server log_message:213 - "GET /static/images/favicon/favicon_32x32.png HTTP/1.1" 304 0
+[INFO] 2026-03-10 05:50:41,215 django.server log_message:213 - "GET /shop/brotherly/products/rain-stone-ices-watch/ HTTP/1.1" 200 17013
+[WARNING] 2026-03-10 05:50:59,112 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:50:59,114 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[INFO] 2026-03-10 05:51:03,482 django.server log_message:213 - "GET /shop/brotherly/products/almon-handbags/ HTTP/1.1" 200 16835
+[WARNING] 2026-03-10 05:51:16,293 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:51:16,295 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:51:17,792 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:51:17,793 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:51:18,381 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:51:18,382 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:51:18,445 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:51:18,446 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:51:18,775 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:51:18,776 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:51:18,835 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:51:18,836 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:51:19,171 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:51:19,172 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:51:19,526 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:51:19,527 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[WARNING] 2026-03-10 05:51:19,587 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /cart/add/
+[WARNING] 2026-03-10 05:51:19,589 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 403 2855
+[INFO] 2026-03-10 05:57:11,886 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\KasuMarketplace\urls.py changed, reloading.
+[INFO] 2026-03-10 05:57:13,887 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 05:58:07,725 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\KasuMarketplace\urls.py changed, reloading.
+[INFO] 2026-03-10 05:58:09,653 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 05:58:38,917 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\KasuMarketplace\urls.py changed, reloading.
+[INFO] 2026-03-10 05:58:40,810 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 05:58:40,878 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode

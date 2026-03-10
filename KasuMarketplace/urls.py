@@ -5,7 +5,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
 from .sitemaps import sitemaps  # <-- use the full production-ready sitemaps.py
-
+from apps.users import views as user_views
 # Import views for direct routes
 from apps.vendors import views as vendor_views
 
@@ -31,6 +31,8 @@ urlpatterns = [
          name='product_detail_public'),
 
     # Authentication
+    # override allauth login route so that /accounts/login/ uses our styled page
+    path('accounts/login/', user_views.LoginView.as_view(), name='account_login'),
     path('accounts/', include('allauth.urls')),
 
     # ✅ Sitemap

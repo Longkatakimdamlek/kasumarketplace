@@ -33,18 +33,21 @@ DEBUG = os.getenv("DEBUG", "true").lower() in {"true", "1", "yes"}
 
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
-    "kasumarketplace.com.ng,www.kasumarketplace.com.ng,kasumarketplace.onrender.com,localhost,127.0.0.1,",
+    "kasumarketplace.com.ng,www.kasumarketplace.com.ng,kasumarketplace.onrender.com,localhost,127.0.0.1,.onrender.com,",
 ).split(",")
 
 CSRF_TRUSTED_ORIGINS = [
     'https://kasumarketplace.com.ng',
     'https://www.kasumarketplace.com.ng',
+    'https://kasumarketplace.onrender.com',
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "https://kasumarketplace.com.ng",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "https://kasumarketplace.onrender.com",
+
 ]
 CORS_ALLOW_CREDENTIALS = True
 SITE_ID = 1
@@ -290,20 +293,14 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 # ===========================
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.zeptomail.com")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() in {"true", "1", "yes"}
+EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "emailapikey")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@kasumarketplace.com.ng")
 DEFAULT_REPLY_TO_EMAIL = os.getenv("DEFAULT_REPLY_TO_EMAIL", "support@kasumarketplace.com.ng")
 SITE_URL = os.getenv('SITE_URL', 'https://kasumarketplace.com.ng')
-# Admin emails
+EMAIL_FAIL_SILENTLY = False
 ADMIN_EMAILS = os.getenv('ADMIN_EMAILS', 'admin@kasumarketplace.com.ng').split(',')
-
-# ===========================
-# OTP CONFIGURATION
-# ===========================
-# OTP Expiry time in minutes (production: 5 minutes)
 OTP_EXPIRY_TIME = 5
 OTP_LENGTH = 6
 
