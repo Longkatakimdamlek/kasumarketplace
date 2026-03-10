@@ -43,3 +43,19 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+    # serve the PWA web manifest at the root URL so that browsers can fetch
+    # it as `/site.webmanifest` without the `/static/` prefix.  the file
+    # resides in our static directory, so point Django's static serve at it.
+    from django.views.static import serve
+
+    urlpatterns += [
+        path(
+            'site.webmanifest',
+            serve,
+            {
+                'document_root': settings.STATICFILES_DIRS[0],
+                'path': 'site.webmanifest',
+            },
+        ),
+    ]

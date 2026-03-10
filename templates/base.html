@@ -17,7 +17,16 @@
     <!-- Added for RealFaviconGenerator compliance -->
     <link rel="icon" type="image/png" sizes="96x96" href="{% static 'images/favicon/favicon-96x96.png' %}" />
     <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon/favicon.svg' %}" />
-    <link rel="manifest" href="{% static 'images/favicon/site.webmanifest' %}">
+    <!-- main PWA manifest; we expose it at the hostname root via
+         a custom URL pattern above so browsers can fetch it as
+         `/site.webmanifest`.  the {% static %} tag now produces an
+         absolute path (/static/site.webmanifest) which works with
+         collectstatic as well, but the root route remains for legacy
+         clients. -->
+    <link rel="manifest" href="/site.webmanifest">
+    <!-- also provide manifest.json for compatibility (served from
+         staticfiles namespace) -->
+    <link rel="manifest" href="{% static 'manifest.json' %}">
     <meta name="apple-mobile-web-app-title" content="Kasu Marketplace">
     <meta name="theme-color" content="#ffffff" />
 

@@ -114,3 +114,34 @@
 [INFO] 2026-03-10 05:58:38,917 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\KasuMarketplace\urls.py changed, reloading.
 [INFO] 2026-03-10 05:58:40,810 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
 [INFO] 2026-03-10 05:58:40,878 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-10 06:50:30,189 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 06:50:30,455 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-10 06:53:14,258 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 06:53:14,311 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[WARNING] 2026-03-10 06:53:17,841 django.request log_response:253 - Not Found: /site.webmanifest
+[WARNING] 2026-03-10 06:53:17,842 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 404 11849
+[WARNING] 2026-03-10 06:53:21,176 django.request log_response:253 - Not Found: /favicon.ico
+[WARNING] 2026-03-10 06:53:21,177 django.server log_message:213 - "GET /favicon.ico HTTP/1.1" 404 11829
+[WARNING] 2026-03-10 06:53:42,517 django.request log_response:253 - Not Found: /manifest.json
+[WARNING] 2026-03-10 06:53:42,526 django.server log_message:213 - "GET /manifest.json HTTP/1.1" 404 11837
+[INFO] 2026-03-10 06:55:27,306 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\KasuMarketplace\settings.py changed, reloading.
+[INFO] 2026-03-10 06:55:32,084 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 06:55:32,139 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-10 06:55:48,236 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\KasuMarketplace\settings.py changed, reloading.
+[INFO] 2026-03-10 06:55:50,317 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 06:55:50,360 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-10 06:55:57,630 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\KasuMarketplace\urls.py changed, reloading.
+[INFO] 2026-03-10 06:55:59,800 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 06:56:00,424 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-10 06:56:32,588 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\KasuMarketplace\settings.py changed, reloading.
+[INFO] 2026-03-10 06:56:34,683 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 06:56:34,736 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-10 07:30:19,206 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 07:30:19,838 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-10 07:30:34,942 django.server log_message:213 - "GET /manifest.json HTTP/1.1" 200 270
+[WARNING] 2026-03-10 07:30:39,156 django.request log_response:253 - Not Found: /favicon.ico
+[WARNING] 2026-03-10 07:30:39,157 django.server log_message:213 - "GET /favicon.ico HTTP/1.1" 404 11829
+[INFO] 2026-03-10 07:30:51,810 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 200 270
+[INFO] 2026-03-10 07:31:00,404 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 200 270
+[INFO] 2026-03-10 07:31:10,268 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 200 270
+[INFO] 2026-03-10 07:31:15,889 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
