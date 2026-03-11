@@ -19,10 +19,10 @@
     <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon/favicon.svg' %}" />
     <!-- main PWA manifest; we expose it at the hostname root via
          a custom URL pattern above so browsers can fetch it as
-         `/site.webmanifest`.  the {% static %} tag now produces an
-         absolute path (/static/site.webmanifest) which works with
-         collectstatic as well, but the root route remains for legacy
-         clients. -->
+         `/site.webmanifest`.  the template tag which generates a URL
+         for static files now produces `/static/site.webmanifest`, so
+         this comment used to describe that behavior but we avoid
+         including the tag itself here to prevent parsing errors. -->
     <link rel="manifest" href="/site.webmanifest">
     <!-- also provide manifest.json for compatibility (served from
          staticfiles namespace) -->

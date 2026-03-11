@@ -145,3 +145,198 @@
 [INFO] 2026-03-10 07:31:00,404 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 200 270
 [INFO] 2026-03-10 07:31:10,268 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 200 270
 [INFO] 2026-03-10 07:31:15,889 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-03-10 07:36:14,652 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-10 07:36:14,823 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-10 07:36:27,658 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-03-10 07:36:28,274 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-03-10 07:36:28,514 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-03-11 04:53:25,953 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-03-11 04:53:28,288 apps.vendors.services.dojah __init__:49 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-03-11 05:17:03,072 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-11 05:17:03,080 django.server handle_error:81 - - Broken pipe from ('127.0.0.1', 56645)
+[INFO] 2026-03-11 05:17:07,844 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 304 0
+[INFO] 2026-03-11 05:17:07,898 django.server log_message:213 - "GET /static/images/favicon/favicon_32x32.png HTTP/1.1" 304 0
+[WARNING] 2026-03-11 05:17:21,659 django.security.csrf log_response:253 - Forbidden (CSRF cookie not set.): /location/update/
+[WARNING] 2026-03-11 05:17:21,661 django.server log_message:213 - "POST /location/update/ HTTP/1.1" 403 2855
+[INFO] 2026-03-11 05:17:28,001 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-11 05:17:28,307 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 80102
+[INFO] 2026-03-11 05:17:37,259 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-03-11 05:17:42,134 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-11 05:17:42,194 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 80102
+[INFO] 2026-03-11 05:17:51,370 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-03-11 05:17:58,589 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-11 05:17:58,639 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 80102
+[INFO] 2026-03-11 05:18:07,779 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-03-11 19:10:52,283 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-11 19:10:57,694 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 304 0
+[INFO] 2026-03-11 19:10:57,701 django.server log_message:213 - "GET /static/images/favicon/favicon_32x32.png HTTP/1.1" 304 0
+[ERROR] 2026-03-11 19:11:30,900 django.request log_response:253 - Internal Server Error: /login/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\views\generic\base.py", line 144, in dispatch
+    return handler(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\kasuMarketplace\apps\users\views.py", line 184, in get
+    return render(request, self.template_name, {'form': form, 'next': next_url})
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        template_name,
+        ^^^^^^^^^^^^^^
+        skip=history,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\templatetags\static.py", line 171, in do_static
+    return StaticNode.handle_token(parser, token)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\templatetags\static.py", line 141, in handle_token
+    raise template.TemplateSyntaxError(
+        "'%s' takes at least one argument (path to file)" % bits[0]
+    )
+django.template.exceptions.TemplateSyntaxError: 'static' takes at least one argument (path to file)
+[ERROR] 2026-03-11 19:11:31,098 django.server log_message:213 - "GET /login/?next=/ HTTP/1.1" 500 216705
+[WARNING] 2026-03-11 19:11:33,647 django.request log_response:253 - Not Found: /favicon.ico
+[WARNING] 2026-03-11 19:11:33,648 django.server log_message:213 - "GET /favicon.ico HTTP/1.1" 404 11829
+[ERROR] 2026-03-11 19:11:48,634 django.request log_response:253 - Internal Server Error: /signup/buyer/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\views\generic\base.py", line 144, in dispatch
+    return handler(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\kasuMarketplace\apps\users\views.py", line 65, in get
+    return render(request, self.template_name, {'form': form})
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 134, in render
+    compiled_parent = self.get_parent(context)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 131, in get_parent
+    return self.find_template(parent, context)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 109, in find_template
+    template, origin = context.template.engine.find_template(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        template_name,
+        ^^^^^^^^^^^^^^
+        skip=history,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\templatetags\static.py", line 171, in do_static
+    return StaticNode.handle_token(parser, token)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\templatetags\static.py", line 141, in handle_token
+    raise template.TemplateSyntaxError(
+        "'%s' takes at least one argument (path to file)" % bits[0]
+    )
+django.template.exceptions.TemplateSyntaxError: 'static' takes at least one argument (path to file)
+[ERROR] 2026-03-11 19:11:48,654 django.server log_message:213 - "GET /signup/buyer/ HTTP/1.1" 500 215779
+[INFO] 2026-03-11 19:15:41,118 django.server log_message:213 - "GET /signup/buyer/ HTTP/1.1" 200 12704
+[INFO] 2026-03-11 19:15:44,338 django.server log_message:213 - "GET /static/images/kasu_logo1.png HTTP/1.1" 200 26848
+[INFO] 2026-03-11 19:15:45,194 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-03-11 19:15:55,960 django.server log_message:213 - "GET / HTTP/1.1" 200 58685
+[INFO] 2026-03-11 19:16:03,465 django.server log_message:213 - "GET /signup/vendor/ HTTP/1.1" 200 12793
+[INFO] 2026-03-11 19:16:04,613 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-03-11 19:16:08,643 django.server log_message:213 - "GET /static/images/favicon/favicon.svg HTTP/1.1" 200 516
+[INFO] 2026-03-11 19:16:47,277 django.server log_message:213 - "GET /shop/brotherly/products/rain-stone-ices-watch/ HTTP/1.1" 200 17013
+[INFO] 2026-03-11 19:17:01,408 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 200 95
+[INFO] 2026-03-11 19:17:05,127 django.server log_message:213 - "GET /cart/ HTTP/1.1" 200 28136
+[INFO] 2026-03-11 19:17:09,985 django.server log_message:213 - "GET /checkout/ HTTP/1.1" 302 0
+[INFO] 2026-03-11 19:17:10,117 django.server log_message:213 - "GET /accounts/login/?next=/checkout/ HTTP/1.1" 200 12394
+[INFO] 2026-03-11 19:17:11,275 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-03-11 19:17:46,038 django.server log_message:213 - "GET /signup/buyer/ HTTP/1.1" 200 12704
+[INFO] 2026-03-11 19:17:47,498 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-03-11 19:28:38,370 django.server log_message:213 - "GET / HTTP/1.1" 200 59242
+[INFO] 2026-03-11 19:28:48,196 django.server log_message:213 - "GET /about/ HTTP/1.1" 200 30251
+[INFO] 2026-03-11 19:29:38,632 django.server log_message:213 - "GET / HTTP/1.1" 200 59242
