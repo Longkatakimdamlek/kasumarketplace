@@ -8,40 +8,40 @@
 {% with vendor=request.user.vendorprofile %}
 
 <div class="max-w-4xl mx-auto">
-    
+
     <!-- Back Button -->
-    <a href="{% url 'vendors:products_list' %}" 
+    <a href="{% url 'vendors:products_list' %}"
        class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6 transition-colors">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
         </svg>
         Back to Products
     </a>
-    
+
     <!-- Form Card -->
-    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-        
-        <form method="post" 
-              enctype="multipart/form-data" 
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-8">
+
+        <form method="post"
+              enctype="multipart/form-data"
               x-data="{
     submitting: false,
     subcategory: '{{ form.subcategory.value|default:'' }}',
     attributes: [],
     imageCount: 0,
     trackInventory: true,
-    
+
     init() {
         if (this.subcategory) {
             this.loadAttributes(this.subcategory);
         }
         this.updateImageCount();
     },
-    
+
     updateImageCount() {
         const inputs = document.querySelectorAll('input[type=file][name*=image]');
         this.imageCount = Array.from(inputs).filter(input => input.files && input.files.length > 0).length;
     },
-    
+
     async loadAttributes(subcategoryId) {
         if (!subcategoryId) {
             this.attributes = [];
@@ -50,12 +50,11 @@
         try {
             const response = await fetch(`/vendors/ajax/attributes/?subcategory_id=${subcategoryId}`);
             const data = await response.json();
-            
-            // Preserve submitted values on form errors
+
             this.attributes = (data.attributes || []).map(attr => {
                 const inputEl = document.querySelector(`[name='attr_${attr.id}']`);
                 const submittedValue = inputEl ? inputEl.value : '';
-                
+
                 return {
                     ...attr,
                     value: submittedValue || ''
@@ -68,135 +67,83 @@
 }"
               @submit="submitting = true">
             {% csrf_token %}
-            
-            {% if form.errors or formset.errors %}
-            <div class="mb-6 bg-red-50 border-2 border-red-400 rounded-lg p-4">
-                <h3 class="text-red-800 font-bold mb-2">⚠️ Please fix the following errors:</h3>
-                
-                <!-- Form field errors -->
-                {% if form.errors %}
-                    {% for field, errors in form.errors.items %}
-                        {% for error in errors %}
-                            <p class="text-sm text-red-700">• {{ field }}: {{ error }}</p>
-                        {% endfor %}
-                    {% endfor %}
-                {% endif %}
-                
-                <!-- Non-field errors -->
-                {% if form.non_field_errors %}
-                    {% for error in form.non_field_errors %}
-                        <p class="text-sm text-red-700">• {{ error }}</p>
-                    {% endfor %}
-                {% endif %}
-                
-                <!-- Formset errors -->
-                {% if formset.errors %}
-                    {% for form_errors in formset.errors %}
-                        {% for field, errors in form_errors.items %}
-                            {% for error in errors %}
-                                <p class="text-sm text-red-700">• Image {{ forloop.parentloop.counter }}: {{ field }} - {{ error }}</p>
-                            {% endfor %}
-                        {% endfor %}
-                    {% endfor %}
-                {% endif %}
-                
-                <!-- Formset non-form errors -->
-                {% if formset.non_form_errors %}
-                    {% for error in formset.non_form_errors %}
-                        <p class="text-sm text-red-700">• {{ error }}</p>
-                    {% endfor %}
-                {% endif %}
+
+            {# Generic backend-error banner — only shown if the view passes general_error #}
+            {% if general_error %}
+            <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-sm text-red-700">Something went wrong while saving. Please try again.</p>
             </div>
             {% endif %}
-            
-            <!-- Basic Information Section -->
-            <div class="mb-8">
-                <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                    <svg class="w-6 h-6 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Basic Information
-                </h2>
-                
-                <!-- Product Title -->
-                <div class="mb-6">
-                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                        Product Title
-                        <span class="text-red-500">*</span>
-                    </label>
-                    {{ form.title }}
-                    {% if form.title.errors %}
-                    <p class="mt-2 text-sm text-red-600">{{ form.title.errors.0 }}</p>
-                    {% endif %}
-                    <p class="mt-1 text-xs text-gray-500">Be specific and descriptive</p>
-                </div>
-                
-                <!-- Main Category (LOCKED) -->
-                <div class="mb-6">
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        Main Category
-                        <span class="text-yellow-600 ml-2">🔒 Locked</span>
-                    </label>
-                    <div class="px-4 py-3 bg-gray-100 border-2 border-gray-300 rounded-lg">
-                        <p class="font-semibold text-gray-700">{{ request.user.vendorprofile.store.main_category.name }}</p>
-                        <p class="text-xs text-gray-500 mt-1">Your store's main category (cannot be changed)</p>
-                    </div>
-                </div>
-                
-                <!-- Subcategory -->
-                <div class="mb-6">
-                    <label for="{{ form.subcategory.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                        Subcategory
-                        <span class="text-red-500">*</span>
-                    </label>
-                    <select name="{{ form.subcategory.html_name }}"
-                            id="{{ form.subcategory.id_for_label }}"
-                            x-model="subcategory"
-                            @change="loadAttributes($event.target.value)"
-                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                            required>
-                        <option value="">-- Select Subcategory --</option>
-                        {% for subcategory in subcategories %}
-                        <option value="{{ subcategory.id }}" {% if form.subcategory.value == subcategory.id|stringformat:"s" %}selected{% endif %}>{{ subcategory.name }}</option>
-                        {% endfor %}
-                    </select>
-                    {% if form.subcategory.errors %}
-                    <p class="mt-2 text-sm text-red-600">{{ form.subcategory.errors.0 }}</p>
-                    {% endif %}
-                </div>
-                
-                <!-- Description -->
-                <div class="mb-6">
-                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                        Description
-                        <span class="text-red-500">*</span>
-                    </label>
-                    {{ form.description }}
-                    {% if form.description.errors %}
-                    <p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>
-                    {% endif %}
+
+            {# Non-field form errors only — per-field errors render inline below #}
+            {% if form.non_field_errors %}
+            <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                {% for error in form.non_field_errors %}
+                <p class="text-sm text-red-700">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Main Category (locked) -->
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    Main Category
+                    <span class="inline-flex items-center gap-1 ml-2 text-xs font-normal text-gray-500">
+                        <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.66 0 3-1.34 3-3V6a3 3 0 10-6 0v2c0 1.66 1.34 3 3 3zm6 2H6a1 1 0 00-1 1v6a1 1 0 001 1h12a1 1 0 001-1v-6a1 1 0 00-1-1z"/>
+                        </svg>
+                        Locked
+                    </span>
+                </label>
+                <div class="px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg">
+                    <p class="font-semibold text-gray-700">{{ request.user.vendorprofile.store.main_category.name }}</p>
                 </div>
             </div>
-            
-            <!-- 🔥 DYNAMIC ATTRIBUTES SECTION -->
-            <div class="mb-8" x-show="attributes.length > 0" x-transition>
-                <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                    <svg class="w-6 h-6 text-soft-blue mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-                    </svg>
-                    Product Specifications
-                </h2>
-                
-                <div class="grid md:grid-cols-2 gap-6">
+
+            <!-- Subcategory -->
+            <div class="mb-6">
+                <label for="{{ form.subcategory.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Subcategory <span class="text-red-500">*</span>
+                </label>
+                <select name="{{ form.subcategory.html_name }}"
+                        id="{{ form.subcategory.id_for_label }}"
+                        x-model="subcategory"
+                        @change="loadAttributes($event.target.value)"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        required>
+                    <option value="">Select Subcategory</option>
+                    {% for subcategory in subcategories %}
+                    <option value="{{ subcategory.id }}" {% if form.subcategory.value == subcategory.id|stringformat:"s" %}selected{% endif %}>{{ subcategory.name }}</option>
+                    {% endfor %}
+                </select>
+                {% if form.subcategory.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.subcategory.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Product Title -->
+            <div class="mb-6">
+                <label for="{{ form.title.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Product Name <span class="text-red-500">*</span>
+                </label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Dynamic Specifications -->
+            <div class="mb-6" x-show="attributes.length > 0" x-transition>
+                <h2 class="text-base font-bold text-gray-900 mb-3">Specifications</h2>
+                <div class="grid sm:grid-cols-2 gap-4">
                     <template x-for="attr in attributes" :key="attr.id">
                         <div>
-                            <label :for="'attr_' + attr.id" 
+                            <label :for="'attr_' + attr.id"
                                    class="block text-sm font-semibold text-gray-900 mb-2">
                                 <span x-text="attr.name"></span>
                                 <span class="text-red-500" x-show="attr.is_required"> *</span>
                             </label>
-                            
-                            <!-- Text Input -->
+
                             <template x-if="attr.field_type === 'text'">
                                 <input type="text"
                                        x-model="attr.value"
@@ -204,10 +151,9 @@
                                        :id="'attr_' + attr.id"
                                        :placeholder="attr.placeholder || 'Enter ' + attr.name.toLowerCase()"
                                        :required="attr.is_required"
-                                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue">
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue">
                             </template>
-                            
-                            <!-- Number Input -->
+
                             <template x-if="attr.field_type === 'number'">
                                 <input type="number"
                                        x-model="attr.value"
@@ -215,24 +161,22 @@
                                        :id="'attr_' + attr.id"
                                        :placeholder="attr.placeholder"
                                        :required="attr.is_required"
-                                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue">
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue">
                             </template>
-                            
-                            <!-- Dropdown -->
+
                             <template x-if="attr.field_type === 'dropdown'">
                                 <select x-model="attr.value"
                                         :name="'attr_' + attr.id"
                                         :id="'attr_' + attr.id"
                                         :required="attr.is_required"
-                                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue">
-                                    <option value="">-- Select --</option>
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue">
+                                    <option value="">Select</option>
                                     <template x-for="option in attr.options" :key="option">
                                         <option :value="option" x-text="option"></option>
                                     </template>
                                 </select>
                             </template>
-                            
-                            <!-- Textarea -->
+
                             <template x-if="attr.field_type === 'textarea'">
                                 <textarea x-model="attr.value"
                                           :name="'attr_' + attr.id"
@@ -240,10 +184,9 @@
                                           :placeholder="attr.placeholder"
                                           :required="attr.is_required"
                                           rows="3"
-                                          class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue"></textarea>
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-blue focus:border-soft-blue"></textarea>
                             </template>
-                            
-                            <!-- Checkbox -->
+
                             <template x-if="attr.field_type === 'checkbox'">
                                 <label class="flex items-center">
                                     <input type="checkbox"
@@ -255,287 +198,204 @@
                                     <span class="ml-2 text-sm text-gray-700" x-text="attr.help_text || 'Yes'"></span>
                                 </label>
                             </template>
-                            
-                            <p x-show="attr.help_text && attr.field_type !== 'checkbox'" 
-                               x-text="attr.help_text" 
-                               class="mt-2 text-xs text-gray-500"></p>
                         </div>
                     </template>
                 </div>
             </div>
-            
-            <!-- ✅ PRICING & INVENTORY SECTION -->
-            <div class="mb-8">
-                <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                    <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Pricing & Inventory
-                </h2>
-                
-                <div class="grid md:grid-cols-2 gap-6 mb-6">
-                    <!-- Price -->
-                    <div>
-                        <label for="{{ form.price.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                            Selling Price (₦)
-                            <span class="text-red-500">*</span>
-                        </label>
-                        {{ form.price }}
-                        {% if form.price.errors %}
-                        <p class="mt-2 text-sm text-red-600">{{ form.price.errors.0 }}</p>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Compare At Price -->
-                    <div>
-                        <label for="{{ form.compare_at_price.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                            Original Price (₦)
-                        </label>
-                        {{ form.compare_at_price }}
-                        <p class="mt-1 text-xs text-gray-500">Show discount by setting higher original price</p>
-                    </div>
-                </div>
-                
-                <!-- ✅ STOCK TRACKING TOGGLE -->
-                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <label class="flex items-start cursor-pointer">
-                        {{ form.track_inventory }}
-                        <div class="ml-3">
-                            <span class="text-sm font-semibold text-gray-900">Track inventory for this product</span>
-                            <p class="text-xs text-gray-600 mt-1">
-                                Enable to automatically reduce stock when orders are placed. 
-                                Disable for services or unlimited digital products.
-                            </p>
-                        </div>
-                    </label>
-                </div>
-                
-                <!-- ✅ STOCK FIELDS (conditional) -->
-                <div x-show="trackInventory" x-transition class="grid md:grid-cols-2 gap-6 mb-6">
-                    <!-- Stock Quantity -->
-                    <div>
-                        <label for="{{ form.stock_quantity.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                            Stock Quantity
-                            <span class="text-red-500">*</span>
-                        </label>
-                        {{ form.stock_quantity }}
-                        {% if form.stock_quantity.errors %}
-                        <p class="mt-2 text-sm text-red-600">{{ form.stock_quantity.errors.0 }}</p>
-                        {% else %}
-                        <p class="mt-1 text-xs text-gray-500">Number of units available for sale</p>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Low Stock Alert Threshold -->
-                    <div>
-                        <label for="{{ form.low_stock_threshold.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                            Low Stock Alert
-                        </label>
-                        {{ form.low_stock_threshold }}
-                        <p class="mt-1 text-xs text-gray-500">Get notified when stock falls below this number</p>
-                    </div>
-                </div>
-                
-                <!-- SKU (Optional) -->
-                <div>
-                    <label for="{{ form.sku.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
-                        SKU (Stock Keeping Unit)
-                    </label>
-                    {{ form.sku }}
-                    <p class="mt-1 text-xs text-gray-500">Optional: For your internal inventory tracking</p>
-                </div>
+
+            <!-- Description -->
+            <div class="mb-6">
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                    Description <span class="text-red-500">*</span>
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                {% endif %}
             </div>
-            
-            <!-- ✅ IMAGES SECTION (3-5 IMAGES) -->
+
+            <!-- Photos -->
             <div class="mb-8">
-                <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                    <svg class="w-6 h-6 text-pink-accent mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    Product Images
-                    <span class="text-sm font-normal text-gray-600 ml-2">(3-5 images required)</span>
+                <h2 class="text-base font-bold text-gray-900 mb-3">
+                    Photos <span class="text-sm font-normal text-gray-500">(3-5 required)</span>
                 </h2>
-                
-                <!-- Image Counter & Instructions -->
-                <div class="mb-6 p-4 border-2 rounded-lg" 
-                     :class="imageCount >= 3 && imageCount <= 5 ? 'bg-green-50 border-green-300' : 'bg-yellow-50 border-yellow-300'">
-                    <div class="flex items-center justify-between mb-2">
-                        <p class="text-sm font-semibold" 
-                           :class="imageCount >= 3 && imageCount <= 5 ? 'text-green-800' : 'text-yellow-800'">
-                            <span x-show="imageCount < 3">⚠️ Need <span x-text="3 - imageCount"></span> more image(s)</span>
-                            <span x-show="imageCount >= 3 && imageCount <= 5">✅ Perfect! <span x-text="imageCount"></span> images uploaded</span>
-                            <span x-show="imageCount > 5">❌ Too many! Remove <span x-text="imageCount - 5"></span> image(s)</span>
+
+                <div class="mb-4 p-3 border rounded-lg"
+                     :class="imageCount >= 3 && imageCount <= 5 ? 'bg-green-50 border-green-300' : 'bg-amber-50 border-amber-300'">
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-medium"
+                           :class="imageCount >= 3 && imageCount <= 5 ? 'text-green-800' : 'text-amber-800'">
+                            <span x-show="imageCount < 3">Need <span x-text="3 - imageCount"></span> more</span>
+                            <span x-show="imageCount >= 3 && imageCount <= 5">Looks good</span>
+                            <span x-show="imageCount > 5">Remove <span x-text="imageCount - 5"></span></span>
                         </p>
-                        <span class="text-lg font-bold" 
-                              :class="imageCount >= 3 && imageCount <= 5 ? 'text-green-600' : 'text-yellow-600'"
-                              x-text="imageCount + ' / 3-5'"></span>
+                        <span class="text-sm font-bold" :class="imageCount >= 3 && imageCount <= 5 ? 'text-green-600' : 'text-amber-600'" x-text="imageCount + ' / 3-5'"></span>
                     </div>
-                    <p class="text-xs" 
-                       :class="imageCount >= 3 && imageCount <= 5 ? 'text-green-700' : 'text-yellow-700'">
-                        📸 Upload 3-5 high-quality photos. First image will be the main display image.
-                    </p>
                 </div>
-                
+
                 {% if formset.non_form_errors %}
-                <div class="mb-6 bg-red-50 border-2 border-red-400 rounded-lg p-4">
-                    <h3 class="text-red-800 font-bold mb-2">⚠️ Image Upload Error:</h3>
+                <div class="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
                     {% for error in formset.non_form_errors %}
-                        <p class="text-sm text-red-700">{{ error }}</p>
+                    <p class="text-sm text-red-700">{{ error }}</p>
                     {% endfor %}
                 </div>
                 {% endif %}
-                
+
                 {{ formset.management_form }}
 
-                <!-- Image Upload Grid (5 slots) -->
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="image-formset"
-                     @image-selected.window="updateImageCount()">
+                <div class="grid grid-cols-5 gap-1.5 sm:gap-3" id="image-formset" @image-selected.window="updateImageCount()">
                     {% if formset.forms %}
                         {% for form in formset %}
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary transition-colors relative cursor-pointer"
-                         x-data="{ 
-                             hasFile: false,
-                             fileName: '',
-                             previewUrl: null,
-                             fileInput: null
-                         }"
-                         x-init="fileInput = $el.querySelector('input[type=file]')"
-                         @click="if (!hasFile) fileInput.click()">
-                        <div class="aspect-square flex flex-col items-center justify-center mb-2">
-                            <!-- Preview Image -->
-                            <template x-if="previewUrl">
-                                <img :src="previewUrl" 
-                                     class="w-full h-full object-cover rounded-lg"
-                                     alt="Preview">
-                            </template>
-                            
-                            <!-- Upload Icon -->
-                            <template x-if="!previewUrl">
-                                <div class="flex flex-col items-center">
-                                    <svg class="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                                    </svg>
-                                    <span class="text-primary text-xs font-semibold">
-                                        {% if forloop.first %}Main Image{% else %}Image {{ forloop.counter }}{% endif %}
-                                    </span>
-                                </div>
-                            </template>
+                        <div class="relative cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-1 text-center transition-colors hover:border-primary sm:p-3"
+                             x-data="{ hasFile: false, fileName: '', previewUrl: null, fileInput: null }"
+                             x-init="fileInput = $el.querySelector('input[type=file]')"
+                             @click="if (!hasFile) fileInput.click()">
+
+                            {% if forloop.first %}
+                            <span class="absolute -top-1.5 -left-1.5 z-10 rounded-full bg-primary px-1.5 py-0.5 text-[8px] font-bold text-white sm:hidden">M</span>
+                            {% endif %}
+
+                            <div class="aspect-square flex flex-col items-center justify-center">
+                                <template x-if="previewUrl">
+                                    <img :src="previewUrl" class="w-full h-full object-cover rounded" alt="Preview">
+                                </template>
+                                <template x-if="!previewUrl">
+                                    <div class="flex flex-col items-center">
+                                        <svg class="size-4 text-gray-400 sm:size-8 sm:mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                        </svg>
+                                        <span class="hidden text-primary text-[11px] font-semibold sm:block">
+                                            {% if forloop.first %}Main{% else %}{{ forloop.counter }}{% endif %}
+                                        </span>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <input type="file"
+                                   name="{{ form.image.html_name }}"
+                                   id="{{ form.image.id_for_label }}"
+                                   accept="image/*"
+                                   @change="
+                                       if ($event.target.files && $event.target.files.length > 0) {
+                                           hasFile = true;
+                                           fileName = $event.target.files[0].name;
+                                           const reader = new FileReader();
+                                           reader.onload = (e) => { previewUrl = e.target.result; };
+                                           reader.readAsDataURL($event.target.files[0]);
+                                           $dispatch('image-selected');
+                                       } else {
+                                           hasFile = false;
+                                           fileName = '';
+                                           previewUrl = null;
+                                           $dispatch('image-selected');
+                                       }
+                                   "
+                                   class="hidden">
+
+                            {{ form.id }}
+                            {{ form.DELETE }}
+                            <input type="hidden" name="{{ form.is_primary.html_name }}" value="{% if forloop.first %}true{% else %}false{% endif %}">
+                            <input type="hidden" name="{{ form.sort_order.html_name }}" value="{{ forloop.counter0 }}">
+
+                            <button type="button"
+                                    x-show="hasFile"
+                                    aria-label="Remove image"
+                                    @click.stop="
+                                        const input = $el.closest('div').querySelector('input[type=file]');
+                                        input.value = '';
+                                        hasFile = false; fileName = ''; previewUrl = null;
+                                        $dispatch('image-selected');
+                                    "
+                                    class="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-red-500 text-white sm:size-5">
+                                <svg class="size-2.5 sm:size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
                         </div>
-                        
-                        <!-- File Input -->
-                        <input type="file" 
-                               name="{{ form.image.html_name }}"
-                               id="{{ form.image.id_for_label }}"
-                               accept="image/*"
-                               @change="
-                                   if ($event.target.files && $event.target.files.length > 0) {
-                                       hasFile = true;
-                                       fileName = $event.target.files[0].name;
-                                       
-                                       // Create preview
-                                       const reader = new FileReader();
-                                       reader.onload = (e) => { previewUrl = e.target.result; };
-                                       reader.readAsDataURL($event.target.files[0]);
-                                       
-                                       // Update parent count
-                                       $dispatch('image-selected');
-                                   } else {
-                                       hasFile = false;
-                                       fileName = '';
-                                       previewUrl = null;
-                                       $dispatch('image-selected');
-                                   }
-                               "
-                               class="hidden">
-                        
-                        {{ form.id }}
-                        {{ form.DELETE }}
-                        
-                        <!-- Hidden fields -->
-                        <input type="hidden" name="{{ form.is_primary.html_name }}" value="{% if forloop.first %}true{% else %}false{% endif %}">
-                        <input type="hidden" name="{{ form.sort_order.html_name }}" value="{{ forloop.counter0 }}">
-                        
-                        <!-- File name display -->
-                        <p class="text-xs text-gray-500 mt-2 truncate" x-show="hasFile" x-text="fileName"></p>
-                        <p class="text-xs text-gray-500 mt-2" x-show="!hasFile">Max 5MB</p>
-                        
-                        <!-- Remove button -->
-                        <button type="button"
-                                x-show="hasFile"
-                                @click.stop="
-                                    const input = $el.closest('div').querySelector('input[type=file]');
-                                    input.value = '';
-                                    hasFile = false;
-                                    fileName = '';
-                                    previewUrl = null;
-                                    $dispatch('image-selected');
-                                "
-                                class="mt-2 text-xs text-red-600 hover:text-red-800 font-semibold">
-                            ❌ Remove
-                        </button>
-                    </div>
                         {% endfor %}
                     {% else %}
-                    <div class="col-span-full p-8 text-center bg-yellow-50 border-2 border-yellow-300 rounded-lg">
-                        <p class="text-yellow-800 font-semibold">⚠️ Image upload forms not available. Please refresh the page.</p>
-                    </div>
+                        <div class="col-span-full p-6 text-center bg-amber-50 border border-amber-300 rounded-lg">
+                            <p class="text-amber-800 text-sm">Image upload forms not available. Please refresh the page.</p>
+                        </div>
                     {% endif %}
-                  </div>
-            </div>
-            
-            <!-- ✅ STATUS SECTION (Draft / Publish) -->
-            <div class="mb-8">
-                <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                    <svg class="w-6 h-6 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Publication Status
-                </h2>
-                
-                <div class="bg-gray-50 border-2 border-gray-300 rounded-lg p-6">
-                    <!-- Vendor Status Selection -->
-                    <label class="block text-sm font-semibold text-gray-900 mb-3">
-                        Choose publication status <span class="text-red-500">*</span>
-                    </label>
-                    
-                    <div class="space-y-3">
-                        {% for value, label in form.status.field.choices %}
-                        <label class="flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all
-                            {% if form.status.value == value %}border-primary bg-primary/5{% else %}border-gray-300 hover:border-primary/50{% endif %}">
-                            <input type="radio" 
-                                   name="{{ form.status.html_name }}"
-                                   value="{{ value }}"
-                                   {% if form.status.value == value or value == 'draft' and not form.status.value %}checked{% endif %}
-                                   class="mt-1 w-4 h-4 text-primary border-gray-300 focus:ring-primary">
-                            <div class="ml-3">
-                                <span class="font-semibold text-gray-900">{{ label }}</span>
-                                <p class="text-xs text-gray-600 mt-1">
-                                    {% if value == 'draft' %}
-                                        Save without publishing. Only you can see this product.
-                                    {% elif value == 'published' %}
-                                        Make this product visible to customers in your store.
-                                    {% endif %}
-                                </p>
-                            </div>
-                        </label>
-                        {% endfor %}
-                    </div>
-                    
-                    <!-- Warning for out of stock -->
-                    <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p class="text-xs text-yellow-800">
-                            ⚠️ <strong>Note:</strong> If you set stock quantity to 0, the product will automatically be marked as "Out of Stock" even if you select "Publish".
-                        </p>
-                    </div>
                 </div>
             </div>
-            
+
+            <!-- Price -->
+            <div class="grid grid-cols-2 gap-3 sm:gap-6 mb-6">
+                <div>
+                    <label for="{{ form.price.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                        Price (₦) <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.price }}
+                    {% if form.price.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.price.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.compare_at_price.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                        Original Price (₦)
+                    </label>
+                    {{ form.compare_at_price }}
+                </div>
+            </div>
+
+            <!-- Inventory toggle -->
+            <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <label class="flex items-start cursor-pointer">
+                    {{ form.track_inventory }}
+                    <span class="ml-3 text-sm font-semibold text-gray-900">Track inventory for this product</span>
+                </label>
+            </div>
+
+            <!-- Stock -->
+            <div x-show="trackInventory" x-transition class="grid grid-cols-2 gap-3 sm:gap-6 mb-8">
+                <div>
+                    <label for="{{ form.stock_quantity.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                        Stock Qty <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.stock_quantity }}
+                    {% if form.stock_quantity.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.stock_quantity.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.low_stock_threshold.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">
+                        Low Stock Alert
+                    </label>
+                    {{ form.low_stock_threshold }}
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="mb-8">
+                <h2 class="text-base font-bold text-gray-900 mb-3">Publication Status</h2>
+                <div class="space-y-2.5">
+                    {% for value, label in form.status.field.choices %}
+                    <label class="flex items-start p-3 border rounded-lg cursor-pointer transition-all
+                        {% if form.status.value == value %}border-primary bg-primary/5{% else %}border-gray-300 hover:border-primary/50{% endif %}">
+                        <input type="radio"
+                               name="{{ form.status.html_name }}"
+                               value="{{ value }}"
+                               {% if form.status.value == value or value == 'draft' and not form.status.value %}checked{% endif %}
+                               class="mt-1 w-4 h-4 text-primary border-gray-300 focus:ring-primary">
+                        <div class="ml-3">
+                            <span class="font-semibold text-gray-900 text-sm">{{ label }}</span>
+                            <p class="text-xs text-gray-500">
+                                {% if value == 'draft' %}Only you can see this{% elif value == 'published' %}Visible to customers{% endif %}
+                            </p>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
             <!-- Submit Buttons -->
-            <div class="flex gap-4">
-                <button type="submit" 
+            <div class="flex flex-col gap-3 sm:flex-row sm:gap-4">
+                <button type="submit"
                         :disabled="submitting"
-                        class="flex-1 py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span x-show="!submitting">✨ Create Product</span>
+                        class="flex-1 py-3 sm:py-4 bg-gradient-to-r from-primary to-soft-blue text-white text-sm sm:text-lg font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span x-show="!submitting">Create Product</span>
                     <span x-show="submitting" class="flex items-center justify-center">
                         <svg class="animate-spin h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -544,9 +404,8 @@
                         Creating...
                     </span>
                 </button>
-                
-                <a href="{% url 'vendors:products_list' %}" 
-                   class="px-8 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-center">
+                <a href="{% url 'vendors:products_list' %}"
+                   class="px-8 py-3 sm:py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-center text-sm sm:text-base">
                     Cancel
                 </a>
             </div>

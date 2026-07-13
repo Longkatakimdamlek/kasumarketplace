@@ -5,135 +5,205 @@
 
 {% block content %}
 
-<div class="max-w-6xl mx-auto">
+<div class="max-w-6xl mx-auto" x-data="{ currentImage: 0, showDesc: false, showSpecs: false }">
 
     <!-- Back -->
     <a href="{% url 'vendors:products_list' %}"
-       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6">
-        ← Back to Products
+       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-5 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back to Products
     </a>
 
-    <div class="grid lg:grid-cols-2 gap-8" x-data="{ currentImage: 0 }">
+    <div class="grid lg:grid-cols-2 gap-5 lg:gap-8">
 
-        <!-- Images -->
-        <div class="bg-white rounded-xl shadow-sm border p-6">
-            <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
+        {# ── Left column: Images ── #}
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+
+            {# Main image #}
+            <div class="aspect-square bg-gray-100 overflow-hidden">
                 {% if product.images.all %}
                     {% for image in product.images.all %}
                     <img x-show="currentImage === {{ forloop.counter0 }}"
                          src="{{ image.image.url }}"
+                         alt="{{ product.title }}"
                          class="w-full h-full object-cover">
                     {% endfor %}
                 {% else %}
-                    <div class="flex items-center justify-center h-full text-gray-400">
-                        No image uploaded
-                    </div>
+                <div class="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
+                    <svg class="size-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <p class="text-sm">No images uploaded</p>
+                </div>
                 {% endif %}
             </div>
 
+            {# Thumbnail strip #}
             {% if product.images.all %}
-            <div class="flex gap-2">
+            <div class="flex gap-2 p-3 overflow-x-auto">
                 {% for image in product.images.all %}
                 <button @click="currentImage = {{ forloop.counter0 }}"
-                        :class="currentImage === {{ forloop.counter0 }} ? 'ring-2 ring-primary' : ''"
-                        class="w-20 h-20 border rounded overflow-hidden">
-                    <img src="{{ image.image.url }}" class="object-cover w-full h-full">
+                        class="shrink-0 size-14 rounded-lg overflow-hidden border-2 transition-colors
+                            {% if forloop.first %}border-primary{% else %}border-transparent{% endif %}"
+                        :class="currentImage === {{ forloop.counter0 }} ? 'border-primary' : 'border-transparent hover:border-gray-300'">
+                    <img src="{{ image.image.url }}" alt="" class="object-cover w-full h-full">
                 </button>
                 {% endfor %}
             </div>
             {% endif %}
         </div>
 
-        <!-- Details -->
-        <div class="space-y-6">
+        {# ── Right column: Info ── #}
+        <div class="space-y-4">
 
-            <!-- Header -->
-            <div class="bg-white rounded-xl border p-6">
-                <h1 class="text-3xl font-bold text-gray-900">{{ product.title }}</h1>
+            {# Title row + delete icon #}
+            <div class="flex items-start justify-between gap-3">
+                <h1 class="text-xl font-bold text-gray-900 leading-tight sm:text-2xl">
+                    {{ product.title }}
+                </h1>
+                <a href="{% url 'vendors:product_delete' product.slug %}"
+                   aria-label="Delete product"
+                   class="shrink-0 flex size-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </a>
+            </div>
 
-                <div class="flex gap-2 mt-3">
-                    <span class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">
-                        {{ product.subcategory.name }}
-                    </span>
+            {# Chips #}
+            <div class="flex flex-wrap gap-2">
+                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                    {{ product.subcategory.name }}
+                </span>
 
-                    {% if product.status == 'published' %}
-                        <span class="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
-                            Published
-                        </span>
-                    {% else %}
-                        <span class="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
-                            Draft
-                        </span>
-                    {% endif %}
-                </div>
-
-                <div class="mt-6">
-                    <p class="text-4xl font-bold text-primary">
-                        ₦{{ product.price|floatformat:2 }}
-                    </p>
-                </div>
-
-                <!-- Stock Status -->
-                {% if product.track_inventory %}
-                    {% if product.stock_quantity > product.low_stock_threshold %}
-                        <p class="mt-4 text-green-700 text-sm">In stock</p>
-                    {% elif product.stock_quantity > 0 %}
-                        <p class="mt-4 text-orange-600 text-sm">Low stock ({{ product.stock_quantity }} left)</p>
-                    {% else %}
-                        <p class="mt-4 text-red-600 text-sm">Out of stock</p>
-                    {% endif %}
+                {% if product.status == 'published' %}
+                <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                    Published
+                </span>
+                {% elif product.status == 'draft' %}
+                <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                    Draft
+                </span>
                 {% else %}
-                    <p class="mt-4 text-blue-600 text-sm">Unlimited availability</p>
+                <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-600">
+                    {{ product.get_status_display }}
+                </span>
                 {% endif %}
             </div>
 
-            <!-- Performance -->
-            <div class="grid grid-cols-3 gap-4 bg-white rounded-xl border p-6 text-center">
-                <div>
-                    <p class="text-2xl font-bold">{{ product.views_count|default:0 }}</p>
-                    <p class="text-xs text-gray-500">Views</p>
+            {# Price + stock #}
+            <div>
+                <div class="flex items-baseline gap-3">
+                    <p class="text-2xl font-bold text-primary">₦{{ product.price|floatformat:2 }}</p>
+                    {% if product.compare_at_price %}
+                    <p class="text-sm text-gray-400 line-through">₦{{ product.compare_at_price|floatformat:2 }}</p>
+                    {% endif %}
                 </div>
-                <div>
-                    <p class="text-2xl font-bold">{{ product.sales_count|default:0 }}</p>
-                    <p class="text-xs text-gray-500">Sold</p>
+
+                <p class="mt-1 text-sm
+                    {% if product.track_inventory %}
+                        {% if product.stock_quantity > product.low_stock_threshold %}text-green-600
+                        {% elif product.stock_quantity > 0 %}text-amber-600
+                        {% else %}text-red-600{% endif %}
+                    {% else %}text-blue-600{% endif %}">
+                    {% if product.track_inventory %}
+                        {% if product.stock_quantity > product.low_stock_threshold %}In stock &mdash; {{ product.stock_quantity }} units
+                        {% elif product.stock_quantity > 0 %}Low stock &mdash; {{ product.stock_quantity }} left
+                        {% else %}Out of stock{% endif %}
+                    {% else %}
+                        Unlimited availability
+                    {% endif %}
+                </p>
+            </div>
+
+            {# Performance strip #}
+            <div class="grid grid-cols-3 divide-x divide-gray-200 rounded-xl border border-gray-200 bg-white py-3">
+                <div class="flex flex-col items-center px-3 text-center">
+                    <p class="text-lg font-bold text-gray-900 sm:text-xl">{{ product.views_count|default:0 }}</p>
+                    <p class="text-[11px] text-gray-500 mt-0.5">Views</p>
                 </div>
-                <div>
-                    <p class="text-2xl font-bold">₦{{ total_revenue|floatformat:2 }}</p>
-                    <p class="text-xs text-gray-500">Revenue</p>
+                <div class="flex flex-col items-center px-3 text-center">
+                    <p class="text-lg font-bold text-gray-900 sm:text-xl">{{ product.sales_count|default:0 }}</p>
+                    <p class="text-[11px] text-gray-500 mt-0.5">Sold</p>
+                </div>
+                <div class="flex flex-col items-center px-3 text-center">
+                    <p class="text-lg font-bold text-green-600 sm:text-xl">₦{{ total_revenue|default:0|floatformat:0 }}</p>
+                    <p class="text-[11px] text-gray-500 mt-0.5">Revenue</p>
                 </div>
             </div>
 
-            <!-- Actions -->
-            <div class="flex gap-3">
+            {# Actions #}
+            <div class="flex gap-2.5">
                 <a href="{% url 'vendors:product_edit' product.slug %}"
-                   class="flex-1 text-center py-3 bg-primary text-white rounded-lg font-semibold">
+                   class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-soft-blue px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md">
+                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
                     Edit Product
                 </a>
 
                 {% if product.status == 'published' %}
                 <a href="{% url 'vendors:store_public' vendor.store.slug %}"
                    target="_blank"
-                   class="flex-1 text-center py-3 bg-gray-100 rounded-lg font-semibold">
+                   rel="noopener"
+                   class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50">
                     View Live
+                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
                 </a>
                 {% endif %}
             </div>
 
-            <!-- Description -->
-            <div class="bg-white rounded-xl border p-6">
-                <h3 class="font-bold mb-2">Description</h3>
-                <p class="text-gray-700 whitespace-pre-line">{{ product.description }}</p>
+            {# Description — collapsible on mobile #}
+            <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                <button @click="showDesc = !showDesc"
+                        class="flex w-full items-center justify-between px-4 py-3.5 text-left lg:cursor-default"
+                        :class="{ 'border-b border-gray-200': showDesc }">
+                    <span class="text-sm font-bold text-gray-900">Description</span>
+                    <svg class="size-4 text-gray-400 transition-transform lg:hidden"
+                         :class="showDesc ? 'rotate-180' : ''"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="showDesc"
+                     x-transition:enter="transition duration-150"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="px-4 pb-4 lg:block"
+                     :class="{ 'hidden': !showDesc }"
+                     x-cloak>
+                    <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ product.description }}</p>
+                </div>
             </div>
 
-            <!-- Specs -->
+            {# Specifications — collapsible on mobile #}
             {% if product.attributes %}
-            <div class="bg-white rounded-xl border p-6">
-                <h3 class="font-bold mb-4">Specifications</h3>
-                <div class="space-y-2">
+            <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                <button @click="showSpecs = !showSpecs"
+                        class="flex w-full items-center justify-between px-4 py-3.5 text-left lg:cursor-default"
+                        :class="{ 'border-b border-gray-200': showSpecs }">
+                    <span class="text-sm font-bold text-gray-900">Specifications</span>
+                    <svg class="size-4 text-gray-400 transition-transform lg:hidden"
+                         :class="showSpecs ? 'rotate-180' : ''"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="showSpecs"
+                     x-transition:enter="transition duration-150"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="divide-y divide-gray-100 lg:block"
+                     :class="{ 'hidden': !showSpecs }"
+                     x-cloak>
                     {% for attr in product.resolved_attributes %}
-                    <div class="flex justify-between border-b pb-2">
-                        <span class="text-gray-600 text-sm">{{ attr.name }}</span>
-                        <span class="font-semibold text-sm">{{ attr.value }}</span>
+                    <div class="flex items-center justify-between px-4 py-2.5">
+                        <span class="text-xs text-gray-500">{{ attr.name }}</span>
+                        <span class="text-xs font-semibold text-gray-900">{{ attr.value }}</span>
                     </div>
                     {% endfor %}
                 </div>
@@ -142,19 +212,6 @@
 
         </div>
     </div>
-
-    <!-- Danger Zone -->
-    <div class="mt-10 bg-red-50 border border-red-200 rounded-xl p-6">
-        <h3 class="font-bold text-red-800 mb-2">Danger Zone</h3>
-        <p class="text-sm text-red-700 mb-4">
-            Deleting this product is permanent and cannot be undone.
-        </p>
-        <a href="{% url 'vendors:product_delete' product.slug %}"
-           class="inline-block bg-red-600 text-white px-6 py-3 rounded-lg font-semibold">
-            Delete Product
-        </a>
-    </div>
-
 </div>
 
 {% endblock %}

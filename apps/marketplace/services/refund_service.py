@@ -82,33 +82,40 @@ def process_refund(sub_order: SubOrder, reason: str, note: str = '') -> dict:
     # ---- IDEMPOTENCY CHECK ----
     existing_refund = RefundRecord.objects.filter(
         sub_order=sub_order,
-        status__in=['PROCESSING', 'COMPLETED']
     ).first()
 
     if existing_refund:
-        return {
-            'success': True,
-            'message': f'Refund already {existing_refund.status.lower()}.',
-            'refund_record': existing_refund,
-        }
-
-    # ---- CREATE REFUND RECORD ----
-    try:
-        with transaction.atomic():
-            refund_record = RefundRecord.objects.create(
-                sub_order=sub_order,
-                reason=reason,
-                status='PROCESSING',
-                amount=sub_order.subtotal,
-                note=note,
-            )
-    except Exception as e:
-        return {
-            'success': False,
-            'message': f'Could not create refund record: {str(e)}',
-            'refund_record': None,
-        }
-
+        if existing_refund.status in ['PROCESSING', 'COMPLETED']:
+            return {
+                'success': True,
+                'message': f'Refund already {existing_refund.status.lower()}.',
+                'refund_record': existing_refund,
+            }
+        elif existing_refund.status == 'FAILED':
+            # Retry — reuse existing record
+            existing_refund.status = 'PROCESSING'
+            existing_refund.save(update_fields=['status'])
+            refund_record = existing_refund
+        else:
+            refund_record = existing_refund
+    else:
+        # ---- CREATE REFUND RECORD ----
+        try:
+            with transaction.atomic():
+                refund_record = RefundRecord.objects.create(
+                    sub_order=sub_order,
+                    reason=reason,
+                    status='PROCESSING',
+                    amount=sub_order.subtotal,
+                    note=note,
+                )
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f'Could not create refund record: {str(e)}',
+                'refund_record': None,
+            }
+    
     # ---- REVERSE WALLET CREDIT ----
     wallet_result = reverse_pending_credit(sub_order)
     if not wallet_result['success']:

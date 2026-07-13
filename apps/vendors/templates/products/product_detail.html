@@ -1,406 +1,356 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{ product.title }} — {{ store.store_name }}</title>
+{% extends 'vendors/store/public_base.html' %}
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#0057FF',
-            'primary-dark': '#0041CC',
-            accent: '#FF6B00',
-            surface: '#F5F7FA',
-            card: '#FFFFFF',
-            muted: '#6B7280',
-            border: '#E5E7EB',
-            dark: '#111827',
-          },
-          fontFamily: {
-            sans: ['"DM Sans"', 'sans-serif'],
-            display: ['"DM Sans"', 'sans-serif'],
-          },
-          boxShadow: {
-            card: '0 2px 16px 0 rgba(0,0,0,0.07)',
-            'card-hover': '0 8px 32px 0 rgba(0,87,255,0.13)',
-          },
-        }
-      }
-    }
-  </script>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+{% block title %}{{ product.title }} — {{ store.store_name }}{% endblock %}
 
-  <style>
-    * { -webkit-tap-highlight-color: transparent; }
-    body { font-family: 'DM Sans', sans-serif; }
-    .scroll-hidden::-webkit-scrollbar { display: none; }
-    .scroll-hidden { -ms-overflow-style: none; scrollbar-width: none; }
-
-    #toast {
-      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-      transform: translateY(100px); opacity: 0;
-    }
-    #toast.show { transform: translateY(0); opacity: 1; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .fade-in { animation: fadeIn 0.25s ease; }
-  </style>
-</head>
-
-<body class="bg-surface text-dark min-h-screen">
-
-  <!-- ===================== TOPBAR ===================== -->
-  <header class="sticky top-0 z-40 bg-white border-b border-border">
-    <div class="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
-
-      <!-- Back -->
-      <a href="javascript:history.back()"
-         class="p-2 rounded-xl hover:bg-surface transition shrink-0">
-        <svg class="w-5 h-5 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+{% block nav_left %}
+<div class="flex min-w-0 flex-1 items-center gap-1">
+    <a href="javascript:history.back()" aria-label="Back to store"
+       class="grid size-9 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/15 active:scale-95">
+        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
         </svg>
-      </a>
-
-      <!-- Store name -->
-      <a href="{% url 'vendors:store_public' store.slug %}"
-         class="flex items-center gap-2 flex-1 min-w-0">
+    </a>
+    <a href="{% url 'store_public' store.slug %}" class="flex min-w-0 flex-1 items-center gap-2">
         {% if store.logo %}
-          <img src="{{ store.logo.url }}" class="w-7 h-7 rounded-lg object-cover shrink-0" />
+        <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="size-8 shrink-0 rounded-lg border border-white/20 object-cover">
         {% else %}
-          <div class="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-            {{ store.store_name|first|upper }}
-          </div>
+        <div class="grid size-8 shrink-0 place-items-center rounded-lg bg-white/15 text-xs font-bold">{{ store.store_name|first|upper }}</div>
         {% endif %}
-        <span class="text-sm font-semibold text-dark truncate">{{ store.store_name }}</span>
-      </a>
+        <span class="min-w-0 flex-1 truncate text-sm font-semibold">{{ store.store_name }}</span>
+    </a>
+</div>
+{% endblock %}
 
-      <!-- Cart (buyers only) -->
-      {% if not is_owner %}
-      <a href="/cart/" class="relative p-2 shrink-0">
-        <svg class="w-6 h-6 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-        </svg>
-        <span id="cart-badge" class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-xs rounded-full items-center justify-center font-bold leading-none hidden">0</span>
-      </a>
-      {% endif %}
+{% block nav_right %}
+{% if is_owner %}
+<span class="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold">Your Product</span>
+{% else %}
+<a href="/cart/" class="relative grid size-10 place-items-center rounded-full transition-colors hover:bg-white/15 active:scale-95" aria-label="Cart">
+    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+    </svg>
+    <span id="cart-badge" class="absolute -right-0.5 -top-0.5 hidden min-w-[18px] place-items-center rounded-full bg-white px-1 text-[11px] font-bold leading-[18px] text-brand">0</span>
+</a>
+{% endif %}
+{% endblock %}
 
-      <!-- Owner badge -->
-      {% if is_owner %}
-      <span class="text-xs bg-primary/10 text-primary font-semibold px-2.5 py-1 rounded-full shrink-0">Your Product</span>
-      {% endif %}
-    </div>
-  </header>
+{% block preview_banner %}
+{% if is_preview %}
+<div class="border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-center">
+    <p class="text-xs font-medium text-amber-700">👁 Preview mode — your store is not published yet</p>
+</div>
+{% endif %}
+{% endblock %}
 
-  <!-- Preview banner -->
-  {% if is_preview %}
-  <div class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-center">
-    <p class="text-xs text-amber-700 font-medium">👁 Preview mode — your store is not published yet</p>
-  </div>
-  {% endif %}
-
-  <!-- ===================== MAIN ===================== -->
-  <main class="max-w-5xl mx-auto pb-32 md:pb-10">
+{% block content %}
+<main class="mx-auto max-w-5xl pb-32 md:pb-10">
     <div class="md:grid md:grid-cols-2 md:gap-10 md:px-6 md:py-8">
 
-      <!-- ---- IMAGES ---- -->
-      <div class="fade-in">
-        <!-- Main image -->
-        <div class="relative bg-white aspect-square overflow-hidden md:rounded-2xl">
-          {% if product.images.all %}
-            <img id="main-img"
-                 src="{{ product.images.all.0.image.url }}"
-                 alt="{{ product.title }}"
-                 class="w-full h-full object-cover" />
-          {% else %}
-            <div class="w-full h-full flex items-center justify-center bg-surface">
-              <svg class="w-16 h-16 text-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-              </svg>
+        <!-- ===================== IMAGE GALLERY ===================== -->
+        <div class="animate-fade-up">
+            <div class="relative aspect-square overflow-hidden bg-white md:rounded-2xl">
+                {% if product.images.all %}
+                <img id="main-img" src="{{ product.images.all.0.image.url }}" alt="{{ product.title }}"
+                     class="size-full object-cover">
+                {% else %}
+                <div class="flex size-full items-center justify-center bg-gray-50">
+                    <svg class="size-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                {% endif %}
+
+                {% if product.compare_at_price %}
+                <span class="absolute left-3 top-3 rounded-lg bg-brand px-2.5 py-1 text-xs font-bold text-brand-foreground">
+                    {{ product.discount_percentage|floatformat:0 }}% OFF
+                </span>
+                {% endif %}
             </div>
-          {% endif %}
 
-          <!-- Discount badge -->
-          {% if product.compare_at_price %}
-          <span class="absolute top-3 left-3 bg-accent text-white text-xs font-bold px-2.5 py-1 rounded-lg">
-            {{ product.discount_percentage }}% OFF
-          </span>
-          {% endif %}
-        </div>
-
-        <!-- Thumbnail strip -->
-        {% if product.images.count > 1 %}
-        <div class="flex gap-2 overflow-x-auto scroll-hidden px-4 md:px-0 py-3">
-          {% for img in product.images.all %}
-          <button onclick="setImg('{{ img.image.url }}')"
-                  class="w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition
-                         {% if forloop.first %}border-primary{% else %}border-transparent hover:border-primary/50{% endif %}">
-            <img src="{{ img.image.url }}" class="w-full h-full object-cover" />
-          </button>
-          {% endfor %}
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- ---- PRODUCT INFO ---- -->
-      <div class="px-4 md:px-0 py-4 md:py-0 fade-in space-y-4">
-
-        <!-- Breadcrumb -->
-        <div class="flex items-center gap-1.5 text-xs text-muted">
-          <a href="/?category={{ product.subcategory.main_category.slug }}" class="hover:text-primary transition">
-            {{ product.subcategory.main_category.name }}
-          </a>
-          <span>/</span>
-          <span>{{ product.subcategory.name }}</span>
-        </div>
-
-        <!-- Title + stock -->
-        <div>
-          <h1 class="font-display font-bold text-2xl text-dark leading-tight mb-2">{{ product.title }}</h1>
-          {% if in_stock %}
-          <span class="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium">
-            <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            In Stock
-          </span>
-          {% else %}
-          <span class="inline-flex items-center gap-1.5 text-sm text-red-500 font-medium">
-            <span class="w-2 h-2 rounded-full bg-red-500"></span>
-            Out of Stock
-          </span>
-          {% endif %}
-        </div>
-
-        <!-- Price -->
-        <div class="bg-primary/5 rounded-2xl p-4 border border-primary/10">
-          <div class="flex items-baseline gap-3 flex-wrap">
-            <span class="text-3xl font-bold text-primary">₦{{ product.price|floatformat:0 }}</span>
-            {% if product.compare_at_price %}
-            <span class="text-lg text-muted line-through">₦{{ product.compare_at_price|floatformat:0 }}</span>
-            <span class="text-sm font-bold text-accent">Save ₦{{ product.savings|floatformat:0 }}</span>
+            {% if product.images.count > 1 %}
+            <div class="flex gap-2 overflow-x-auto px-4 py-3 md:px-0" style="scrollbar-width: none;">
+                {% for img in product.images.all %}
+                <button type="button" onclick="setImg('{{ img.image.url }}', this)"
+                        class="thumb-btn size-16 shrink-0 overflow-hidden rounded-xl border-2 transition
+                               {% if forloop.first %}border-brand{% else %}border-transparent hover:border-brand/50{% endif %}">
+                    <img src="{{ img.image.url }}" alt="{{ product.title }} view {{ forloop.counter }}" class="size-full object-cover">
+                </button>
+                {% endfor %}
+            </div>
             {% endif %}
-          </div>
-          {% if product.sales_count %}
-          <p class="text-xs text-muted mt-1">{{ product.sales_count }} sold</p>
-          {% endif %}
         </div>
 
-        <!-- Description -->
-        <div>
-          <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Description</p>
-          <p class="text-sm text-dark leading-relaxed whitespace-pre-line">{{ product.description }}</p>
-        </div>
+        <!-- ===================== PRODUCT INFO ===================== -->
+        <div class="animate-fade-up space-y-4 px-4 py-4 md:px-0 md:py-0">
 
-        <!-- Specifications -->
-        {% if specifications %}
-        <div>
-          <p class="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Specifications</p>
-          <div class="grid grid-cols-2 gap-2">
-            {% for spec in specifications %}
-            <div class="bg-surface rounded-xl p-3 border border-border">
-              <p class="text-xs text-muted mb-0.5">{{ spec.label }}</p>
-              <p class="text-sm font-semibold text-dark">{{ spec.value }}</p>
+            <!-- Breadcrumb -->
+            <nav class="flex items-center gap-1.5 text-xs text-gray-500">
+                <a href="/?category={{ product.subcategory.main_category.slug }}" class="hover:text-brand">
+                    {{ product.subcategory.main_category.name }}
+                </a>
+                <span>/</span>
+                <span>{{ product.subcategory.name }}</span>
+            </nav>
+
+            <!-- Title + stock -->
+            <div>
+                <h1 class="mb-2 text-2xl font-bold leading-tight text-gray-900">{{ product.title }}</h1>
+                {% if in_stock %}
+                <span class="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                    <span class="relative flex size-2">
+                        <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
+                    </span>
+                    In Stock
+                </span>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 text-sm font-medium text-red-500">
+                    <span class="size-2 rounded-full bg-red-500"></span>
+                    Out of Stock
+                </span>
+                {% endif %}
             </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% else %}
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p class="text-xs text-amber-700"><strong>No specifications added yet.</strong> The vendor can add product details in their dashboard.</p>
-        </div>
-        {% endif %}
 
-        <!-- Store card -->
-        <a href="{% url 'vendors:store_public' store.slug %}"
-           class="flex items-center gap-3 bg-surface rounded-xl p-4 border border-border hover:border-primary/30 hover:bg-primary/5 transition">
-          <div class="w-10 h-10 rounded-xl overflow-hidden bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shrink-0">
-            {% if store.logo %}
-              <img src="{{ store.logo.url }}" class="w-full h-full object-cover" />
+            <!-- Price -->
+            <div class="rounded-2xl border border-brand/10 bg-brand/5 p-4">
+                <div class="flex flex-wrap items-baseline gap-3">
+                    <span class="text-3xl font-bold text-brand">₦{{ product.price|floatformat:0 }}</span>
+                    {% if product.compare_at_price %}
+                    <span class="text-lg text-gray-400 line-through">₦{{ product.compare_at_price|floatformat:0 }}</span>
+                    <span class="text-sm font-bold text-brand">Save ₦{{ product.savings|floatformat:0 }}</span>
+                    {% endif %}
+                </div>
+                {% if product.sales_count %}
+                <p class="mt-1 text-xs text-gray-500">{{ product.sales_count }} sold</p>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Description</p>
+                <p class="whitespace-pre-line text-sm leading-relaxed text-gray-900">{{ product.description }}</p>
+            </div>
+
+            <!-- Specifications -->
+            {% if specifications %}
+            <div>
+                <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Specifications</p>
+                <div class="grid grid-cols-2 gap-2">
+                    {% for spec in specifications %}
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                        <p class="mb-0.5 text-xs text-gray-500">{{ spec.label }}</p>
+                        <p class="text-sm font-semibold text-gray-900">{{ spec.value }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
             {% else %}
-              {{ store.store_name|first|upper }}
-            {% endif %}
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-dark truncate">{{ store.store_name }}</p>
-            {% if distance and distance != 'Distance unavailable' %}
-            <p class="text-xs text-muted flex items-center gap-1 mt-0.5">
-              <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-              {{ distance }}
-            </p>
-            {% endif %}
-          </div>
-          <svg class="w-4 h-4 text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-        </a>
-
-        <!-- ---- VENDOR CONTACT (locked for buyers until payment) ---- -->
-        {% if not is_owner %}
-        <div class="rounded-xl border border-border overflow-hidden">
-          <div class="flex items-center gap-2 px-4 py-3 bg-surface border-b border-border">
-            <svg class="w-4 h-4 text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-            <p class="text-xs font-semibold text-muted">Vendor Contact</p>
-            <span class="ml-auto text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">Unlocks after payment</span>
-          </div>
-          <div class="px-4 py-3 flex items-center gap-3">
-            <div class="flex-1 space-y-2">
-              <!-- Blurred placeholder rows -->
-              <div class="h-4 rounded-lg bg-border/60 blur-sm w-36"></div>
-              <div class="h-4 rounded-lg bg-border/60 blur-sm w-28"></div>
+            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p class="text-xs text-amber-700"><strong>No specifications added yet.</strong> The vendor can add product details in their dashboard.</p>
             </div>
-            <svg class="w-5 h-5 text-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-            </svg>
-          </div>
-          <div class="px-4 pb-3">
-            <p class="text-xs text-muted">Complete a purchase to unlock the vendor's phone and WhatsApp.</p>
-          </div>
-        </div>
-        {% endif %}
+            {% endif %}
 
-        <!-- Desktop action buttons -->
-        <div class="hidden md:block space-y-3">
-          {% if is_owner %}
-          <a href="{% url 'vendors:product_detail' product.slug %}"
-             class="flex items-center justify-center gap-2 w-full py-3.5 bg-primary/10 text-primary font-bold rounded-2xl hover:bg-primary/20 transition text-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
-            View Analytics & Manage
-          </a>
-          <p class="text-center text-xs text-muted">You own this product — cart and payment are disabled.</p>
-          {% elif in_stock %}
-          <div class="flex items-center gap-3">
-            <div class="flex items-center border border-border rounded-xl overflow-hidden">
-              <button onclick="changeQty(-1)" class="w-10 h-10 flex items-center justify-center text-muted hover:text-dark transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+            <!-- Store card -->
+            <a href="{% url 'store_public' store.slug %}"
+               class="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 transition hover:border-brand/30 hover:bg-brand/5">
+                <div class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-brand/10 text-sm font-bold text-brand">
+                    {% if store.logo %}
+                    <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="size-full object-cover">
+                    {% else %}
+                    {{ store.store_name|first|upper }}
+                    {% endif %}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1">
+                        <p class="truncate text-sm font-semibold text-gray-900">{{ store.store_name }}</p>
+                        {% if store.is_verified %}
+                        <svg class="size-4 shrink-0 text-brand" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        {% endif %}
+                    </div>
+                    {% if distance and distance != 'Distance unavailable' %}
+                    <p class="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
+                        <svg class="size-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        {{ distance }}
+                    </p>
+                    {% endif %}
+                </div>
+                <svg class="size-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
-              </button>
-              <span id="qty-display-desk" class="w-10 text-center text-sm font-bold">1</span>
-              <button onclick="changeQty(1)" class="w-10 h-10 flex items-center justify-center text-muted hover:text-dark transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-              </button>
+            </a>
+
+            <!-- Vendor contact (locked for buyers until payment) -->
+            {% if not is_owner %}
+            <div class="overflow-hidden rounded-xl border border-gray-200">
+                <div class="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-3">
+                    <svg class="size-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <p class="text-xs font-semibold text-gray-500">Vendor Contact</p>
+                    <span class="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Unlocks after payment</span>
+                </div>
+                <div class="flex items-center gap-3 px-4 py-3">
+                    <div class="flex-1 space-y-2">
+                        <div class="h-4 w-36 rounded-lg bg-gray-200/70 blur-sm"></div>
+                        <div class="h-4 w-28 rounded-lg bg-gray-200/70 blur-sm"></div>
+                    </div>
+                    <svg class="size-5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                </div>
+                <div class="px-4 pb-3">
+                    <p class="text-xs text-gray-500">Complete a purchase to unlock the vendor's phone and WhatsApp.</p>
+                </div>
             </div>
-            <button onclick="addToCart({{ product.pk }})"
-                    class="flex-1 py-3.5 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark active:scale-95 transition-all text-sm flex items-center justify-center gap-2 shadow-card-hover">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-              </svg>
-              Add to Cart
-            </button>
-          </div>
-          {% else %}
-          <button disabled class="w-full py-3.5 bg-border text-muted font-bold rounded-2xl text-sm cursor-not-allowed">
-            Out of Stock
-          </button>
-          {% endif %}
-        </div>
+            {% endif %}
 
-      </div>
+            <!-- Desktop action buttons -->
+            <div class="hidden space-y-3 md:block">
+                {% if is_owner %}
+                <a href="{% url 'vendors:product_detail' product.slug %}"
+                   class="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand/10 py-3.5 text-sm font-bold text-brand transition hover:bg-brand/20">
+                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    View Analytics & Manage
+                </a>
+                <p class="text-center text-xs text-gray-500">You own this product — cart and payment are disabled.</p>
+                {% elif in_stock %}
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center overflow-hidden rounded-xl border border-gray-200">
+                        <button type="button" onclick="changeQty(-1)" class="flex size-10 items-center justify-center text-gray-500 transition hover:text-gray-900">
+                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                        </button>
+                        <span id="qty-display-desk" class="w-10 text-center text-sm font-bold">1</span>
+                        <button type="button" onclick="changeQty(1)" class="flex size-10 items-center justify-center text-gray-500 transition hover:text-gray-900">
+                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        </button>
+                    </div>
+                    <button type="button" onclick="addToCart({{ product.pk }})"
+                            class="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand py-3.5 text-sm font-bold text-brand-foreground shadow-sm shadow-brand/30 transition-all hover:bg-brand/90 active:scale-95">
+                        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                        </svg>
+                        Add to Cart
+                    </button>
+                </div>
+                {% else %}
+                <button disabled class="w-full cursor-not-allowed rounded-2xl bg-gray-200 py-3.5 text-sm font-bold text-gray-500">
+                    Out of Stock
+                </button>
+                {% endif %}
+            </div>
+        </div>
     </div>
-  </main>
+</main>
 
-  <!-- ===================== MOBILE BOTTOM ACTION BAR ===================== -->
-  {% if not is_owner %}
-  <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border px-4 py-3 flex items-center gap-3"
-       style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom))">
+<!-- ===================== MOBILE BOTTOM ACTION BAR ===================== -->
+{% if not is_owner %}
+<div class="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-gray-200 bg-white px-4 py-3 md:hidden"
+     style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom))">
     {% if in_stock %}
-    <!-- Qty stepper -->
-    <div class="flex items-center border border-border rounded-xl overflow-hidden shrink-0">
-      <button onclick="changeQty(-1)" class="w-9 h-10 flex items-center justify-center text-muted">−</button>
-      <span id="qty-display" class="w-8 text-center text-sm font-bold">1</span>
-      <button onclick="changeQty(1)" class="w-9 h-10 flex items-center justify-center text-muted">+</button>
+    <div class="flex shrink-0 items-center overflow-hidden rounded-xl border border-gray-200">
+        <button type="button" onclick="changeQty(-1)" class="flex h-10 w-9 items-center justify-center text-gray-500">−</button>
+        <span id="qty-display" class="w-8 text-center text-sm font-bold">1</span>
+        <button type="button" onclick="changeQty(1)" class="flex h-10 w-9 items-center justify-center text-gray-500">+</button>
     </div>
-    <!-- Add to cart -->
-    <button onclick="addToCart({{ product.pk }})"
-            class="flex-1 h-11 bg-primary text-white font-bold rounded-2xl active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-      </svg>
-      Add to Cart
+    <button type="button" onclick="addToCart({{ product.pk }})"
+            class="flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-brand text-sm font-bold text-brand-foreground transition-all active:scale-95">
+        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+        </svg>
+        Add to Cart
     </button>
     {% else %}
-    <button disabled class="flex-1 h-11 bg-border text-muted font-bold rounded-2xl text-sm cursor-not-allowed">
-      Out of Stock
+    <button disabled class="h-11 flex-1 cursor-not-allowed rounded-2xl bg-gray-200 text-sm font-bold text-gray-500">
+        Out of Stock
     </button>
     {% endif %}
-  </div>
-  {% endif %}
+</div>
+{% endif %}
 
-  <!-- Toast -->
-  <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-dark text-white text-sm font-medium shadow-xl max-w-xs text-center pointer-events-none"></div>
+<!-- Toast -->
+<div id="toast" class="pointer-events-none fixed bottom-24 left-1/2 z-50 max-w-xs -translate-x-1/2 rounded-2xl bg-gray-900 px-5 py-3 text-center text-sm font-medium text-white shadow-xl transition-all"
+     style="transform: translate(-50%, 100px); opacity: 0;"></div>
+{% endblock %}
 
-  <script>
+{% block footer %}
+{{ block.super }}
+{% if not is_owner %}
+<!-- Clearance for the fixed mobile Add-to-Cart bar, which sits outside <main>
+     and below the footer — without this the footer's last lines get hidden
+     behind the bar on scroll, as caught in QC. -->
+<div class="h-20 md:hidden" style="height: calc(5rem + env(safe-area-inset-bottom))"></div>
+{% endif %}
+{% endblock %}
+
+{% block extra_body %}
+<style>
+    #toast.show { transform: translate(-50%, 0) !important; opacity: 1 !important; }
+</style>
+<script>
     // CSRF
     function getCookie(name) {
-      let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
-      return v ? v[2] : null;
+        let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+        return v ? v[2] : null;
     }
     const CSRF = getCookie('csrftoken');
 
     // Toast
     function showToast(msg, type) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.className = `fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-medium shadow-xl max-w-xs text-center pointer-events-none show ${type === 'error' ? 'bg-red-500' : 'bg-dark'}`;
-      setTimeout(() => t.classList.remove('show'), 3000);
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'pointer-events-none fixed bottom-24 left-1/2 z-50 max-w-xs -translate-x-1/2 rounded-2xl px-5 py-3 text-center text-sm font-medium text-white shadow-xl transition-all show ' + (type === 'error' ? 'bg-red-500' : 'bg-gray-900');
+        setTimeout(() => t.classList.remove('show'), 3000);
     }
 
     // Qty
     let qty = 1;
     const maxQty = {{ product.stock_quantity|default:99 }};
     function changeQty(delta) {
-      qty = Math.max(1, Math.min(maxQty, qty + delta));
-      document.querySelectorAll('#qty-display, #qty-display-desk').forEach(el => el.textContent = qty);
+        qty = Math.max(1, Math.min(maxQty, qty + delta));
+        document.querySelectorAll('#qty-display, #qty-display-desk').forEach(el => el.textContent = qty);
     }
 
-    // Thumbnail
-    function setImg(url) {
-      document.getElementById('main-img').src = url;
-      document.querySelectorAll('.thumb-btn').forEach(b => b.classList.remove('border-primary'));
+    // Thumbnail swap — now correctly toggles the active border (fixed a dead
+    // '.thumb-btn' selector bug in the original markup that never matched).
+    function setImg(url, btn) {
+        document.getElementById('main-img').src = url;
+        document.querySelectorAll('.thumb-btn').forEach(b => b.classList.remove('border-brand'));
+        document.querySelectorAll('.thumb-btn').forEach(b => b.classList.add('border-transparent'));
+        if (btn) {
+            btn.classList.remove('border-transparent');
+            btn.classList.add('border-brand');
+        }
     }
 
     // Add to cart
     function addToCart(productId) {
-      fetch('/cart/add/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-        body: JSON.stringify({ product_id: productId, quantity: qty })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          showToast(data.message, 'success');
-          // Update cart badge
-          const badge = document.getElementById('cart-badge');
-          if (badge && data.cart_total_items > 0) {
-            badge.textContent = data.cart_total_items;
-            badge.classList.remove('hidden');
-            badge.classList.add('flex');
-          }
-        } else {
-          showToast(data.message, 'error');
-        }
-      })
-      .catch(() => showToast('Something went wrong.', 'error'));
+        fetch('/cart/add/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ product_id: productId, quantity: qty })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                const badge = document.getElementById('cart-badge');
+                if (badge && data.cart_total_items > 0) {
+                    badge.textContent = data.cart_total_items;
+                    badge.classList.remove('hidden');
+                    badge.classList.add('grid');
+                }
+            } else {
+                showToast(data.message, 'error');
+            }
+        })
+        .catch(() => showToast('Something went wrong.', 'error'));
     }
-  </script>
-
-</body>
-</html>
+</script>
+{% endblock %}

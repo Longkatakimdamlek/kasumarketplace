@@ -110,7 +110,7 @@ class EmailService:
         Args:
             to_email: Recipient email
             subject: Email subject
-            template_name: Template path (e.g., 'vendors/emails/nin_verified.html')
+            template_name: Template path (e.g., 'vendors/emails/identity_verified.html')
             context: Template context data
             
         Returns:
@@ -232,24 +232,6 @@ class NotificationService:
     # ==========================================
     # VENDOR VERIFICATION NOTIFICATIONS
     # ==========================================
-    
-    def send_nin_verified(self, vendor) -> bool:
-        """
-        Send email when NIN verification succeeds
-        
-        Args:
-            vendor: VendorProfile instance
-        """
-        return self.email.send_template_email(
-            to_email=vendor.user.email,
-            subject='NIN Verification Successful ✅',
-            template_name='vendors/emails/nin_verified.html',
-            context={
-                'vendor': vendor,
-                'vendor_name': vendor.full_name,
-                'next_step': 'BVN Verification'
-            }
-        )
     
     def send_bvn_verified(self, vendor) -> bool:
         """Send email when BVN verification succeeds"""
@@ -517,8 +499,8 @@ Email: {vendor.user.email}
 Phone: {vendor.phone}
 Store: {vendor.store.store_name if hasattr(vendor, 'store') else 'Not set up'}
 
-NIN Verified: {vendor.identity_status == 'nin_verified'}
-BVN Verified: {vendor.bank_status == 'bvn_verified'}
+Identity Verified: {vendor.bank_status == 'verified'}
+BVN Verified: {vendor.bank_status == 'verified'}
 
 Review in admin: {settings.SITE_URL}/admin/vendors/vendorprofile/{vendor.id}/change/
 

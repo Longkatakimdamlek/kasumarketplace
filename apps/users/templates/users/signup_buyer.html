@@ -86,14 +86,16 @@
             </label>
         </div>
         
-        {{ form.recaptcha }}
-        <!-- reCAPTCHA -->
-        <div class="recaptcha-container">
-            <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}" data-callback="onRecaptchaSuccess"></div>
-        </div>
+        {% if RECAPTCHA_ENABLED %}
+            {{ form.recaptcha }}
+            <!-- reCAPTCHA -->
+            <div class="recaptcha-container">
+                <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}" data-callback="onRecaptchaSuccess"></div>
+            </div>
+        {% endif %}
         
         <!-- Submit Button -->
-        <button id="submitButton" type="submit" class="btn btn-primary" disabled>Create account</button>
+        <button id="submitButton" type="submit" class="btn btn-primary" {% if RECAPTCHA_ENABLED %}disabled{% endif %}>Create account</button>
     </form>
     
     <!-- Links -->
@@ -116,6 +118,7 @@
         }
     }
 </script>
+{% if RECAPTCHA_ENABLED %}
 <script>
     function onRecaptchaSuccess(token) {
         const btn = document.getElementById('submitButton');
@@ -124,4 +127,5 @@
         if (recaptchaInput) recaptchaInput.value = token;
     }
 </script>
+{% endif %}
 {% endblock %}

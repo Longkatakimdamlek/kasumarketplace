@@ -14,7 +14,6 @@ class Command(BaseCommand):
             (ProductImage, 'image'),
             (Store, 'logo'),
             (Store, 'banner'),
-            (VendorProfile, 'photo_from_nin'),
             (VendorProfile, 'student_id_image'),
             (VendorProfile, 'selfie'),
         ]

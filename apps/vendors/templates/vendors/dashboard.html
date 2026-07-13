@@ -6,294 +6,265 @@
 
 {% block content %}
 
-<!-- Welcome Banner -->
-<div class="bg-gradient-to-r from-primary to-soft-blue rounded-xl p-8 mb-8 text-white shadow-lg">
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-3xl font-bold mb-2">Welcome back, {{ vendor.user.first_name|default:"Vendor" }}!</h1>
-            <p class="text-blue-100">Here's what's happening with your store today.</p>
+{# ============================================================ #}
+{# Verification Banner — always visible (mobile + desktop)      #}
+{# Scoped to dashboard for now; promote to base.html later when #}
+{# we reach the Navbar/Footer step in the review order.         #}
+{# ============================================================ #}
+{% if not vendor.can_sell %}
+<a href="{% url 'vendors:verification_center' %}"
+   class="group mb-4 flex w-full items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-800 transition-colors hover:bg-amber-100 sm:mb-6 sm:px-6 sm:text-sm">
+    <svg class="size-4 shrink-0 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001z" clip-rule="evenodd"/>
+    </svg>
+    <span class="flex-1 font-medium">
+        Verify your store to unlock payouts and a trusted seller badge.
+        <span class="font-semibold underline underline-offset-2 sm:hidden"> Complete verification</span>
+    </span>
+    <svg class="size-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+    </svg>
+</a>
+{% endif %}
+
+{# ============================================================ #}
+{# Welcome Banner                                                #}
+{# ============================================================ #}
+<div class="rounded-xl bg-gradient-to-br from-primary to-soft-blue p-5 mb-4 text-white shadow-sm sm:p-6 sm:mb-6">
+    <div class="flex items-center justify-between gap-4">
+        <div class="min-w-0">
+            <h1 class="text-xl font-bold tracking-tight sm:text-3xl">Welcome back, {{ vendor.user.first_name|default:"Vendor" }}!</h1>
+            <p class="mt-1 text-[13px] text-white/85 sm:text-sm">Here's how {{ vendor.store.name|default:"your store" }} is performing today.</p>
         </div>
         {% if not vendor.can_sell %}
-        <a href="{% url 'vendors:verification_center' %}" 
-           class="hidden lg:flex items-center px-6 py-3 bg-white text-primary font-bold rounded-lg hover:shadow-xl transition-all">
-            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-            </svg>
+        <a href="{% url 'vendors:verification_center' %}"
+           class="hidden shrink-0 items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-primary shadow-sm transition-all hover:scale-[1.02] hover:shadow-md sm:inline-flex">
             Complete Verification
+            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
         </a>
         {% endif %}
     </div>
 </div>
 
-<!-- Stats Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    {% include 'vendors/components/stats_card.html' with title="Total Products" value=total_products change="+5" change_type="increase" icon="package" color="purple" url="/vendors/products/" %}
-    
-    {% include 'vendors/components/stats_card.html' with title="Total Orders" value=orders_total icon="shopping" color="orange" url="/vendors/orders/" %}
-    
-    {% include 'vendors/components/stats_card.html' with title="Pending Orders" value=orders_pending icon="clock" color="blue" url="/vendors/orders/?status=pending" %}
-    
-    {% include 'vendors/components/stats_card.html' with title="Total Sales" value="₦"|add:total_sales|default:"₦0" change="+12.5%" change_type="increase" icon="chart" color="green" url="/vendors/wallet/" %}
+{# ============================================================ #}
+{# Action Needed Strip                                           #}
+{# ============================================================ #}
+<div class="flex items-center gap-2 mb-4 sm:gap-3 sm:mb-6">
+    <div class="flex flex-1 items-center gap-2.5 rounded-lg border border-gray-200 bg-white px-3 py-2.5 transition-shadow hover:shadow-md">
+        <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </span>
+        <p class="text-[13px] font-bold leading-none text-gray-900 sm:text-sm">
+            {{ orders_pending|default:0 }}
+            <span class="text-[11px] font-medium text-gray-500 sm:text-xs">Pending Orders</span>
+        </p>
+    </div>
+
+    <div class="flex flex-1 items-center gap-2.5 rounded-lg border border-gray-200 bg-white px-3 py-2.5 transition-shadow hover:shadow-md">
+        <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-pink-accent/10 text-pink-accent">
+            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+        </span>
+        <p class="text-[13px] font-bold leading-none text-gray-900 sm:text-sm">
+            {{ low_stock_products|length|default:0 }}
+            <span class="text-[11px] font-medium text-gray-500 sm:text-xs">Low Stock</span>
+        </p>
+    </div>
 </div>
 
-<!-- Main Content Grid -->
-<div class="grid lg:grid-cols-3 gap-8">
-    
-    <!-- Left Column: Recent Orders -->
-    <div class="lg:col-span-2 space-y-8">
-        
-        <!-- Recent Orders -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 class="text-lg font-bold text-gray-900">Recent Orders</h2>
-                <a href="{% url 'vendors:orders_list' %}" 
-                   class="text-sm font-semibold text-primary hover:text-primary/80">
-                    View all →
-                </a>
-            </div>
-            
-            <div class="divide-y divide-gray-200">
-                {% if recent_orders %}
-                    {% for order in recent_orders %}
-                    <div class="p-6 hover:bg-gray-50 transition-colors">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-12 h-12 bg-gradient-to-br from-primary/10 to-soft-blue/10 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="font-semibold text-gray-900">Order #{{ order.order_number }}</p>
-                                    <p class="text-xs text-gray-500">{{ order.created_at|timesince }} ago</p>
-                                </div>
-                            </div>
-                            {% if order.status == 'pending' %}
-                            {% include 'vendors/components/verification_badge.html' with status="pending" label="Pending" size="sm" %}
-                            {% elif order.status == 'processing' %}
-                            {% include 'vendors/components/verification_badge.html' with status="in_progress" label="Processing" size="sm" %}
-                            {% elif order.status == 'shipped' %}
-                            {% include 'vendors/components/verification_badge.html' with status="in_progress" label="Shipped" size="sm" %}
-                            {% elif order.status == 'delivered' %}
-                            {% include 'vendors/components/verification_badge.html' with status="completed" label="Delivered" size="sm" %}
-                            {% else %}
-                            {% include 'vendors/components/verification_badge.html' with status="failed" label=order.get_status_display size="sm" %}
-                            {% endif %}
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-600">{{ order.customer_name }}</p>
-                                <p class="text-xs text-gray-500">{{ order.items.count }} item{{ order.items.count|pluralize }}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-lg font-bold text-gray-900">₦{{ order.total_amount|floatformat:2 }}</p>
-                                <a href="{% url 'vendors:order_detail' order.id %}" 
-                                   class="text-xs font-semibold text-soft-blue hover:text-soft-blue/80">
-                                    View Details →
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                <div class="p-12 text-center">
-                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+{# ============================================================ #}
+{# Stats Grid — 4 cols at ALL breakpoints, compact on mobile     #}
+{# ============================================================ #}
+<div class="grid grid-cols-4 gap-2 mb-4 sm:gap-4 sm:mb-6">
+    {% include 'vendors/components/stats_card.html' with title="Total Products" label="Products" value=total_products icon="package" tone="purple" url="/vendors/products/" %}
+
+    {% include 'vendors/components/stats_card.html' with title="Total Orders" label="Orders" value=orders_total icon="shopping" tone="blue" url="/vendors/orders/" %}
+
+    {% include 'vendors/components/stats_card.html' with title="Pending Orders" label="Pending" value=orders_pending icon="clock" tone="default" url="/vendors/orders/?status=pending" %}
+
+    {% include 'vendors/components/stats_card.html' with title="Total Sales" label="Sales" value=total_sales|floatformat:2 icon="chart" tone="pink" url="/vendors/wallet/" %}
+</div>
+
+{# ============================================================ #}
+{# Main content area                                              #}
+{# Mobile: natural stacking order (Recent Orders, Quick Actions,  #}
+{# Low Stock, This Month, Store Health)                           #}
+{# Desktop: explicit grid placement, 2 cols left + 1 col right    #}
+{# ============================================================ #}
+<div class="space-y-4 sm:space-y-6 lg:grid lg:grid-cols-3 lg:items-start lg:gap-6 lg:space-y-0">
+
+    <!-- Recent Orders -->
+    <div class="rounded-xl border border-gray-200 bg-white shadow-sm lg:col-span-2 lg:col-start-1 lg:row-start-1">
+        <div class="flex items-center justify-between px-4 py-4 border-b border-gray-200 sm:px-6">
+            <h2 class="text-sm font-bold text-gray-900 sm:text-lg">Recent Orders</h2>
+            <a href="{% url 'vendors:orders_list' %}" class="text-xs font-semibold text-primary hover:text-primary/80 sm:text-sm">
+                View all →
+            </a>
+        </div>
+
+        {% if recent_orders %}
+        <ul class="divide-y divide-gray-200">
+            {% for order in recent_orders %}
+            <li class="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 sm:px-6">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
+                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                     </svg>
-                    <p class="text-gray-500 font-medium mb-2">No orders yet</p>
-                    <p class="text-sm text-gray-400">Your orders will appear here once customers start buying</p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- Low Stock Alert -->
-        {% if low_stock_products %}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 class="text-lg font-bold text-gray-900 flex items-center">
-                    <svg class="w-5 h-5 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                    </svg>
-                    Low Stock Alert
-                </h2>
-                <span class="text-sm font-semibold text-yellow-600">{{ low_stock_products|length }} product{{ low_stock_products|length|pluralize }}</span>
-            </div>
-            
-            <div class="divide-y divide-gray-200">
-                {% for product in low_stock_products %}
-                <div class="p-6 hover:bg-gray-50 transition-colors">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-4">
-                            {% if product.images.first %}
-                            <img src="{{ product.images.first.image.url }}" 
-                                 alt="{{ product.name }}"
-                                 class="w-16 h-16 object-cover rounded-lg">
-                            {% else %}
-                            <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                </svg>
-                            </div>
-                            {% endif %}
-                            <div>
-                                <p class="font-semibold text-gray-900">{{ product.name }}</p>
-                                <p class="text-sm text-gray-500">₦{{ product.price|floatformat:2 }}</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-2xl font-bold text-yellow-600">{{ product.stock_quantity }}</p>
-                            <p class="text-xs text-gray-500">in stock</p>
-                            <a href="{% url 'vendors:product_edit' product.id %}" 
-                               class="text-xs font-semibold text-primary hover:text-primary/80 mt-1 inline-block">
-                                Restock →
-                            </a>
-                        </div>
+                </span>
+
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                        <p class="text-[13px] font-semibold text-gray-900 sm:text-sm">#{{ order.order_number }}</p>
+                        <span class="text-[11px] text-gray-500 sm:text-xs">{{ order.created_at|timesince }} ago</span>
                     </div>
+                    <p class="mt-0.5 truncate text-[11px] text-gray-500 sm:text-xs">
+                        {{ order.customer_name }} · {{ order.items.count }} item{{ order.items.count|pluralize }}
+                    </p>
                 </div>
-                {% endfor %}
-            </div>
+
+                <div class="flex flex-col items-end gap-1">
+                    {% if order.status == 'pending' %}
+                    {% include 'vendors/components/verification_badge.html' with status="pending" label="Pending" size="sm" %}
+                    {% elif order.status == 'processing' %}
+                    {% include 'vendors/components/verification_badge.html' with status="in_progress" label="Processing" size="sm" %}
+                    {% elif order.status == 'shipped' %}
+                    {% include 'vendors/components/verification_badge.html' with status="in_progress" label="Shipped" size="sm" %}
+                    {% elif order.status == 'delivered' %}
+                    {% include 'vendors/components/verification_badge.html' with status="completed" label="Delivered" size="sm" %}
+                    {% else %}
+                    {% include 'vendors/components/verification_badge.html' with status="failed" label=order.get_status_display size="sm" %}
+                    {% endif %}
+
+                    <p class="text-[13px] font-bold text-gray-900 sm:text-sm">₦{{ order.total_amount|floatformat:2 }}</p>
+
+                    {% if order.status == 'PENDING_VENDOR' %}
+                    <a href="{% url 'vendors:orders_list' %}?status=PENDING_VENDOR" class="text-[11px] font-medium text-soft-blue hover:underline">
+                        View Details
+                    </a>
+                    {% else %}
+                    <a href="{% url 'vendors:vendor_order_detail' order.id %}" class="text-[11px] font-medium text-soft-blue hover:underline">
+                        View Details
+                    </a>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="flex flex-col items-center justify-center gap-2 py-12 text-center">
+            <span class="flex size-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                <svg class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+            </span>
+            <p class="text-sm font-semibold text-gray-900">No orders yet</p>
+            <p class="max-w-xs text-xs text-gray-500">Your orders will appear here once customers start buying.</p>
         </div>
         {% endif %}
-        
     </div>
-    
-    <!-- Right Column: Quick Actions & Stats -->
-    <div class="space-y-6">
-        
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 class="font-bold text-gray-900 mb-4">Quick Actions</h3>
-            <div class="space-y-3">
-                <a href="{% url 'vendors:product_create' %}" 
-                   class="flex items-center p-4 bg-gradient-to-r from-primary/5 to-soft-blue/5 rounded-lg hover:shadow-md transition-all group">
-                    <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                        </svg>
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <p class="font-semibold text-gray-900">Add Product</p>
-                        <p class="text-xs text-gray-500">List a new item</p>
-                    </div>
-                    <svg class="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                </a>
-                
-                <a href="{% url 'vendors:orders_list' %}" 
-                   class="flex items-center p-4 bg-gradient-to-r from-soft-blue/5 to-primary/5 rounded-lg hover:shadow-md transition-all group">
-                    <div class="w-10 h-10 bg-soft-blue rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                        </svg>
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <p class="font-semibold text-gray-900">View Orders</p>
-                        <p class="text-xs text-gray-500">Manage sales</p>
-                    </div>
-                    <svg class="w-5 h-5 text-gray-400 group-hover:text-soft-blue transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                </a>
-                
-                <a href="{% url 'vendors:wallet_overview' %}" 
-                   class="flex items-center p-4 bg-gradient-to-r from-green-500/5 to-green-400/5 rounded-lg hover:shadow-md transition-all group">
-                    <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                        </svg>
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <p class="font-semibold text-gray-900">Wallet</p>
-                        <p class="text-xs text-gray-500">Request payout</p>
-                    </div>
-                    <svg class="w-5 h-5 text-gray-400 group-hover:text-green-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                </a>
-            </div>
-        </div>
-        
-        <!-- Performance This Month -->
-        <div class="bg-gradient-to-br from-primary/5 to-soft-blue/5 rounded-xl p-6 border border-primary/10">
-            <h3 class="font-bold text-gray-900 mb-4">This Month</h3>
-            <div class="space-y-4">
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm text-gray-600">Sales Target</span>
-                        <span class="text-sm font-bold text-gray-900">75%</span>
-                    </div>
-                    {% include 'vendors/components/progress_bar.html' with percentage=75 color="purple" size="sm" %}
-                </div>
-                
-                <div class="pt-4 border-t border-gray-200">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-xs text-gray-600">Orders</span>
-                        <span class="text-lg font-bold text-gray-900">{{ monthly_orders|default:0 }}</span>
-                    </div>
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-xs text-gray-600">Revenue</span>
-                        <span class="text-lg font-bold text-green-600">₦{{ monthly_revenue|default:0|floatformat:0 }}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-600">Customers</span>
-                        <span class="text-lg font-bold text-primary">{{ monthly_customers|default:0 }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Store Health -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 class="font-bold text-gray-900 mb-4">Store Health</h3>
-            <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">Products Listed</span>
-                    <span class="text-sm font-bold text-green-600">✓ {{ total_products }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">Response Rate</span>
-                    <span class="text-sm font-bold text-green-600">✓ 98%</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">Avg. Rating</span>
-                    <span class="text-sm font-bold text-yellow-500">★ 4.8</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">Fulfillment</span>
-                    <span class="text-sm font-bold text-green-600">✓ 95%</span>
-                </div>
-            </div>
-        </div>
-        
-    </div>
-    
-</div>
 
-<!-- Orders Breakdown -->
-<div class="mb-8">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <h3 class="text-sm font-semibold text-gray-700 mb-3">Orders Breakdown</h3>
-        <div class="flex items-center space-x-6">
-            <div class="text-center">
-                <p class="text-lg font-bold text-gray-900">{{ orders_total|default:0 }}</p>
-                <p class="text-xs text-gray-500">Total orders</p>
-            </div>
-            <div class="text-center">
-                <p class="text-lg font-bold text-blue-600">{{ orders_pending|default:0 }}</p>
-                <p class="text-xs text-gray-500">Pending</p>
-            </div>
-            <div class="text-center">
-                <p class="text-lg font-bold text-green-600">{{ orders_confirmed|default:0 }}</p>
-                <p class="text-xs text-gray-500">Accepted</p>
-            </div>
-            <div class="text-center">
-                <p class="text-lg font-bold text-red-600">{{ orders_cancelled|default:0 }}</p>
-                <p class="text-xs text-gray-500">Rejected</p>
-            </div>
+    <!-- Quick Actions: under Recent Orders on mobile (natural source order); right column, row 1 on desktop -->
+    <div class="lg:col-span-1 lg:col-start-3 lg:row-start-1">
+        {% include 'vendors/dashboard/_quick_actions.html' %}
+    </div>
+
+    <!-- Low Stock Alert: under Quick Actions on mobile; back in left column, row 2 on desktop -->
+    {% if low_stock_products %}
+    <div class="rounded-xl border border-gray-200 bg-white shadow-sm lg:col-span-2 lg:col-start-1 lg:row-start-2">
+        <div class="flex items-center gap-2 px-4 py-4 border-b border-gray-200 sm:px-6">
+            <svg class="size-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <h2 class="text-sm font-bold text-gray-900 sm:text-lg">Low Stock Alert</h2>
         </div>
+        <ul class="divide-y divide-gray-200">
+            {% for product in low_stock_products %}
+            <li class="flex items-center gap-3 px-4 py-2.5 sm:px-6">
+                {% if product.images.first %}
+                <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" class="size-10 shrink-0 rounded-md border border-gray-200 object-cover">
+                {% else %}
+                <div class="flex size-10 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-400">
+                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                {% endif %}
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-[13px] font-semibold text-gray-900 sm:text-sm">{{ product.name }}</p>
+                    <p class="text-[11px] text-gray-500 sm:text-xs">₦{{ product.price|floatformat:2 }}</p>
+                </div>
+                <div class="flex flex-col items-end gap-0.5">
+                    <p class="text-[13px] font-bold text-amber-600 sm:text-sm">{{ product.stock_quantity }} left</p>
+                    <a href="{% url 'vendors:product_edit' product.id %}" class="text-[11px] font-medium text-primary hover:underline">
+                        Restock
+                    </a>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- This Month -->
+    <div class="rounded-xl border border-gray-200 bg-gradient-to-br from-primary/5 to-soft-blue/5 p-4 shadow-sm sm:p-6 lg:col-span-1 lg:col-start-3 lg:row-start-2">
+        <h3 class="text-sm font-bold text-gray-900 sm:text-lg">This Month</h3>
+
+        <div class="mt-4">
+            <div class="mb-1.5 flex items-center justify-between">
+                <span class="text-[11px] font-medium text-gray-500 sm:text-xs">Sales Target</span>
+                <span class="text-[13px] font-bold text-primary sm:text-sm">75%</span>
+            </div>
+            {% include 'vendors/components/progress_bar.html' with percentage=75 color="purple" size="sm" %}
+        </div>
+
+        <dl class="mt-4 space-y-2.5">
+            <div class="flex items-center justify-between">
+                <dt class="text-[11px] font-medium text-gray-500 sm:text-xs">Orders</dt>
+                <dd class="text-[13px] font-bold text-gray-900 sm:text-sm">{{ monthly_orders|default:0 }}</dd>
+            </div>
+            <div class="flex items-center justify-between">
+                <dt class="text-[11px] font-medium text-gray-500 sm:text-xs">Revenue</dt>
+                <dd class="text-[13px] font-bold text-primary sm:text-sm">₦{{ monthly_revenue|default:0|floatformat:0 }}</dd>
+            </div>
+            <div class="flex items-center justify-between">
+                <dt class="text-[11px] font-medium text-gray-500 sm:text-xs">Customers</dt>
+                <dd class="text-[13px] font-bold text-primary sm:text-sm">{{ monthly_customers|default:0 }}</dd>
+            </div>
+        </dl>
+    </div>
+
+    <!-- Store Health -->
+    <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5 lg:col-span-1 lg:col-start-3 lg:row-start-3">
+        <h3 class="text-sm font-bold text-gray-900">Store Health</h3>
+        <dl class="mt-3 space-y-2">
+            <div class="flex items-center justify-between">
+                <dt class="text-xs text-gray-500">Products Listed</dt>
+                <dd class="text-xs font-semibold text-gray-900">{{ total_products }}</dd>
+            </div>
+            <div class="flex items-center justify-between">
+                <dt class="text-xs text-gray-500">Response Rate</dt>
+                <dd class="flex items-center gap-1 text-xs font-semibold text-primary">
+                    <svg class="size-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/></svg>
+                    98%
+                </dd>
+            </div>
+            <div class="flex items-center justify-between">
+                <dt class="text-xs text-gray-500">Avg. Rating</dt>
+                <dd class="text-xs font-semibold text-amber-500">★ 4.8</dd>
+            </div>
+            <div class="flex items-center justify-between">
+                <dt class="text-xs text-gray-500">Fulfillment</dt>
+                <dd class="flex items-center gap-1 text-xs font-semibold text-primary">
+                    <svg class="size-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/></svg>
+                    95%
+                </dd>
+            </div>
+        </dl>
     </div>
 </div>
 

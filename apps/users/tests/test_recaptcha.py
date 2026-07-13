@@ -15,12 +15,15 @@ class ReCaptchaFormTests(TestCase):
         # make sure dummy keys exist as they do in .env by default
         self.old_public = getattr(settings, 'RECAPTCHA_PUBLIC_KEY', None)
         self.old_private = getattr(settings, 'RECAPTCHA_PRIVATE_KEY', None)
+        self.old_enabled = getattr(settings, 'RECAPTCHA_ENABLED', None)
         settings.RECAPTCHA_PUBLIC_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
         settings.RECAPTCHA_PRIVATE_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'
+        settings.RECAPTCHA_ENABLED = True
 
     def tearDown(self):
         settings.RECAPTCHA_PUBLIC_KEY = self.old_public
         settings.RECAPTCHA_PRIVATE_KEY = self.old_private
+        settings.RECAPTCHA_ENABLED = self.old_enabled
 
     def test_signup_form_rejects_missing_token(self):
         form = BuyerSignupForm(data={
@@ -78,12 +81,17 @@ class ReCaptchaViewTests(TestCase):
     """Check that the widget is rendered and that server rejects posts."""
 
     def setUp(self):
+        self.old_enabled = getattr(settings, 'RECAPTCHA_ENABLED', None)
         settings.RECAPTCHA_PUBLIC_KEY = 'public'
         settings.RECAPTCHA_PRIVATE_KEY = 'private'
+        settings.RECAPTCHA_ENABLED = True
         User = get_user_model()
         self.user = User.objects.create(email='v@test.com', role='buyer', is_active=True, is_verified=True)
         self.user.set_password('Password123!')
         self.user.save()
+
+    def tearDown(self):
+        settings.RECAPTCHA_ENABLED = self.old_enabled
 
     def test_signup_page_contains_widget(self):
         resp = self.client.get(reverse('users:buyer_signup'))

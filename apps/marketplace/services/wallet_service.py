@@ -243,7 +243,7 @@ def reverse_pending_credit(sub_order) -> dict:
                 transaction_type='REVERSAL',
                 amount=sub_order.subtotal,
                 status='REVERSED',
-                reference=sub_order.main_order.reference,
+                reference=sub_order.main_order.reference + '-REVERSAL',
                 note=f"Reversal for refunded order {sub_order.main_order.order_number}",
             )
 

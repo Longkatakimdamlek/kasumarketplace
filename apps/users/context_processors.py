@@ -22,12 +22,14 @@ def recaptcha_keys(request):
         return {
             'RECAPTCHA_PUBLIC_KEY': getattr(settings, 'RECAPTCHA_PUBLIC_KEY', ''),
             'RECAPTCHA_PRIVATE_KEY': getattr(settings, 'RECAPTCHA_PRIVATE_KEY', ''),
+            'RECAPTCHA_ENABLED': getattr(settings, 'RECAPTCHA_ENABLED', False),
         }
     except Exception as e:
         logger.error(f"Error in recaptcha_keys context processor: {str(e)}", exc_info=True)
         return {
             'RECAPTCHA_PUBLIC_KEY': '',
             'RECAPTCHA_PRIVATE_KEY': '',
+            'RECAPTCHA_ENABLED': False,
         }
 
 

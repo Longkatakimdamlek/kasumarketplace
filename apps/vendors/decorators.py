@@ -52,7 +52,7 @@ def vendor_required(view_func):
 
 def vendor_verified_required(view_func):
     """
-    Decorator to ensure vendor is fully verified (NIN + BVN verified)
+    Decorator to ensure vendor is fully verified (identity + BVN verified)
     Redirects to verification center if not verified
     
     Usage:
@@ -73,11 +73,11 @@ def vendor_verified_required(view_func):
         
         vendor = request.user.vendorprofile
         
-        # Check if vendor can sell (NIN + BVN verified)
+        # Check if vendor can sell (identity + BVN verified)
         if not vendor.can_sell:
             messages.warning(
                 request, 
-                'Please complete identity (NIN) and banking (BVN) verification to access this feature.'
+                'Please complete identity and banking (BVN) verification to access this feature.'
             )
             return redirect('vendors:verification_center')
         
@@ -315,12 +315,12 @@ def ajax_vendor_required(view_func):
 
 def rate_limit_verification(view_func):
     """
-    Rate limit verification attempts (NIN/BVN)
-    Max 3 attempts per hour per vendor
+    Rate limit verification attempts for vendor verification.
+    Max 3 attempts per hour per vendor.
     
     Usage:
         @rate_limit_verification
-        def nin_verification_view(request):
+        def some_verification_view(request):
             ...
     """
     @wraps(view_func)
@@ -471,7 +471,7 @@ def check_vendor_permissions(user, permission_type='basic'):
     
     Permission types:
         - 'basic': Just needs vendor profile
-        - 'verified': Needs NIN + BVN verified
+        - 'verified': Needs identity + BVN verified
         - 'approved': Needs admin approval
         - 'store': Needs store setup
     """

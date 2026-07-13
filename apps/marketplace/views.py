@@ -541,6 +541,7 @@ def order_detail(request, order_number):
             'suborders__store__vendor__user',
             'suborders__items__product',
             'suborders__wallet_transactions',
+            'suborders__dispute',
         ),
         order_number=order_number,
         buyer=request.user,

@@ -1,0 +1,256 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ store.store_name }} - KasuMarketplace{% endblock %}</title>
+
+    <!-- Favicons (kept consistent with the vendor dashboard) -->
+    <link rel="icon" href="{% static 'images/favicon/favicon.ico' %}" />
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon/favicon_32x32.png' %}" />
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicon/favicon_180x180.png' %}" />
+    <meta name="theme-color" content="{{ store.primary_color|default:'#6a3df5' }}" />
+
+    <!-- Tailwind CSS CDN (JIT) — same convention used across the rest of the app -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!--
+        SINGLE SOURCE OF VENDOR THEMING
+        Every public storefront page shares this one config block. The vendor's
+        brand color is read once here and exposed both as Tailwind utility
+        classes (bg-brand, text-brand, border-brand, bg-brand/10 …) and as a
+        CSS custom property for the handful of places raw CSS is simpler than
+        a utility class. Nothing below this point should ever write
+        style="background-color: {{ store.primary_color }}" inline again.
+
+        ACCESSIBILITY SAFEGUARD: nav/footer/button text is always white
+        (brand-foreground). Vendors pick their own primary_color with no
+        constraints, so a light color (pale yellow, mint, etc.) would make
+        that white text unreadable. Before handing the color to Tailwind, we
+        check its luminance and automatically darken it if needed — the
+        vendor's chosen hue is preserved, only its lightness is clamped, so
+        their brand still reads as "their color" but text stays legible.
+    -->
+    <script>
+        (function () {
+            function ensureReadableBrand(hex) {
+                hex = (hex || '#6a3df5').trim();
+                var m = hex.replace('#', '');
+                if (!/^[0-9a-fA-F]{6}$/.test(m)) return '#6a3df5';
+                var r = parseInt(m.slice(0, 2), 16), g = parseInt(m.slice(2, 4), 16), b = parseInt(m.slice(4, 6), 16);
+                var luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+                if (luminance > 0.6) {
+                    var factor = 0.55 + (1 - luminance) * 0.3; // darken proportionally, hue preserved
+                    r = Math.round(r * factor); g = Math.round(g * factor); b = Math.round(b * factor);
+                }
+                return '#' + [r, g, b].map(function (v) { return v.toString(16).padStart(2, '0'); }).join('');
+            }
+            window.__BRAND__ = ensureReadableBrand('{{ store.primary_color|default:"#6a3df5"|escapejs }}');
+            document.documentElement.style.setProperty('--brand', window.__BRAND__);
+
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            brand: window.__BRAND__,
+                            'brand-foreground': '#ffffff',
+                        },
+                        fontFamily: {
+                            sans: ['Inter', 'system-ui', 'sans-serif'],
+                        },
+                        keyframes: {
+                            'fade-up': {
+                                from: { opacity: 0, transform: 'translateY(8px)' },
+                                to: { opacity: 1, transform: 'translateY(0)' },
+                            },
+                        },
+                        animation: {
+                            'fade-up': 'fade-up 0.5s cubic-bezier(0.22,1,0.36,1) both',
+                        },
+                    }
+                }
+            }
+        })();
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        @media (prefers-reduced-motion: reduce) {
+            .animate-fade-up { animation: none; }
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full font-sans antialiased bg-gray-50 text-gray-900">
+
+    <!-- ===================== TOP NAV (shared by storefront, product detail, preview) ===================== -->
+    <header id="site-nav" class="sticky top-0 z-50 bg-brand text-brand-foreground shadow-none transition-shadow duration-300">
+        <nav class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-4 md:h-16 md:px-8">
+            {% block nav_left %}
+            <a href="/" class="flex items-center gap-2 text-lg font-semibold tracking-tight md:text-xl" aria-label="Marketplace home">
+                <span class="grid size-8 place-items-center rounded-lg bg-white/15 text-base font-bold">K</span>
+                <span class="hidden sm:inline">Kasu<span class="font-light opacity-80">Marketplace</span></span>
+            </a>
+            {% endblock %}
+
+            <div class="flex items-center gap-1">
+                {% block nav_right %}
+                {% if is_owner %}
+                <a href="{% url 'vendors:store_settings' %}"
+                   class="flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors hover:bg-white/15 active:scale-95">
+                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    <span class="hidden sm:inline">Edit Store</span>
+                </a>
+                {% else %}
+                <a href="/cart/" class="relative grid size-10 place-items-center rounded-full transition-colors hover:bg-white/15 active:scale-95" aria-label="Cart">
+                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                    </svg>
+                    <span id="cart-badge" class="absolute -right-0.5 -top-0.5 hidden min-w-[18px] place-items-center rounded-full bg-white px-1 text-[11px] font-bold leading-[18px] text-brand">0</span>
+                </a>
+                {% endif %}
+                <a href="/" class="hidden text-sm font-medium text-white/90 hover:text-white sm:inline">← Marketplace</a>
+                {% endblock %}
+            </div>
+        </nav>
+    </header>
+
+    {% block preview_banner %}{% endblock %}
+
+    {% block content %}{% endblock %}
+
+    {% block footer %}
+    <footer class="mt-16 border-t border-white/10 bg-brand text-brand-foreground font-sans">
+        <div class="mx-auto max-w-7xl px-4 py-14 md:px-8">
+            <div class="grid gap-10 lg:grid-cols-[1.75fr_repeat(3,minmax(0,13rem))]">
+                <div class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        {% if store.logo %}
+                        <div class="size-12 overflow-hidden rounded-3xl bg-white/10 ring-1 ring-white/10">
+                            <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="size-full object-cover">
+                        </div>
+                        {% endif %}
+                        <div>
+                            <p class="text-2xl font-semibold tracking-tight text-white">{{ store.store_name }}</p>
+                            <p class="mt-1 text-sm text-white/80">{{ store.tagline|default:'A curated storefront built for fast local shopping.' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-3 text-sm leading-6 text-white/85">
+                        {% if store.description %}
+                        <p class="max-w-xl text-white/80">{{ store.description|truncatewords:30 }}</p>
+                        {% endif %}
+
+                        {% if store.business_email or store.address %}
+                        <div class="space-y-3">
+                            {% if store.business_email %}
+                            <a href="mailto:{{ store.business_email }}" class="flex items-center gap-3 px-0 py-0 text-sm text-white/90 transition hover:text-white">
+                                <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/90">
+                                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 6.75h15a2.25 2.25 0 012.25 2.25v6a2.25 2.25 0 01-2.25 2.25h-15A2.25 2.25 0 012.25 15V9A2.25 2.25 0 014.5 6.75zm0 0l7.5 4.5 7.5-4.5"/>
+                                    </svg>
+                                </span>
+                                <span>{{ store.business_email }}</span>
+                            </a>
+                            {% endif %}
+
+                            {% if store.address %}
+                            <div class="flex items-center gap-3 px-0 py-0 text-sm text-white/90">
+                                <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/90">
+                                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11.25a3 3 0 100-6 3 3 0 000 6zm0 0c2.21 0 4 1.79 4 4 0 2.5-2.6 5.52-4 6.75-1.4-1.23-4-4.25-4-6.75 0-2.21 1.79-4 4-4z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1.5"/>
+                                    </svg>
+                                </span>
+                                <span>{{ store.address }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        {% if store.instagram or store.facebook or store.twitter %}
+                        <div class="flex flex-wrap items-center gap-3">
+                            {% if store.instagram %}
+                            <a href="{{ store.instagram }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#f09433] via-[#e6683c] to-[#cc2a7d] text-white transition hover:opacity-90">
+                                <span class="sr-only">Instagram</span>
+                                <svg class="size-4" fill="currentColor" viewBox="0 0 24 24"><path d="M7.75 2h8.5A5.75 5.75 0 0122 7.75v8.5A5.75 5.75 0 0116.25 22h-8.5A5.75 5.75 0 012 16.25v-8.5A5.75 5.75 0 017.75 2zm0 1.5A4.25 4.25 0 003.5 7.75v8.5A4.25 4.25 0 007.75 20.5h8.5A4.25 4.25 0 0020.5 16.25v-8.5A4.25 4.25 0 0016.25 3.5h-8.5zm4.25 3a4.25 4.25 0 110 8.5 4.25 4.25 0 010-8.5zm0 1.5a2.75 2.75 0 100 5.5 2.75 2.75 0 000-5.5zm4.5-.75a.75.75 0 110 1.5.75.75 0 010-1.5z"/></svg>
+                            </a>
+                            {% endif %}
+                            {% if store.facebook %}
+                            <a href="{{ store.facebook }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1877F2] text-white transition hover:opacity-90">
+                                <span class="sr-only">Facebook</span>
+                                <svg class="size-4" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12.073C22 6.446 17.523 2 12 2S2 6.446 2 12.073c0 4.992 3.657 9.128 8.438 9.95v-7.05H7.898v-2.9h2.54V9.845c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.242 0-1.63.772-1.63 1.562v1.874h2.773l-.443 2.9h-2.33v7.05C18.343 21.2 22 17.065 22 12.073z"/></svg>
+                            </a>
+                            {% endif %}
+                            {% if store.twitter %}
+                            <a href="{{ store.twitter }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1DA1F2] text-white transition hover:opacity-90">
+                                <span class="sr-only">Twitter</span>
+                                <svg class="size-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14.86A4.48 4.48 0 0022.43.36a9.09 9.09 0 01-2.88 1.1 4.52 4.52 0 00-7.72 4.12A12.83 12.83 0 011.64 1.4a4.48 4.48 0 001.4 6A4.41 4.41 0 01.8 6.57v.05a4.52 4.52 0 003.62 4.44 4.41 4.41 0 01-2.04.08 4.52 4.52 0 004.22 3.13A9.07 9.07 0 010 19.54a12.8 12.8 0 006.92 2.03c8.3 0 12.84-6.88 12.84-12.84 0-.2 0-.42-.02-.62A9.18 9.18 0 0023 3z"/></svg>
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Shipping Policy</p>
+                    <div class="mt-5 space-y-3 text-sm text-slate-300">
+                        {% if store.shipping_policy %}
+                        <p class="text-slate-300">{{ store.shipping_policy|truncatewords:25 }}</p>
+                        {% else %}
+                        <p class="text-slate-500">No shipping policy provided yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Refunds Policy</p>
+                    <div class="mt-5 space-y-3 text-sm text-slate-300">
+                        {% if store.return_policy %}
+                        <p class="text-slate-300">{{ store.return_policy|truncatewords:25 }}</p>
+                        {% else %}
+                        <p class="text-slate-500">No refunds policy provided yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Support</p>
+                    <ul class="mt-5 space-y-3 text-sm text-slate-300">
+                        <li><a href="mailto:support@kasumarketplace.com.ng" class="hover:text-white">support@kasumarketplace.com.ng</a></li>
+                        <li><a href="#" class="hover:text-white">Terms</a></li>
+                        <li><a href="#" class="hover:text-white">Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-10 border-t border-white/10 pt-6 text-sm text-slate-500 sm:flex sm:items-center sm:justify-between">
+                <p>&copy; {% now "Y" %} {{ store.store_name }}. All rights reserved.</p>
+                <p class="mt-3 sm:mt-0">Designed for fast local shopping on KasuMarketplace.</p>
+            </div>
+        </div>
+    </footer>
+    {% endblock %}
+
+    {% block extra_body %}{% endblock %}
+
+    <script>
+        // Compact footer policy toggles (Shipping / Return expand inline)
+        document.querySelectorAll('[data-policy-toggle]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var panel = document.querySelector('[data-policy-panel="' + btn.dataset.policyToggle + '"]');
+                if (panel) panel.classList.toggle('hidden');
+            });
+        });
+    </script>
+</body>
+</html>

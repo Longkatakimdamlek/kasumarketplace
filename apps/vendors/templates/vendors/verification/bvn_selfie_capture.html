@@ -1,0 +1,229 @@
+{% extends 'vendors/base.html' %}
+{% load static %}
+
+{% block title %}Face Verification - KasuMarketplace{% endblock %}
+{% block page_title %}Face Verification{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto"
+     x-data="bvnSelfieCapture()"
+     x-init="init()">
+
+    <!-- 3-step progress (matches mockup) -->
+    <div class="flex items-center justify-center gap-0 mb-8 px-4">
+        <template x-for="(s, i) in steps" :key="i">
+            <div class="flex items-center">
+                <div class="flex flex-col items-center">
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300"
+                         :class="stepClass(i + 1)"
+                         x-text="stepLabel(i + 1)"></div>
+                </div>
+                <div x-show="i < steps.length - 1"
+                     class="w-16 sm:w-20 h-0.5 mx-1 transition-colors duration-300"
+                     :class="connectorClass(i + 1)"></div>
+            </div>
+        </template>
+    </div>
+
+    <!-- ── PHASE: Live capture ── -->
+    <div x-show="phase === 'capture'" x-cloak>
+        <a href="{% url 'vendors:bvn_verification' %}"
+           class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-primary mb-5 transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Back to BVN Details
+        </a>
+
+        <div class="text-center mb-5">
+            <h1 class="text-xl font-bold text-gray-900">Position Your Face</h1>
+            <p class="text-sm text-gray-500 mt-1">Look straight at the camera · Good lighting</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div id="live-capture-root"
+                 x-init="$nextTick(() => mountCamera())">
+            </div>
+        </div>
+
+        <p class="mt-3 text-xs text-gray-400 text-center flex items-center justify-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Camera never recorded · Secured by Dojah
+        </p>
+    </div>
+
+    <!-- ── PHASE: Preview (Retake / Continue) ── -->
+    <div x-show="phase === 'preview'" x-cloak>
+        <div class="text-center mb-6">
+            <h1 class="text-xl font-bold text-gray-900">Preview Your Photo</h1>
+            <p class="text-sm text-gray-500 mt-1">Make sure your photo is clear</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div class="relative bg-black" style="aspect-ratio: 3/4;">
+                <img :src="capturedImage" class="w-full h-full object-cover" alt="Selfie preview">
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="button" @click="retake()"
+                    class="flex-1 py-3.5 px-4 bg-white border-2 border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Retake
+            </button>
+            <button type="button" @click="confirmAndSubmit()"
+                    class="flex-1 py-3.5 px-4 bg-gradient-to-r from-primary to-primary text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-xl transition-all">
+                Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- ── PHASE: Processing (Verifying with Dojah) ── -->
+    <div x-show="phase === 'processing'" x-cloak>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 px-6 py-10 text-center">
+
+            <!-- Upload icon -->
+            <div class="flex justify-center mb-6">
+                <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                </div>
+            </div>
+
+            <h1 class="text-xl font-bold text-gray-900 mb-1">Verifying Your Identity</h1>
+            <p class="text-sm text-gray-500 mb-8">Please wait while we verify your information with Dojah</p>
+
+            <!-- Checklist -->
+            <div class="text-left space-y-4 max-w-xs mx-auto mb-8">
+                <template x-for="(item, idx) in procItems" :key="idx">
+                    <div class="flex items-center gap-3">
+                        <!-- Done -->
+                        <div x-show="procStep > idx + 1"
+                             class="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <!-- Active spinner -->
+                        <div x-show="procStep === idx + 1"
+                             class="w-6 h-6 rounded-full border-2 border-primary bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <svg class="animate-spin w-3.5 h-3.5 text-primary" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                            </svg>
+                        </div>
+                        <!-- Pending -->
+                        <div x-show="procStep < idx + 1"
+                             class="w-6 h-6 rounded-full border-2 border-gray-200 flex items-center justify-center flex-shrink-0">
+                            <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+                        </div>
+                        <span class="text-sm"
+                              :class="procStep >= idx + 1 ? 'font-medium text-gray-800' : 'text-gray-400'"
+                              x-text="item"></span>
+                    </div>
+                </template>
+            </div>
+
+            <div class="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
+                <p class="text-xs text-primary font-medium">This may take a few seconds</p>
+            </div>
+        </div>
+    </div>
+
+    {% if form.selfie_image.errors %}
+    <div class="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+        <p class="text-sm text-red-700">{{ form.selfie_image.errors.0 }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Hidden POST form -->
+    <form method="POST"
+          action="{% url 'vendors:bvn_selfie_capture' %}"
+          x-ref="selfieForm"
+          class="hidden">
+        {% csrf_token %}
+        <input type="hidden" name="{{ form.selfie_image.html_name }}" :value="capturedImage">
+    </form>
+
+</div>
+
+<style>[x-cloak] { display: none !important; }</style>
+{% endblock %}
+
+{% block extra_js %}
+<script type="module">
+    import * as visionTasks from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
+    window.FaceLandmarksTasksVision = visionTasks;
+    window.dispatchEvent(new Event('mediapipe:ready'));
+</script>
+<script src="{% static 'vendors/js/live_capture.js' %}" defer></script>
+<script>
+function bvnSelfieCapture() {
+    return {
+        phase:         'capture',
+        capturedImage: '',
+        procStep:      1,
+        procItems:     ['Uploading photo', 'Verifying with Dojah', 'Checking details', 'Finalizing'],
+        steps:         ['Preview', 'Verify', 'Done'],
+
+        init() {
+            window.addEventListener('livecapture:captured', (e) => {
+                this.capturedImage = e.detail.dataUrl;
+                this.phase = 'preview';
+            });
+        },
+
+        /* Progress bar helpers */
+        stepClass(n) {
+            const active = (n === 1 && this.phase === 'preview')
+                        || (n === 2 && this.phase === 'processing')
+                        || (n === 3 && false);
+            const done   = (n === 1 && (this.phase === 'processing'))
+                        || (n === 2 && false);
+            if (active) return 'bg-primary text-white shadow-md shadow-primary/30';
+            if (done)   return 'bg-primary text-white';
+            return 'bg-gray-100 text-gray-400';
+        },
+        stepLabel(n) {
+            const done = (n === 1 && this.phase !== 'capture');
+            if (done && n < 3) return '✓';
+            return n;
+        },
+        connectorClass(n) {
+            const done = (n === 1 && this.phase !== 'capture');
+            return done ? 'bg-primary/70' : 'bg-gray-200';
+        },
+
+        mountCamera() {
+            const root = document.getElementById('live-capture-root');
+            if (root && window.mountLiveCapture) {
+                root.innerHTML = '';
+                window.mountLiveCapture('live-capture-root');
+            }
+        },
+
+        retake() {
+            this.capturedImage = '';
+            this.phase = 'capture';
+            this.$nextTick(() => this.mountCamera());
+        },
+
+        confirmAndSubmit() {
+            this.phase = 'processing';
+            this.procStep = 1;
+            setTimeout(() => { this.procStep = 2; }, 800);
+            setTimeout(() => { this.procStep = 3; }, 2200);
+            setTimeout(() => { this.procStep = 4; }, 4000);
+            this.$nextTick(() => this.$refs.selfieForm.submit());
+        },
+    };
+}
+</script>
+{% endblock %}

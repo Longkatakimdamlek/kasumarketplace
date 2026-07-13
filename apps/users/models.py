@@ -322,6 +322,20 @@ class OTPVerification(models.Model):
         """
         # Delete existing OTP
         cls.objects.filter(user=user).delete()
+
+        print(f"\n[DEV OTP] {user.email} → {otp_code}\n")
+    
+    # Create new OTP with expiration
+        expiry_time = timezone.now() + timezone.timedelta(
+            minutes=cls.OTP_EXPIRY_MINUTES
+        )
+    
+        otp = cls.objects.create(
+            user=user,
+            otp_hash=make_password(otp_code),
+            expires_at=expiry_time
+        )
+        return otp
         
         # Create new OTP with expiration
         expiry_time = timezone.now() + timezone.timedelta(

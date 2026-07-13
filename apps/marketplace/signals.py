@@ -15,6 +15,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
+from .models import SubOrderItem
 
 
 @receiver(post_save, sender=User)
@@ -117,3 +118,51 @@ def handle_dispute_opened(sender, instance, created, **kwargs):
             send_dispute_opened(instance)
         except Exception:
             pass
+
+
+@receiver(post_save, sender='marketplace.SubOrder')
+def notify_vendor_new_suborder(sender, instance, created, **kwargs):
+    """Create a Notification for the vendor when a new SubOrder arrives."""
+    if not created:
+        return
+    try:
+        from apps.vendors.models import Notification
+        vendor = instance.store.vendor  # Store → VendorProfile
+        Notification.objects.create(
+            vendor=vendor,
+            notification_type='order',
+            title='New Order Received! 🛒',
+            message=f'You have a new order worth ₦{instance.subtotal} from {instance.main_order.buyer.get_full_name() or "a customer"}. Please accept or reject it.',
+            link=f'/vendors/orders/{instance.id}/',
+        )
+    except Exception as e:
+        logger.error(f"Error creating new order notification: {e}", exc_info=True)
+
+
+@receiver(post_save, sender='marketplace.SubOrderItem')
+def reduce_stock_on_suborder_item(sender, instance, created, **kwargs):
+    """Reduce product stock immediately on order placement; update sales_count from confirmed orders only."""
+    if not created:
+        return
+    try:
+        product = instance.product
+        if not product.track_inventory:
+            return
+
+        if product.stock_quantity >= instance.quantity:
+            product.stock_quantity -= instance.quantity
+            if product.stock_quantity == 0:
+                product.status = 'out_of_stock'
+            product.save(update_fields=['stock_quantity', 'status'])
+        else:
+            logger.warning(f"Insufficient stock for {product.title}: have {product.stock_quantity}, need {instance.quantity}")
+
+        from django.db.models import Sum
+        product.sales_count = SubOrderItem.objects.filter(
+            product=product,
+            sub_order__status='CONFIRMED'
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+        product.save(update_fields=['sales_count'])
+
+    except Exception as e:
+        logger.error(f"Error reducing stock for SubOrderItem {instance.id}: {e}", exc_info=True)

@@ -151,10 +151,13 @@ class BaseSignupForm(forms.ModelForm):
         # reCAPTCHA: if a private key is configured, require a successful
         # challenge.  We deliberately keep the field non‑required so forms
         # still render during development; enforcement happens here.
-        recaptcha_response = cleaned_data.get('recaptcha')
-        if getattr(settings, 'RECAPTCHA_PRIVATE_KEY', ''):
-            if not recaptcha_response or not self._validate_recaptcha(recaptcha_response):
-                raise ValidationError({'recaptcha': _('reCAPTCHA validation failed.')})
+        if getattr(settings, 'RECAPTCHA_ENABLED', False):
+            recaptcha_response = cleaned_data.get('recaptcha')
+            if getattr(settings, 'RECAPTCHA_PRIVATE_KEY', ''):
+                if not recaptcha_response or not self._validate_recaptcha(recaptcha_response):
+                    raise ValidationError(
+                        {'recaptcha': _('reCAPTCHA validation failed.')}
+                    )
 
         return cleaned_data
     
@@ -315,10 +318,13 @@ class LoginForm(forms.Form):
         password = cleaned_data.get('password')
         
         # enforce reCAPTCHA when configured
-        recaptcha_response = cleaned_data.get('recaptcha')
-        if getattr(settings, 'RECAPTCHA_PRIVATE_KEY', ''):
-            if not recaptcha_response or not self._validate_recaptcha(recaptcha_response):
-                raise ValidationError({'recaptcha': _('reCAPTCHA validation failed.')})
+        if getattr(settings, 'RECAPTCHA_ENABLED', False):
+            recaptcha_response = cleaned_data.get('recaptcha')
+            if getattr(settings, 'RECAPTCHA_PRIVATE_KEY', ''):
+                if not recaptcha_response or not self._validate_recaptcha(recaptcha_response):
+                    raise ValidationError(
+                        {'recaptcha': _('reCAPTCHA validation failed.')}
+                    )
 
         if email and password:
             # Check if user exists
@@ -361,11 +367,6 @@ class LoginForm(forms.Form):
 
     def _validate_recaptcha(self, response):
         """Delegate to the signup form helper so both forms behave consistently."""
-        return BaseSignupForm._validate_recaptcha(self, response)
-
-    # replicate the recaptcha validator so tests can patch this class as well
-    def _validate_recaptcha(self, response):
-        """Delegate to the same helper used by signup forms."""
         return BaseSignupForm._validate_recaptcha(self, response)
 
 

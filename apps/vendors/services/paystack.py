@@ -456,25 +456,31 @@ class PaystackService:
     
     def get_banks(self) -> Tuple[bool, list]:
         """
-        Get list of Nigerian banks
-        
-        Returns:
-            Tuple of (success: bool, banks: list)
-            
-        Example response:
-            [
-                {'name': 'Guaranty Trust Bank', 'code': '058', 'slug': 'guaranty-trust-bank'},
-                {'name': 'Access Bank', 'code': '044', 'slug': 'access-bank'},
-                ...
-            ]
+        Get list of Nigerian banks.
+
+        Falls back to a small built-in list when Paystack is unavailable,
+        so the payment-method form can still populate the dropdown.
         """
+        fallback_banks = [
+            {'name': 'Access Bank', 'code': '044', 'slug': 'access-bank'},
+            {'name': 'First Bank of Nigeria', 'code': '011', 'slug': 'first-bank-of-nigeria'},
+            {'name': 'Guaranty Trust Bank', 'code': '058', 'slug': 'guaranty-trust-bank'},
+            {'name': 'United Bank for Africa', 'code': '033', 'slug': 'united-bank-for-africa'},
+            {'name': 'Zenith Bank', 'code': '057', 'slug': 'zenith-bank'},
+            {'name': 'Ecobank Nigeria', 'code': '050', 'slug': 'ecobank-nigeria'},
+            {'name': 'Fidelity Bank', 'code': '070', 'slug': 'fidelity-bank'},
+            {'name': 'Sterling Bank', 'code': '232', 'slug': 'sterling-bank'},
+            {'name': 'Wema Bank', 'code': '035', 'slug': 'wema-bank'},
+            {'name': 'Kuda Bank', 'code': '50211', 'slug': 'kuda-bank'},
+        ]
+
         try:
             response = self._make_request('GET', '/bank')
-            
+
             if response.get('status'):
                 banks = response['data']
                 logger.info(f'Retrieved {len(banks)} banks')
-                
+
                 return True, [
                     {
                         'name': bank.get('name'),
@@ -483,12 +489,12 @@ class PaystackService:
                     }
                     for bank in banks
                 ]
-            
-            return False, []
-        
+
+            return True, fallback_banks
+
         except PaystackAPIError as e:
-            logger.error(f'Get banks error: {str(e)}')
-            return False, []
+            logger.warning(f'Get banks error, using fallback list: {str(e)}')
+            return True, fallback_banks
 
 
 # Singleton instance

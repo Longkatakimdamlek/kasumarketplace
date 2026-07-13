@@ -4,29 +4,25 @@ from . import views
 app_name = 'vendors'
 
 urlpatterns = [
+        path('api/banks/', views.api_get_banks, name='api_get_banks'),
     # Dashboard
     path('', views.dashboard, name='dashboard'),
-    
+
     # ==========================================
-    # VERIFICATION FLOW (Complete)
+    # VERIFICATION FLOW (BVN + Selfie only)
     # ==========================================
     path('verification/', views.verification_center, name='verification_center'),
-    
-    # NIN Flow
-    path('verification/nin/', views.nin_entry, name='nin_entry'),
-    path('verification/nin-otp/', views.nin_otp, name='nin_otp'),
-    path('verification/nin-success/', views.nin_success, name='nin_success'),
-    
-    # BVN Flow
-    path('verification/bvn/', views.bvn_entry, name='bvn_entry'),
-    path('verification/bvn-otp/', views.bvn_otp, name='bvn_otp'),
-    path('verification/bvn-success/', views.bvn_success, name='bvn_success'),
-    
+
+    # BVN + Selfie Flow (2 pages: BVN entry → live selfie capture)
+    path('verification/bvn/', views.bvn_verification, name='bvn_verification'),
+    path('verification/bvn/selfie/', views.bvn_selfie_capture, name='bvn_selfie_capture'),
+    path('verification/success/', views.verification_success, name='verification_success'),
+
     # Store Setup & Student
     path('verification/store/', views.store_setup, name='store_setup'),
     path('verification/student/', views.student_verification, name='student_verification'),
     path('verification/pending-review/', views.pending_review, name='pending_review'),
-    
+
     # ==========================================
     # PRODUCTS (VENDOR DASHBOARD - PRIVATE)
     # ==========================================
@@ -35,15 +31,16 @@ urlpatterns = [
     path('products/<slug:slug>/', views.product_detail, name='product_detail'),
     path('products/<slug:slug>/edit/', views.product_edit, name='product_edit'),
     path('products/<slug:slug>/delete/', views.product_delete, name='product_delete'),
-    
+
     # ==========================================
     # ORDERS
     # ==========================================
     path('orders/', views.orders_list, name='orders_list'),
+    path('orders/order/<uuid:order_id>/', views.order_detail, name='order_detail'),
     path('orders/<int:suborder_id>/', views.vendor_order_detail, name='vendor_order_detail'),
     path('orders/<int:suborder_id>/accept/', views.vendor_order_accept, name='vendor_order_accept'),
     path('orders/<int:suborder_id>/reject/', views.vendor_order_reject, name='vendor_order_reject'),
-    
+
     # ==========================================
     # WALLET
     # ==========================================
@@ -51,7 +48,7 @@ urlpatterns = [
     path('wallet/transactions/', views.wallet_transactions, name='wallet_transactions'),
     path('wallet/payout/', views.request_payout, name='request_payout'),
     path('wallet/payment-method/', views.payment_method, name='payment_method'),
-    
+
     # ==========================================
     # STORE MANAGEMENT
     # ==========================================
@@ -61,7 +58,7 @@ urlpatterns = [
     path('store/category-change/', views.category_change_request, name='category_change_request'),
     # Public storefront (catch-all slug) should be last to avoid matching 'settings' etc.
     path('store/<slug:slug>/', views.store_public, name='store_public'),
-    
+
     # ==========================================
     # NOTIFICATIONS
     # ==========================================
@@ -70,12 +67,12 @@ urlpatterns = [
     path('notifications/<int:notification_id>/mark-read/', views.notification_mark_read, name='notification_mark_read'),
     path('notifications/<int:notification_id>/delete/', views.notification_delete, name='notification_delete'),
     path('notifications/<int:notification_id>/', views.notification_detail, name='notification_detail'),
-    
+
     # ==========================================
     # PROFILE
     # ==========================================
     path('profile/', views.profile_view, name='profile_view'),
-    
+
     # ==========================================
     # AJAX ENDPOINTS
     # ==========================================

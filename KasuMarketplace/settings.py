@@ -33,10 +33,17 @@ DEBUG = os.getenv("DEBUG", "true").lower() in {"true", "1", "yes"}
 
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
-    "kasumarketplace.com.ng,www.kasumarketplace.com.ng,kasumarketplace.onrender.com,localhost,127.0.0.1,.onrender.com,",
+    "kasumarketplace.com.ng,"
+    "www.kasumarketplace.com.ng,"
+    "kasumarketplace.onrender.com,"
+    "localhost,"
+    "127.0.0.1,"
+    ".onrender.com,"
+    ".trycloudflare.com",
 ).split(",")
 
 CSRF_TRUSTED_ORIGINS = [
+    'https://*.trycloudflare.com',
     'https://kasumarketplace.com.ng',
     'https://www.kasumarketplace.com.ng',
     'https://kasumarketplace.onrender.com',
@@ -121,6 +128,7 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
     
 ]
+RECAPTCHA_ENABLED = not DEBUG
 
 ROOT_URLCONF = 'KasuMarketplace.urls'
 
@@ -144,6 +152,7 @@ TEMPLATES = [
                 'apps.users.context_processors.site_settings',
                 'apps.users.context_processors.otp_settings',
                 'apps.marketplace.context_processors.cart_context',
+                'apps.vendors.context_processors.vendor_context',
             ],
         },
     },
@@ -297,7 +306,9 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 # ===========================
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.zeptomail.com")
-EMAIL_USE_TLS = True
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "465"))
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "emailapikey")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@kasumarketplace.com.ng")
@@ -338,7 +349,8 @@ DOJAH_SECRET_KEY = os.getenv("DOJAH_SECRET_KEY")
 DOJAH_APP_ID = os.getenv("DOJAH_APP_ID")
 DOJAH_BASE_URL = os.getenv("DOJAH_BASE_URL", "https://sandbox.dojah.io")
 DOJAH_ENV = os.getenv("DOJAH_ENV")
-
+DOJAH_SELFIE_AUTO_VERIFY_THRESHOLD = 90.0
+DOJAH_SELFIE_REVIEW_THRESHOLD = 75.0
 
 # Site Configuration
 # SITE_NAME = 'KasuMarketplace'

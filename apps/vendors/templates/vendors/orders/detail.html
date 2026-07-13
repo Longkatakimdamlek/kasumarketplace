@@ -1,153 +1,284 @@
 {% extends 'vendors/base.html' %}
-{% block title %}Order {{ sub_order.main_order.order_number }} — Vendor Dashboard{% endblock %}
+{% block title %}Order {{ sub_order.main_order.order_number }} — KasuMarketplace{% endblock %}
+{% block page_title %}Order Detail{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 py-6">
 
-  <!-- Back -->
-  <a href="{% url 'vendors:orders_list' %}"
-     class="inline-flex items-center gap-2 text-sm text-slate-500 mb-5 hover:text-slate-900 transition">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-    </svg>
-    All Orders
-  </a>
+<div class="max-w-2xl mx-auto" x-data="{ rejectOpen: false, rejecting: false }">
 
-  <!-- Order header -->
-  <div class="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
-    <div class="flex items-start justify-between mb-4">
-      <div>
-        <p class="font-bold text-lg text-slate-900">{{ sub_order.main_order.order_number }}</p>
-        <p class="text-xs text-slate-500 mt-0.5">{{ sub_order.created_at|date:"M d, Y · g:i A" }}</p>
-      </div>
-      <span class="text-xl font-bold text-primary">₦{{ sub_order.subtotal|floatformat:0 }}</span>
-    </div>
+    {# Back #}
+    <a href="{% url 'vendors:orders_list' %}"
+       class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 mb-5 transition-colors">
+        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        All Orders
+    </a>
 
-    <!-- Buyer delivery info -->
-    <div class="bg-slate-50 rounded-xl p-4 space-y-1.5">
-      <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Buyer Delivery Info</p>
-      <p class="text-sm text-slate-800">📍 {{ sub_order.main_order.delivery_address }}</p>
-      {% if sub_order.main_order.delivery_city %}
-      <p class="text-sm text-slate-700">{{ sub_order.main_order.delivery_city }}{% if sub_order.main_order.delivery_state %}, {{ sub_order.main_order.delivery_state }}{% endif %}</p>
-      {% endif %}
-      <p class="text-sm text-slate-700">📞 {{ sub_order.main_order.delivery_phone }}</p>
-    </div>
-  </div>
-
-  <!-- Order items -->
-  <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-4">
-    <div class="px-5 py-3.5 border-b border-slate-100">
-      <p class="text-sm font-bold text-slate-900">
-        Items <span class="text-slate-400 font-normal">({{ sub_order.items.count }})</span>
-      </p>
-    </div>
-    <div class="divide-y divide-slate-100">
-      {% for item in sub_order.items.all %}
-      <div class="flex items-center gap-3 px-5 py-3.5">
-        <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
-          {% if item.product %}
-            {% with img=item.product.images.all|first %}
-            {% if img %}<img src="{{ img.image.url }}" class="w-full h-full object-cover" />
-            {% else %}<div class="w-full h-full bg-slate-200"></div>{% endif %}
-            {% endwith %}
-          {% else %}
-          <div class="w-full h-full bg-slate-200"></div>
-          {% endif %}
+    {# ── Order header card ── #}
+    <div class="mb-3 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+        <div class="flex items-start justify-between mb-3">
+            <div>
+                <p class="text-base font-bold text-gray-900">{{ sub_order.main_order.order_number }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">{{ sub_order.created_at|date:"M d, Y · g:i A" }}</p>
+            </div>
+            <div class="flex flex-col items-end gap-1.5">
+                <p class="text-lg font-bold text-primary">₦{{ sub_order.subtotal|floatformat:0 }}</p>
+                {# Status badge #}
+                {% if sub_order.status == 'PENDING_VENDOR' %}
+                <span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">Pending</span>
+                {% elif sub_order.status == 'ACCEPTED' %}
+                <span class="rounded-full bg-blue-100 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">Accepted</span>
+                {% elif sub_order.status == 'CONFIRMED' %}
+                <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-[11px] font-semibold text-green-700">Completed</span>
+                {% elif sub_order.status == 'REJECTED' %}
+                <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-600">Rejected</span>
+                {% elif sub_order.status == 'CANCELLED' %}
+                <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-500">Cancelled</span>
+                {% elif sub_order.status == 'REFUNDED' %}
+                <span class="rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-semibold text-rose-600">Refunded</span>
+                {% elif sub_order.status == 'DISPUTED' %}
+                <span class="rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-semibold text-rose-700">Disputed</span>
+                {% endif %}
+            </div>
         </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-semibold text-slate-900 truncate">{{ item.product_title }}</p>
-          <p class="text-xs text-slate-500">x{{ item.quantity }} · ₦{{ item.unit_price|floatformat:0 }} each</p>
+
+        {# Delivery info #}
+        <div class="rounded-xl bg-gray-50 p-3 space-y-1.5">
+            <p class="flex items-start gap-2 text-sm text-gray-700">
+                <svg class="size-4 shrink-0 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span>
+                    {{ sub_order.main_order.delivery_address }}
+                    {% if sub_order.main_order.delivery_city %}, {{ sub_order.main_order.delivery_city }}{% endif %}
+                    {% if sub_order.main_order.delivery_state %}, {{ sub_order.main_order.delivery_state }}{% endif %}
+                </span>
+            </p>
+            <p class="flex items-center gap-2 text-sm text-gray-700">
+                <svg class="size-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                </svg>
+                {{ sub_order.main_order.delivery_phone }}
+            </p>
         </div>
-        <p class="text-sm font-bold text-slate-900 shrink-0">₦{{ item.subtotal|floatformat:0 }}</p>
-      </div>
-      {% endfor %}
     </div>
-    <div class="flex justify-between px-5 py-3.5 bg-slate-50 border-t border-slate-100">
-      <span class="text-sm font-semibold text-slate-700">Subtotal</span>
-      <span class="text-sm font-bold text-primary">₦{{ sub_order.subtotal|floatformat:0 }}</span>
+
+    {# ── Order items card ── #}
+    <div class="mb-3 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100">
+            <p class="text-sm font-bold text-gray-900">
+                Items <span class="font-normal text-gray-400">({{ sub_order.items.count }})</span>
+            </p>
+        </div>
+        <div class="divide-y divide-gray-100">
+            {% for item in sub_order.items.all %}
+            <div class="flex items-center gap-3 px-4 py-3">
+                <div class="size-12 shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                    {% if item.product %}
+                        {% with img=item.product.images.all|first %}
+                        {% if img %}
+                        <img src="{{ img.image.url }}" class="w-full h-full object-cover" alt="{{ item.product_title }}">
+                        {% else %}
+                        <div class="w-full h-full bg-gray-200"></div>
+                        {% endif %}
+                        {% endwith %}
+                    {% else %}
+                    <div class="w-full h-full bg-gray-200"></div>
+                    {% endif %}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold text-gray-900 truncate">{{ item.product_title }}</p>
+                    <p class="text-xs text-gray-500">x{{ item.quantity }} &middot; ₦{{ item.unit_price|floatformat:0 }} each</p>
+                </div>
+                <p class="text-sm font-bold text-gray-900 shrink-0">₦{{ item.subtotal|floatformat:0 }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="flex items-center justify-between bg-gray-50 border-t border-gray-100 px-4 py-3">
+            <span class="text-sm font-semibold text-gray-700">Subtotal</span>
+            <span class="text-sm font-bold text-primary">₦{{ sub_order.subtotal|floatformat:0 }}</span>
+        </div>
     </div>
-  </div>
 
-  <!-- Status + deadline -->
-  {% if sub_order.status == 'PENDING_VENDOR' %}
-  <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-    <div class="flex items-center gap-2 mb-1">
-      <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-      <p class="text-sm font-bold text-amber-800">Action Required</p>
+    {# ── Status strip ── #}
+    <div class="mb-4">
+
+        {# PENDING_VENDOR #}
+        {% if sub_order.status == 'PENDING_VENDOR' %}
+        <div class="mb-3 flex items-start gap-3 rounded-r-xl border-l-4 border-amber-500 bg-amber-50 p-3">
+            <svg class="size-5 mt-0.5 shrink-0 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+                <p class="text-sm font-semibold text-amber-900">Action required</p>
+                <p class="text-xs text-amber-700 mt-0.5">
+                    Respond by <strong>{{ sub_order.vendor_deadline|date:"M d, Y g:i A" }}</strong> or the order will be auto-cancelled.
+                </p>
+            </div>
+        </div>
+
+        {# Accept button #}
+        <form method="POST" action="{% url 'vendors:vendor_order_accept' sub_order.pk %}" class="mb-2">
+            {% csrf_token %}
+            <button type="submit"
+                    class="w-full rounded-xl bg-gradient-to-r from-primary to-soft-blue py-3.5 text-sm font-bold text-white transition-all hover:shadow-md active:scale-[.99]">
+                Accept Order &mdash; ₦{{ sub_order.subtotal|floatformat:0 }}
+            </button>
+        </form>
+
+        {# Reject toggle #}
+        <button @click="rejectOpen = !rejectOpen"
+                class="w-full rounded-xl border border-red-300 py-3 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50">
+            Reject Order
+        </button>
+
+        {# Reject expand #}
+        <div x-show="rejectOpen"
+             x-transition:enter="transition duration-150"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             class="mt-2"
+             x-cloak>
+            <form method="POST" action="{% url 'vendors:vendor_order_reject' sub_order.pk %}">
+                {% csrf_token %}
+                <textarea name="rejection_reason" rows="3"
+                          placeholder="Reason for rejection (optional — shown to buyer)"
+                          class="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 mb-2"></textarea>
+                <button type="submit"
+                        class="w-full rounded-xl bg-red-500 py-3 text-sm font-bold text-white transition-colors hover:bg-red-600">
+                    Confirm Rejection
+                </button>
+            </form>
+        </div>
+
+        {# ACCEPTED #}
+        {% elif sub_order.status == 'ACCEPTED' %}
+        <div class="flex items-center gap-3 rounded-r-xl border-l-4 border-blue-500 bg-blue-50 p-3">
+            <svg class="size-5 shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <p class="text-sm text-blue-900"><span class="font-semibold">Accepted.</span> Coordinate delivery with the buyer using the contact info above.</p>
+        </div>
+
+        {# CONFIRMED #}
+        {% elif sub_order.status == 'CONFIRMED' %}
+        <div class="flex items-center gap-3 rounded-r-xl border-l-4 border-primary bg-green-50 p-3">
+            <svg class="size-5 shrink-0 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <p class="text-sm text-green-900">
+                <span class="font-semibold">Buyer confirmed receipt</span> on {{ sub_order.confirmed_at|date:"M d, Y" }}.
+                ₦{{ sub_order.subtotal|floatformat:0 }} releasing to your wallet within 24h.
+            </p>
+        </div>
+
+        {# REJECTED #}
+        {% elif sub_order.status == 'REJECTED' %}
+        <div class="rounded-r-xl border-l-4 border-gray-400 bg-gray-50 p-3">
+            <div class="flex items-center gap-3">
+                <svg class="size-5 shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p class="text-sm text-gray-800"><span class="font-semibold">Order rejected.</span> Buyer has been notified and refunded.</p>
+            </div>
+            {% if sub_order.rejection_reason %}
+            <p class="mt-2 ml-8 text-xs text-gray-500 italic">"{{ sub_order.rejection_reason }}"</p>
+            {% endif %}
+        </div>
+
+        {# CANCELLED #}
+        {% elif sub_order.status == 'CANCELLED' %}
+        <div class="flex items-center gap-3 rounded-r-xl border-l-4 border-gray-400 bg-gray-50 p-3">
+            <svg class="size-5 shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-sm text-gray-700"><span class="font-semibold">Auto-cancelled</span> — no response within 48 hours.</p>
+        </div>
+
+        {# REFUNDED #}
+        {% elif sub_order.status == 'REFUNDED' %}
+        <div class="flex items-center gap-3 rounded-r-xl border-l-4 border-rose-400 bg-rose-50 p-3">
+            <svg class="size-5 shrink-0 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+            </svg>
+            <p class="text-sm text-rose-900"><span class="font-semibold">Refunded ₦{{ sub_order.subtotal|floatformat:0 }}</span> to buyer.</p>
+        </div>
+
+        {# DISPUTED #}
+        {% elif sub_order.status == 'DISPUTED' %}
+
+            {% if sub_order.dispute.status == 'OPEN' %}
+            <div class="rounded-r-xl border-l-4 border-rose-500 bg-rose-50 p-3">
+                <div class="flex items-start gap-3">
+                    <svg class="size-5 shrink-0 mt-0.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <div>
+                        <p class="text-sm font-semibold text-rose-900">Dispute opened</p>
+                        <p class="text-xs text-rose-700 mt-0.5">Funds are locked pending review. Respond within 48h if contacted.</p>
+                    </div>
+                </div>
+            </div>
+
+            {% elif sub_order.dispute.status == 'UNDER_REVIEW' %}
+            <div class="flex items-center gap-3 rounded-r-xl border-l-4 border-amber-500 bg-amber-50 p-3">
+                <svg class="size-5 shrink-0 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <p class="text-sm text-amber-900"><span class="font-semibold">Under review</span> by KasuMarketplace team. No action needed.</p>
+            </div>
+
+            {% elif sub_order.dispute.status == 'RESOLVED_RELEASE' %}
+            <div class="rounded-r-xl border-l-4 border-primary bg-green-50 p-3">
+                <div class="flex items-center gap-3">
+                    <svg class="size-5 shrink-0 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <p class="text-sm text-green-900"><span class="font-semibold">Resolved in your favour.</span> Funds released to wallet.</p>
+                </div>
+                {% if sub_order.dispute.admin_note %}
+                <div class="mt-2 ml-8 rounded-lg border border-green-200 bg-white p-2.5">
+                    <p class="text-xs font-semibold text-green-700 mb-1">Admin note</p>
+                    <p class="text-xs text-gray-700">{{ sub_order.dispute.admin_note }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% elif sub_order.dispute.status == 'RESOLVED_REFUND' %}
+            <div class="rounded-r-xl border-l-4 border-purple-400 bg-purple-50 p-3">
+                <div class="flex items-center gap-3">
+                    <svg class="size-5 shrink-0 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                    </svg>
+                    <p class="text-sm text-purple-900"><span class="font-semibold">Resolved in buyer's favour.</span> Payment refunded.</p>
+                </div>
+                {% if sub_order.dispute.admin_note %}
+                <div class="mt-2 ml-8 rounded-lg border border-purple-200 bg-white p-2.5">
+                    <p class="text-xs font-semibold text-purple-700 mb-1">Admin note</p>
+                    <p class="text-xs text-gray-700">{{ sub_order.dispute.admin_note }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% elif sub_order.dispute.status == 'CLOSED' %}
+            <div class="rounded-r-xl border-l-4 border-gray-400 bg-gray-50 p-3">
+                <div class="flex items-center gap-3">
+                    <svg class="size-5 shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                    <p class="text-sm text-gray-700"><span class="font-semibold">Dispute closed.</span></p>
+                </div>
+                {% if sub_order.dispute.admin_note %}
+                <p class="mt-1.5 ml-8 text-xs text-gray-500">{{ sub_order.dispute.admin_note }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        {% endif %}
     </div>
-    <p class="text-xs text-amber-700">
-      You have until <strong>{{ sub_order.vendor_deadline|date:"M d, Y g:i A" }}</strong> to accept or reject.
-      If no action is taken, the order will be auto-cancelled and the buyer refunded.
-    </p>
-  </div>
-
-  <!-- ACCEPT button -->
-  <form method="POST" action="{% url 'vendors:vendor_order_accept' sub_order.pk %}" class="mb-3">
-    {% csrf_token %}
-    <button type="submit"
-            class="w-full py-4 bg-emerald-500 text-white font-bold rounded-2xl hover:bg-emerald-600 active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
-      ✅ Accept Order — ₦{{ sub_order.subtotal|floatformat:0 }}
-    </button>
-  </form>
-
-  <!-- REJECT button + form -->
-  <button onclick="document.getElementById('reject-form').classList.toggle('hidden')"
-          class="w-full py-3.5 border border-red-300 text-red-500 font-semibold rounded-2xl hover:bg-red-50 transition text-sm">
-    ❌ Reject Order
-  </button>
-
-  <div id="reject-form" class="hidden mt-3">
-    <form method="POST" action="{% url 'vendors:vendor_order_reject' sub_order.pk %}">
-      {% csrf_token %}
-      <textarea name="rejection_reason" rows="3"
-                placeholder="Reason for rejection (shown to buyer — optional)"
-                class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 resize-none mb-3"></textarea>
-      <button type="submit"
-              class="w-full py-3.5 bg-red-500 text-white font-bold rounded-2xl hover:bg-red-600 transition text-sm">
-        Confirm Rejection
-      </button>
-    </form>
-  </div>
-
-  {% elif sub_order.status == 'ACCEPTED' %}
-  <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
-    <p class="text-sm font-bold text-blue-800 mb-1">✅ Order Accepted</p>
-    <p class="text-xs text-blue-700">
-      Coordinate delivery with the buyer using the contact info above.
-      Payment is held securely until the buyer confirms receipt.
-    </p>
-  </div>
-
-  {% elif sub_order.status == 'CONFIRMED' %}
-  <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-    <p class="text-sm font-bold text-emerald-800 mb-1">💚 Payment Releasing</p>
-    <p class="text-xs text-emerald-700">
-      Buyer confirmed on {{ sub_order.confirmed_at|date:"M d, Y" }}.
-      Payment of ₦{{ sub_order.subtotal|floatformat:0 }} will be available in your wallet within 24 hours.
-    </p>
-  </div>
-
-  {% elif sub_order.status == 'REJECTED' %}
-  <div class="bg-red-50 border border-red-200 rounded-xl p-4">
-    <p class="text-sm font-bold text-red-800 mb-1">❌ Order Rejected</p>
-    {% if sub_order.rejection_reason %}
-    <p class="text-xs text-red-700">Reason: {{ sub_order.rejection_reason }}</p>
-    {% endif %}
-    <p class="text-xs text-red-600 mt-1">Buyer has been refunded.</p>
-  </div>
-
-  {% elif sub_order.status == 'CANCELLED' %}
-  <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-    <p class="text-sm font-bold text-gray-700 mb-1">⏱ Auto-Cancelled</p>
-    <p class="text-xs text-gray-600">This order was cancelled because no response was given within 48 hours.</p>
-  </div>
-
-  {% elif sub_order.status == 'DISPUTED' %}
-  <div class="bg-rose-50 border border-rose-200 rounded-xl p-4">
-    <p class="text-sm font-bold text-rose-800 mb-1">🚨 Dispute Opened</p>
-    <p class="text-xs text-rose-700">The buyer has raised a dispute. Our team is reviewing the case. Funds are locked.</p>
-  </div>
-  {% endif %}
 
 </div>
+
 {% endblock %}

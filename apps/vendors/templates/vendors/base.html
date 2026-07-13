@@ -36,8 +36,8 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#15803d',
-                        'soft-blue': '#16a34a',
+                        primary: '#065f46',
+                        'soft-blue': '#047857',
                         'pink-accent': '#ff4fa7',
                         'light-purple': '#a75dff',
                     },
@@ -154,7 +154,7 @@
                 {% if messages %}
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
                     {% for message in messages %}
-                    <div class="rounded-lg p-4 mb-4 shadow-sm {% if message.tags == 'error' %}bg-red-50 border border-red-200 text-red-800{% elif message.tags == 'success' %}bg-green-50 border border-green-200 text-green-800{% elif message.tags == 'warning' %}bg-yellow-50 border border-yellow-200 text-yellow-800{% else %}bg-blue-50 border border-blue-200 text-blue-800{% endif %}"
+                    <div class="rounded-lg p-4 mb-4 shadow-sm {% if message.tags == 'error' %}bg-red-50 border border-red-200 text-red-800{% elif message.tags == 'success' %}bg-primary/10 border border-primary/20 text-primary{% elif message.tags == 'warning' %}bg-yellow-50 border border-yellow-200 text-yellow-800{% else %}bg-primary/10 border border-primary/20 text-primary{% endif %}"
                          x-data="{ show: true }"
                          x-show="show"
                          x-transition:enter="transition ease-out duration-300"
@@ -223,6 +223,13 @@
             });
         }, 5000);
     </script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script type="module">
+        import * as visionTasks from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
+        window.FaceLandmarksTasksVision = visionTasks;
+    </script>
+    <script src="{% static 'vendors/js/live_capture.js' %}" defer></script>
     
     {% block extra_js %}{% endblock %}
 </body>

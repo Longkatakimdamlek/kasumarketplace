@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 def encrypt_sensitive_data(data: str) -> str:
     """
-    Encrypt sensitive data (NIN, BVN, etc.)
+    Encrypt sensitive data (BVN, etc.)
     Uses simple encryption for demo - replace with proper encryption in production
     
     Args:
@@ -155,26 +155,6 @@ def verify_otp_from_cache(key: str, otp: str) -> bool:
 # ==========================================
 # VALIDATION
 # ==========================================
-
-def validate_nin(nin: str) -> Tuple[bool, str]:
-    """
-    Validate Nigerian National Identity Number
-    
-    Args:
-        nin: NIN string
-        
-    Returns:
-        Tuple of (is_valid: bool, error_message: str)
-    """
-    # Remove spaces and dashes
-    nin = re.sub(r'[\s\-]', '', nin)
-    
-    # Check if 11 digits
-    if not re.match(r'^\d{11}$', nin):
-        return False, 'NIN must be exactly 11 digits'
-    
-    return True, ''
-
 
 def validate_bvn(bvn: str) -> Tuple[bool, str]:
     """

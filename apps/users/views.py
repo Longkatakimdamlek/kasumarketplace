@@ -62,7 +62,10 @@ class BuyerSignupView(View):
             return redirect('users:buyer_dashboard')
         
         form = self.form_class()
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {
+            'form': form,
+            'RECAPTCHA_ENABLED': getattr(settings, 'RECAPTCHA_ENABLED', False),
+        })
     
     def post(self, request):
         """Process buyer signup form."""
@@ -99,7 +102,10 @@ class BuyerSignupView(View):
             request.session['verify_email'] = user.email
             return redirect('users:verify_otp')
         
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {
+            'form': form,
+            'RECAPTCHA_ENABLED': getattr(settings, 'RECAPTCHA_ENABLED', False),
+        })
 
 
 class VendorSignupView(View):
@@ -116,7 +122,10 @@ class VendorSignupView(View):
         # store intended role in session so social callbacks know
         request.session['signup_role'] = 'vendor'
         form = self.form_class()
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {
+            'form': form,
+            'RECAPTCHA_ENABLED': getattr(settings, 'RECAPTCHA_ENABLED', False),
+        })
     
     def post(self, request):
         """Process vendor signup form."""
@@ -161,7 +170,10 @@ class VendorSignupView(View):
             request.session['verify_email'] = user.email
             return redirect('users:verify_otp')
         
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {
+            'form': form,
+            'RECAPTCHA_ENABLED': getattr(settings, 'RECAPTCHA_ENABLED', False),
+        })
 
 
 class LoginView(View):
@@ -181,7 +193,11 @@ class LoginView(View):
         form = self.form_class()
         # carry along any "next" parameter so we can honor it on POST
         next_url = request.GET.get('next', '')
-        return render(request, self.template_name, {'form': form, 'next': next_url})
+        return render(request, self.template_name, {
+            'form': form,
+            'next': next_url,
+            'RECAPTCHA_ENABLED': getattr(settings, 'RECAPTCHA_ENABLED', False),
+        })
     
     def post(self, request):
         """Process login form and redirect appropriately."""
@@ -242,7 +258,11 @@ class LoginView(View):
                 # DO NOT change this to redirect('home') - that URL name no longer exists
                 return redirect('/')
         
-        return render(request, self.template_name, {'form': form, 'next': next_url})
+        return render(request, self.template_name, {
+            'form': form,
+            'next': next_url,
+            'RECAPTCHA_ENABLED': getattr(settings, 'RECAPTCHA_ENABLED', False),
+        })
 
 
 class OTPVerificationView(View):

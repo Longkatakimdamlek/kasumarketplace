@@ -1,9 +1,56 @@
+from django.http import JsonResponse
+from .decorators import vendor_required
+
 """
 Vendor App Views
 All views for vendor dashboard, verification, products, orders, wallet, etc.
+
+CHANGED IN THIS VERSION:
+- DELETED: nin_entry, nin_otp, nin_success, bvn_otp, bvn_success
+- REPLACED: bvn_entry -> bvn_verification (single screen: BVN number +
+  live selfie capture, one submit, one Dojah call, 3-tier outcome)
+- verification_center rewritten for the 4-step flow (was 5)
+- payment_method, store_setup, pending_review: small reference updates
+  for the new bank_status choices (not_started/verified/pending_review/failed)
+
+Everything else (dashboard, products, orders, wallet, store settings,
+category change requests, notifications, AJAX endpoints) is UNCHANGED.
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+from django.http import HttpResponse
+from django.http import Http404
+from django.db.models import Sum, Count, Q
+from apps.marketplace.models import SubOrder, SubOrderItem
+from apps.marketplace.services.distance_service import get_distance_to_store
+from django.utils import timezone
+from django.db.models import F
+from django.core.paginator import Paginator
+from django.urls import reverse
+from django.conf import settings
+from decimal import Decimal
+from datetime import datetime, date, timedelta
+import logging
+
+from .models import (
+    VendorProfile, Store, Product, ProductImage,
+    Order, OrderItem, Wallet, Transaction,
+    MainCategory, SubCategory, SubCategoryAttribute, CategoryChangeRequest,
+    Notification, VerificationAttempt
+)
+
+# API: Get Paystack banks
+@vendor_required
+def api_get_banks(request):
+    """Return Paystack bank list as JSON for dropdown."""
+    from apps.vendors.services.paystack import paystack_service
+    success, banks = paystack_service.get_banks()
+    if success:
+        return JsonResponse({'banks': banks})
+    return JsonResponse({'banks': []})
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
@@ -16,23 +63,17 @@ from django.db.models import F
 from django.core.paginator import Paginator
 from django.urls import reverse
 from decimal import Decimal
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import logging
 
-from .models import (
-    VendorProfile, Store, Product, ProductImage, 
-    Order, OrderItem, Wallet, Transaction,
-    MainCategory, SubCategory, SubCategoryAttribute, CategoryChangeRequest,
-    Notification
-)
 from .forms import (
-    NINEntryForm, NINOTPForm, BVNEntryForm, BVNOTPForm,
+    BVNEntryForm, BVNSelfieForm,
     StudentVerificationForm, StoreSetupForm, StoreSettingsForm,
-    ProductForm, ProductImageFormSet, OrderStatusUpdateForm, 
+    ProductForm, ProductImageFormSet, OrderStatusUpdateForm,
     CategoryChangeRequestForm
 )
 from .decorators import (
-    vendor_required, vendor_verified_required, 
+    vendor_required, vendor_verified_required,
     vendor_owns_product, vendor_owns_order,
     rate_limit_verification
 )
@@ -44,6 +85,231 @@ from .services.utils import generate_reference, calculate_commission
 logger = logging.getLogger(__name__)
 
 
+def _parse_dojah_date(date_str):
+    """
+    Dojah's date format is inconsistent across responses observed so far:
+      - "1993-05-06"      (ISO format)
+      - "01-January-1907" (DD-Month-YYYY)
+    Try multiple formats, return None if none match rather than raising -
+    a failed date parse should never block the verification outcome itself.
+    """
+    if not date_str or not date_str.strip():
+        return None
+
+    formats_to_try = ['%Y-%m-%d', '%d-%B-%Y', '%d-%b-%Y', '%d-%m-%Y', '%Y/%m/%d']
+    for fmt in formats_to_try:
+        try:
+            return datetime.strptime(date_str.strip(), fmt).date()
+        except ValueError:
+            continue
+
+    logger.warning(f"Could not parse Dojah date format: {date_str}")
+    return None
+
+
+BVN_SESSION_KEY = 'bvn_pending_verification'
+BVN_SESSION_MAX_AGE_SECONDS = 900  # 15 minutes
+
+
+def _bvn_verification_guard(request, vendor):
+    """Shared pre-checks for both BVN verification pages. Returns a response or None."""
+    if vendor.bank_status == 'verified':
+        messages.info(request, 'Identity already verified')
+        return redirect('vendors:verification_center')
+    if vendor.bank_status == 'pending_review':
+        messages.info(request, 'Your verification is pending admin review.')
+        return redirect('vendors:pending_review')
+    failed_attempts_count = VerificationAttempt.objects.filter(
+        vendor=vendor, attempt_type='bvn', status='failed'
+    ).count()
+    if failed_attempts_count >= 3:
+        messages.error(
+            request,
+            "You've reached the maximum number of verification attempts. "
+            "Please contact support to continue."
+        )
+        return render(request, 'vendors/verification/bvn_verification_locked.html', {
+            'vendor': vendor, 'hide_verification_badge': True,
+        })
+    return None
+
+
+def _store_bvn_session(request, bvn_number, bank_name, bank_code=''):
+    request.session[BVN_SESSION_KEY] = {
+        'bvn_number': bvn_number,
+        'bank_name': bank_name,
+        'bank_code': bank_code,
+        'started_at': timezone.now().isoformat(),
+    }
+    request.session.modified = True
+
+
+def _get_bvn_session(request):
+    data = request.session.get(BVN_SESSION_KEY)
+    if not data:
+        return None
+    started = data.get('started_at')
+    if started:
+        try:
+            started_at = datetime.fromisoformat(started)
+            if timezone.is_naive(started_at):
+                started_at = timezone.make_aware(started_at)
+            if (timezone.now() - started_at).total_seconds() > BVN_SESSION_MAX_AGE_SECONDS:
+                del request.session[BVN_SESSION_KEY]
+                request.session.modified = True
+                return None
+        except (ValueError, TypeError):
+            pass
+    return data
+
+
+def _clear_bvn_session(request):
+    if BVN_SESSION_KEY in request.session:
+        del request.session[BVN_SESSION_KEY]
+        request.session.modified = True
+
+
+def _process_bvn_with_selfie(request, vendor, bvn_number, bank_name, selfie_data_uri):
+    """
+    Run Dojah BVN+selfie verification and persist vendor/wallet state.
+    Returns a redirect response.
+    """
+    selfie_base64 = (
+        selfie_data_uri.split(',', 1)[-1]
+        if ',' in selfie_data_uri else selfie_data_uri
+    )
+
+    duplicate_vendor = VendorProfile.objects.filter(
+        bvn_number=bvn_number
+    ).exclude(id=vendor.id).first()
+
+    if duplicate_vendor:
+        vendor.has_duplicate_bvn = True
+        vendor.duplicate_bvn_vendor_id = str(duplicate_vendor.vendor_id)
+        vendor.save()
+        logger.warning(f"Duplicate BVN detected: {bvn_number[-4:]}")
+        messages.error(
+            request,
+            "This BVN is already registered. If this is your BVN, please contact support."
+        )
+        _clear_bvn_session(request)
+        return redirect('vendors:bvn_verification')
+
+    success, data = dojah_service.verify_bvn_with_selfie(bvn_number, selfie_base64)
+
+    if not success:
+        VerificationAttempt.objects.create(
+            vendor=vendor, attempt_type='bvn', status='failed',
+            request_data={'bvn_masked': f'***{bvn_number[-4:]}'},
+            response_data={}, error_message=data.get('error', ''),
+            ip_address=request.META.get('REMOTE_ADDR'),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+        )
+        messages.error(request, f"Verification failed: {data.get('error', 'Please try again.')}")
+        return redirect('vendors:bvn_selfie_capture')
+
+    confidence = data['selfie_confidence']
+    auto_threshold = settings.DOJAH_SELFIE_AUTO_VERIFY_THRESHOLD
+    review_threshold = settings.DOJAH_SELFIE_REVIEW_THRESHOLD
+
+    if confidence >= auto_threshold:
+        attempt_status = 'success'
+    elif confidence >= review_threshold:
+        attempt_status = 'success'
+    else:
+        attempt_status = 'failed'
+
+    VerificationAttempt.objects.create(
+        vendor=vendor, attempt_type='bvn', status=attempt_status,
+        request_data={'bvn_masked': f'***{bvn_number[-4:]}'},
+        response_data=data,
+        ip_address=request.META.get('REMOTE_ADDR'),
+        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+    )
+
+    vendor.bvn_number = bvn_number
+    vendor.full_name = data['full_name']
+    vendor.gender = (data.get('gender') or '').lower()
+    vendor.phone = data.get('phone', '')
+    vendor.selfie_match = data['selfie_match']
+    vendor.selfie_confidence = confidence
+    vendor.selfie_image_url = data.get('selfie_image_url', '')
+    vendor.bvn_verification_ip = request.META.get('REMOTE_ADDR')
+
+    dob_raw = data.get('dateofbirth', '')
+    parsed_dob = _parse_dojah_date(dob_raw)
+    if parsed_dob:
+        vendor.dob = parsed_dob
+        today = date.today()
+        age = today.year - parsed_dob.year - (
+            (today.month, today.day) < (parsed_dob.month, parsed_dob.day)
+        )
+        vendor.calculated_age = age
+        if age < 18:
+            vendor.is_underage = True
+            logger.warning(f"Underage vendor detected: {age} years old")
+
+    if confidence >= auto_threshold:
+        vendor.bank_status = 'verified'
+        vendor.bvn_verified_at = timezone.now()
+        outcome_message = 'Identity verified successfully!'
+        redirect_target = 'vendors:verification_success'
+
+    elif confidence >= review_threshold:
+        vendor.bank_status = 'pending_review'
+        outcome_message = (
+            "We're reviewing your verification — this usually takes 24-48 hours. "
+            "We'll notify you once it's complete."
+        )
+        redirect_target = 'vendors:pending_review'
+
+        try:
+            import base64 as _b64
+            import cloudinary.uploader as _cu
+            selfie_bytes = _b64.b64decode(selfie_base64)
+            upload_result = _cu.upload(
+                selfie_bytes,
+                folder='vendor_review_selfies',
+                public_id=f'review_{vendor.vendor_id}_{int(timezone.now().timestamp())}',
+                resource_type='image',
+                format='jpg',
+            )
+            vendor.identity_selfie = upload_result['public_id']
+        except Exception as selfie_upload_err:
+            logger.error(f"Failed to store review selfie for vendor {vendor.pk}: {selfie_upload_err}")
+
+    else:
+        vendor.bank_status = 'failed'
+        outcome_message = (
+            "We couldn't verify your identity. Please ensure good lighting "
+            "and a clear view of your face, then try again."
+        )
+        redirect_target = 'vendors:bvn_verification'
+
+    vendor.calculate_risk_score()
+    vendor.save()
+    _clear_bvn_session(request)
+
+    if vendor.bank_status == 'verified':
+        wallet = vendor.wallet
+        wallet.account_holder_name = vendor.full_name
+        wallet.bank_name = bank_name
+        wallet.is_verified = True
+        wallet.verified_at = timezone.now()
+        wallet.save()
+        try:
+            notification_service.send_bvn_verified(vendor)
+        except Exception:
+            logger.warning('Failed to send BVN verified notification')
+
+    if vendor.bank_status == 'failed':
+        messages.error(request, outcome_message)
+    else:
+        messages.success(request, outcome_message)
+
+    return redirect(redirect_target)
+
+
 # ==========================================
 # PROFILE
 # ==========================================
@@ -52,15 +318,15 @@ logger = logging.getLogger(__name__)
 def profile_view(request):
     """
     View vendor profile (read-only display)
-    Shows auto-filled NIN/BVN data with masked sensitive info
+    Shows auto-filled BVN data with masked sensitive info
     """
     vendor = request.user.vendorprofile
-    
+
     context = {
         'vendor': vendor,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/profile/view.html', context)
 
 
@@ -74,39 +340,54 @@ def dashboard(request):
     Main vendor dashboard with stats and overview
     """
     vendor = request.user.vendorprofile
-    
+
+    # Safely get the vendor's store if it exists
+    try:
+        store = vendor.store
+    except Store.DoesNotExist:
+        store = None
+
     # Get stats
+    # Query SubOrders through the vendor's store
+    suborders = SubOrder.objects.filter(store=store) if store else SubOrder.objects.none()
+
+    # Compute total sales from confirmed SubOrders
+    total_sales = 0
+    if store:
+        total_sales = SubOrder.objects.filter(
+            store=store,
+            status='CONFIRMED'
+        ).aggregate(total=Sum('subtotal'))['total'] or 0
+
     context = {
         'vendor': vendor,
+        'store': store,
         'total_products': vendor.products.filter(status='published').count(),
-        'orders_total': vendor.orders.all().count(),
-        'orders_pending': vendor.orders.filter(status='pending').count(),
-        'orders_confirmed': vendor.orders.filter(status='confirmed').count(),
-        'orders_cancelled': vendor.orders.filter(status__in=['cancelled', 'refunded']).count(),
-        'total_sales': vendor.store.total_sales if hasattr(vendor, 'store') else 0,
+        'orders_total': suborders.count(),
+        'orders_pending': suborders.filter(status='PENDING_VENDOR').count(),
+        'orders_confirmed': suborders.filter(status='ACCEPTED').count(),
+        'orders_cancelled': suborders.filter(status__in=['CANCELLED', 'REJECTED']).count(),
+        'total_sales': total_sales,
         'wallet_balance': vendor.wallet.balance if hasattr(vendor, 'wallet') else 0,
-        
+
         # Recent orders
-        'recent_orders': vendor.orders.all()[:5],
-        
+        'recent_orders': suborders.order_by('-id')[:5],
+
         # Low stock products
         'low_stock_products': vendor.products.filter(
             status='published',
             track_inventory=True,
             stock_quantity__lte=5
         )[:5],
-        
-        # Unread notifications
-        'unread_notifications': vendor.notifications.filter(is_read=False).count(),
     }
-    
+
     # Show verification banner if not verified
     if not vendor.can_sell:
         messages.info(
             request,
             f'Complete verification to start selling. Progress: {vendor.completion_percentage}%'
         )
-    
+
     context['hide_verification_badge'] = True
     return render(request, 'vendors/dashboard.html', context)
 
@@ -118,113 +399,122 @@ def dashboard(request):
 @vendor_required
 def verification_center(request):
     """
-    Verification center - shows progress and next steps
+    Verification center - shows progress and next steps.
+    4 steps: BVN+selfie -> Store setup -> Student (optional) -> Admin review.
     """
     vendor = request.user.vendorprofile
-    
+
     # If already approved, redirect to dashboard
     if vendor.is_verified:
         messages.success(request, "You're already verified!")
         return redirect('vendors:dashboard')
-    
-    # Map raw status to badge status and label (for NIN/BVN)
-    def _nin_badge(s):
-        if s == 'nin_verified':
-            return 'completed', 'Verified'
-        if s in ('nin_otp_sent', 'nin_entered'):
-            return 'in_progress', 'OTP Sent' if s == 'nin_otp_sent' else 'In Progress'
-        if s == 'failed':
-            return 'failed', 'Failed'
-        return 'not_started', 'Not Started'
 
     def _bvn_badge(s):
-        if s == 'bvn_verified':
+        if s == 'verified':
             return 'completed', 'Verified'
-        if s in ('bvn_otp_sent', 'bvn_entered'):
-            return 'in_progress', 'OTP Sent' if s == 'bvn_otp_sent' else 'In Progress'
+        if s == 'pending_review':
+            return 'in_progress', 'Pending Review'
         if s == 'failed':
             return 'failed', 'Failed'
         return 'not_started', 'Not Started'
 
-    # Calculate step status
-    nin_badge_status, nin_status_label = _nin_badge(vendor.identity_status)
     bvn_badge_status, bvn_status_label = _bvn_badge(vendor.bank_status)
 
+    # Lock logic: each step after BVN is locked until the prior step is done.
+    bvn_done = vendor.bank_status == 'verified'
+    store_done = vendor.store_setup_completed or vendor.store_setup_skipped
+    student_done = vendor.student_status in ('verified', 'not_applicable')
+
+    step1_status = bvn_badge_status
+    step2_status = 'completed' if store_done else ('locked' if not bvn_done else 'not_started')
+    step3_status = (
+        'completed' if vendor.student_status == 'verified' else
+        'pending' if vendor.student_status == 'pending' else
+        ('locked' if not store_done else 'not_started')
+    )
+    step4_status = (
+        'completed' if vendor.verification_status == 'approved' else
+        'failed' if vendor.verification_status == 'rejected' else
+        ('locked' if not (bvn_done and store_done) else 'pending')
+    )
+
     steps = [
-    {
-        'number': 1,
-        'name': 'Verify Your Identity (nin)',
-        'title': 'Verify Your Identity (nin)',
-        'status': nin_badge_status,
-        'status_label': nin_status_label,
-        'completed': vendor.identity_status == 'nin_verified',
-        'url': 'vendors:nin_entry',
-        'verification_type': 'nin',
-        'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                   </svg>'''
-    },
-    {
-        'number': 2,
-        'name': 'Verify Your Banking (bvn)',
-        'title': 'Verify Your Banking (bvn)',
-        'status': bvn_badge_status,
-        'status_label': bvn_status_label,
-        'completed': vendor.bank_status == 'bvn_verified',
-        'url': 'vendors:bvn_entry',
-        'verification_type': 'bvn',
-        'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                   </svg>'''
-    },
-    {
-        'number': 3,
-        'name': 'Set Up Your Store',
-        'title': 'Set Up Your Store',
-        'status': 'completed' if vendor.store_setup_completed else 'pending',
-        'status_label': 'Completed' if vendor.store_setup_completed else 'Pending',
-        'completed': vendor.store_setup_completed,
-        'url': 'vendors:store_setup',
-        'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                   </svg>'''
-    },
-    {
-        'number': 4,
-        'name': 'Verify Student Status (optional)',
-        'title': 'Verify Student Status (optional)',
-        'status': ('completed' if vendor.student_status == 'verified' else
-                  'pending' if vendor.student_status == 'pending' else
-                  'not_started'),
-        'status_label': ('Verified' if vendor.student_status == 'verified' else
-                        'Pending' if vendor.student_status == 'pending' else
-                        'Not Started'),
-        'completed': vendor.student_status == 'verified',
-        'url': 'vendors:student_verification',
-        'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path d="M12 14l9-5-9-5-9 5 9 5z"/>
-                     <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/>
-                   </svg>'''
-    },
-    {
-        'number': 5,
-        'name': 'Pending Admin Review',
-        'title': 'Pending Admin Review',
-        'status': ('completed' if vendor.verification_status == 'approved' else
-                  'failed' if vendor.verification_status == 'rejected' else
-                  'pending'),
-        'status_label': ('Approved' if vendor.verification_status == 'approved' else
-                        'Rejected' if vendor.verification_status == 'rejected' else
-                        'Pending'),
-        'completed': vendor.verification_status == 'approved',
-        'url': 'vendors:pending_review',
-        'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                   </svg>'''
-    }
-]
-    
+        {
+            'number': 1,
+            'name': 'Verify Your Identity',
+            'title': 'Verify Your Identity',
+            'description': 'Enter your BVN and bank details, then take a live selfie to verify your identity and link your bank account for payouts.',
+            'status': step1_status,
+            'status_label': bvn_status_label,
+            'completed': bvn_done,
+            'completed_at': vendor.bvn_verified_at,
+            'note': (
+                "Your verification is awaiting manual admin review."
+                if vendor.bank_status == 'pending_review' else None
+            ),
+            'url': 'vendors:bvn_verification',
+            'verification_type': 'bvn',
+            'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                       </svg>'''
+        },
+        {
+            'number': 2,
+            'name': 'Set Up Your Store',
+            'title': 'Set Up Your Store',
+            'description': 'Add your store name, branding, contact details, and pick a category for your products.',
+            'status': step2_status,
+            'status_label': 'Completed' if store_done else ('Locked' if not bvn_done else 'Not Started'),
+            'completed': store_done,
+            'completed_at': None,
+            'note': None,
+            'url': 'vendors:store_setup',
+            'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                       </svg>'''
+        },
+        {
+            'number': 3,
+            'name': 'Verify Student Status (optional)',
+            'title': 'Verify Student Status (optional)',
+            'description': 'Optional badge for Kaduna State University students and alumni. Boosts buyer trust on your storefront.',
+            'status': step3_status,
+            'status_label': (
+                'Verified' if vendor.student_status == 'verified' else
+                'Pending' if vendor.student_status == 'pending' else
+                ('Locked' if not store_done else 'Not Started')
+            ),
+            'completed': vendor.student_status == 'verified',
+            'completed_at': vendor.student_verified_at,
+            'note': None,
+            'url': 'vendors:student_verification',
+            'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+                         <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/>
+                       </svg>'''
+        },
+        {
+            'number': 4,
+            'name': 'Pending Admin Review',
+            'title': 'Pending Admin Review',
+            'description': 'Our team does a final review of your account before you can start selling.',
+            'status': step4_status,
+            'status_label': (
+                'Approved' if vendor.verification_status == 'approved' else
+                'Rejected' if vendor.verification_status == 'rejected' else
+                ('Locked' if not (bvn_done and store_done) else 'Pending')
+            ),
+            'completed': vendor.verification_status == 'approved',
+            'completed_at': vendor.approved_at,
+            'note': None,
+            'url': 'vendors:pending_review',
+            'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                       </svg>'''
+        }
+    ]
+
     context = {
         'vendor': vendor,
         'steps': steps,
@@ -233,279 +523,98 @@ def verification_center(request):
         'can_sell': vendor.can_sell,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/verification/center.html', context)
 
 
 @vendor_required
 @rate_limit_verification
-def nin_entry(request):
-    """Step 1: NIN Entry with security checks"""
+def bvn_verification(request):
+    """
+    Page 1 of 2: BVN number, bank selection, and consent.
+    Stores details in session and sends vendor to the selfie capture page.
+    """
     vendor = request.user.vendorprofile
-    
-    if vendor.identity_status == 'nin_verified':
-        messages.info(request, 'NIN already verified')
-        return redirect('vendors:verification_center')
-    
-    if request.method == 'POST':
-        form = NINEntryForm(request.POST)
-        
-        if form.is_valid():
-            nin_number = form.cleaned_data['nin_number']
-            
-            # ✅ CHECK FOR DUPLICATE NIN BEFORE API CALL
-            duplicate_vendor = VendorProfile.objects.filter(
-                nin_number=nin_number
-            ).exclude(id=vendor.id).first()
-            
-            if duplicate_vendor:
-                vendor.has_duplicate_nin = True
-                vendor.duplicate_nin_vendor_id = str(duplicate_vendor.vendor_id)
-                vendor.save()
-                logger.warning(f"⚠️ Duplicate NIN detected: {nin_number} (Vendor: {duplicate_vendor.vendor_id})")
-                messages.error(
-                    request,
-                    "⚠️ This NIN is already registered. If this is your NIN, please contact support."
-                )
-                return render(request, 'vendors/verification/nin_entry.html', {'form': form})
-            
-            # Call Dojah API
-            success, data = dojah_service.verify_nin(nin_number)
-            
-            if success:
-                # Store NIN data
-                vendor.nin_number = nin_number
 
-                first = data.get('firstname', '') or data.get('first_name', '') or ''
-                middle = data.get('middlename', '') or data.get('middle_name', '') or ''
-                last = data.get('surname', '') or data.get('lastname', '') or data.get('last_name', '') or ''
-                vendor.full_name = " ".join([p for p in [first, middle, last] if p]).strip()
-                
-                # ✅ Extract phone (advanced endpoint uses phone_number)
-                phone_from_dojah = (
-                    data.get('phone_number') 
-                    or data.get('phone', '') 
-                    or data.get('telephoneno', '')
-                )
-                if phone_from_dojah:
-                    vendor.phone = phone_from_dojah
-                
-                # ✅ HANDLE DOB WITH AGE CHECK (advanced endpoint uses date_of_birth)
-                birthdate = (
-                    data.get('date_of_birth')
-                    or data.get('birthdate') 
-                    or data.get('dateofbirth')
-                )
-                if birthdate and birthdate.strip():
-                    try:
-                        parsed_date = datetime.strptime(birthdate, '%Y-%m-%d')
-                        vendor.dob = parsed_date.date()
-                        
-                        # Calculate age
-                        today = date.today()
-                        age = today.year - vendor.dob.year - (
-                            (today.month, today.day) < (vendor.dob.month, vendor.dob.day)
-                        )
-                        vendor.calculated_age = age
-                        
-                        # Check if underage
-                        if age < 18:
-                            vendor.is_underage = True
-                            logger.warning(f"⚠️ Underage vendor detected: {age} years old")
-                        
-                    except (ValueError, AttributeError) as e:
-                        logger.warning(f"Invalid birthdate format from Dojah: {birthdate}")
-                        vendor.dob = None
-                else:
-                    vendor.dob = None
-                
-                vendor.gender = (data.get('gender', '') or '').lower()
-                
-                # ✅ Extract address (now includes combined address_line_1 + address_line_2 from advanced endpoint)
-                vendor.address = (
-                    data.get('residence_address') 
-                    or data.get('address') 
-                    or ''
-                ).strip()
-                
-                # ✅ Extract state (from advanced endpoint)
-                vendor.state = (
-                    data.get('residence_state') 
-                    or data.get('state') 
-                    or ''
-                ).strip()
-                
-                # ✅ Extract LGA (from advanced endpoint)
-                vendor.lga = (
-                    data.get('residence_lga') 
-                    or data.get('lga') 
-                    or ''
-                ).strip()
-                
-                # Log for debugging
-                if vendor.address or vendor.state or vendor.lga:
-                    logger.info(f'✅ Address data extracted - Address: {vendor.address[:50] if vendor.address else "N/A"} | State: {vendor.state} | LGA: {vendor.lga}')
-                
-                # ✅ CAPTURE IP ADDRESS
-                vendor.nin_verification_ip = request.META.get('REMOTE_ADDR')
-                
-                vendor.identity_status = 'nin_otp_sent'
-                vendor.save()
-                
-                # Calculate initial risk score
-                vendor.calculate_risk_score()
-                vendor.save()
-                
-                # Send OTP
-                otp_success, otp_data = dojah_service.send_nin_otp(nin_number)
-                
-                if otp_success:
-                    messages.success(request, f"OTP sent to {otp_data.get('phone', 'your phone')}! ✅")
-                    return redirect('vendors:nin_otp')
-                else:
-                    messages.warning(request, 'Could not send OTP. Please contact support.')
-                    vendor.identity_status = 'nin_verified'
-                    vendor.nin_verified_at = timezone.now()
-                    vendor.save()
-                    return redirect('vendors:bvn_entry')
-            else:
-                messages.error(request, f"NIN verification failed: {data.get('error')}")
+    guard = _bvn_verification_guard(request, vendor)
+    if guard:
+        return guard
+
+    if request.method == 'POST':
+        form = BVNEntryForm(request.POST)
+        if form.is_valid():
+            _store_bvn_session(
+                request,
+                form.cleaned_data['bvn_number'],
+                form.cleaned_data['bank_name'],
+                request.POST.get('bank_code', '').strip(),
+            )
+            return redirect('vendors:bvn_selfie_capture')
+        messages.error(request, 'Please correct the errors below.')
     else:
-        form = NINEntryForm()
-    
-    return render(request, 'vendors/verification/nin_entry.html', {
+        form = BVNEntryForm()
+
+    return render(request, 'vendors/verification/bvn_verification.html', {
         'form': form,
-        'hide_verification_badge': True
+        'vendor': vendor,
+        'hide_verification_badge': True,
     })
 
 
-    
 @vendor_required
 @rate_limit_verification
-def bvn_entry(request):
-    """Step 2: BVN Entry with name matching"""
+def bvn_selfie_capture(request):
+    """
+    Page 2 of 2: MediaPipe live selfie capture with auto-submit to Dojah.
+    BVN and bank are read from session (set on page 1).
+    """
     vendor = request.user.vendorprofile
-    
-    if vendor.identity_status != 'nin_verified':
-        messages.warning(request, 'Please verify NIN first')
-        return redirect('vendors:nin_entry')
-    
-    if vendor.bank_status == 'bvn_verified':
-        messages.info(request, 'BVN already verified')
-        return redirect('vendors:verification_center')
-    
+
+    guard = _bvn_verification_guard(request, vendor)
+    if guard:
+        return guard
+
+    session_data = _get_bvn_session(request)
+    if not session_data:
+        messages.warning(request, 'Please enter your BVN and bank details first.')
+        return redirect('vendors:bvn_verification')
+
     if request.method == 'POST':
-        form = BVNEntryForm(request.POST)
-        
+        form = BVNSelfieForm(request.POST)
         if form.is_valid():
-            bvn_number = form.cleaned_data['bvn_number']
-            bank_name = form.cleaned_data['bank_name']
-            
-            # ✅ CHECK FOR DUPLICATE BVN
-            duplicate_vendor = VendorProfile.objects.filter(
-                bvn_number=bvn_number
-            ).exclude(id=vendor.id).first()
-            
-            if duplicate_vendor:
-                vendor.has_duplicate_bvn = True
-                vendor.duplicate_bvn_vendor_id = str(duplicate_vendor.vendor_id)
-                vendor.save()
-                logger.warning(f"⚠️ Duplicate BVN detected: {bvn_number}")
-                messages.error(
-                    request,
-                    "⚠️ This BVN is already registered. If this is your BVN, please contact support."
-                )
-                return render(request, 'vendors/verification/bvn_entry.html', {
-                    'form': form,
-                    'vendor': vendor
-                })
-            
-            # Call Dojah API
-            success, data = dojah_service.verify_bvn(bvn_number)
-            
-            if success:
-                # Extract BVN name
-                bvn_first = data.get('firstname', data.get('first_name', ''))
-                bvn_last = data.get('lastname', data.get('last_name', data.get('surname', '')))
-                bvn_full_name = f"{bvn_first} {bvn_last}".strip()
-                
-                vendor.bvn_full_name = bvn_full_name
-                
-                # ✅ CHECK NAME MATCH
-                matches, similarity, details = vendor.check_name_match(bvn_full_name)
-                
-                if not matches:
-                    vendor.has_name_mismatch = True
-                    vendor.name_mismatch_details = details
-                    logger.warning(f"⚠️ {details}")
-                else:
-                    vendor.has_name_mismatch = False
-                    vendor.name_mismatch_details = ""
-                
-                # Update vendor
-                vendor.bvn_number = bvn_number
-                vendor.bank_status = 'bvn_verified'
-                vendor.bvn_verified_at = timezone.now()
-                
-                # ✅ CAPTURE IP ADDRESS
-                vendor.bvn_verification_ip = request.META.get('REMOTE_ADDR')
-                
-                vendor.save()
-                
-                # Update wallet
-                wallet = vendor.wallet
-                
-                # ✅ Extract account holder name from BVN (auto-fill, read-only)
-                # Try account_name first, then construct from firstname+lastname, fallback to vendor full_name
-                account_name = (
-                    data.get('account_name', '') 
-                    or bvn_full_name  # Use the BVN full name we extracted
-                    or vendor.full_name  # Fallback to NIN name
-                )
-                wallet.account_holder_name = account_name.strip()
-                
-                # Bank name and account number can be changed by user
-                wallet.bank_name = bank_name
-                wallet.account_number = data.get('account_number', '')
-                wallet.is_verified = True
-                wallet.verified_at = timezone.now()
-                wallet.save()
-                
-                logger.info(f'✅ Wallet updated - Account Holder: {wallet.account_holder_name} | Bank: {wallet.bank_name} | Account: {wallet.account_number}')
-                
-                # Calculate risk score
-                vendor.calculate_risk_score()
-                vendor.save()
-                
-                # Send notification
-                notification_service.send_bvn_verified(vendor)
-                
-                messages.success(request, 'BVN verified successfully! ✅')
-                return redirect('vendors:store_setup')
-            else:
-                messages.error(request, f"BVN verification failed: {data.get('error')}")
+            return _process_bvn_with_selfie(
+                request,
+                vendor,
+                session_data['bvn_number'],
+                session_data['bank_name'],
+                form.cleaned_data['selfie_image'],
+            )
+        messages.error(request, 'Selfie capture failed. Please try again.')
     else:
-        form = BVNEntryForm()
-    
-    return render(request, 'vendors/verification/bvn_entry.html', {
+        form = BVNSelfieForm()
+
+    bvn_number = session_data['bvn_number']
+    return render(request, 'vendors/verification/bvn_selfie_capture.html', {
         'form': form,
         'vendor': vendor,
-        'hide_verification_badge': True
+        'bank_name': session_data['bank_name'],
+        'bvn_masked': f'***{bvn_number[-4:]}',
+        'hide_verification_badge': True,
     })
 
 
 @vendor_required
 def store_setup(request):
     """
-    Step 3: Store Setup (can be skipped)
+    Step 2: Store Setup (can be skipped)
     """
     vendor = request.user.vendorprofile
-    
-    # Check prerequisites - must have NIN and BVN verified
-    if vendor.identity_status != 'nin_verified' or vendor.bank_status != 'bvn_verified':
-        messages.warning(request, 'Please complete NIN and BVN verification first')
+
+    # Check prerequisites - must have BVN+selfie verified
+    if vendor.bank_status != 'verified':
+        messages.warning(request, 'Please complete identity verification first')
         return redirect('vendors:verification_center')
-    
+
     # Get or create store
     try:
         store = vendor.store
@@ -513,7 +622,7 @@ def store_setup(request):
     except Store.DoesNotExist:
         store = None
         is_new = True
-    
+
     if request.method == 'POST':
         # Check for skip action
         if 'skip' in request.POST:
@@ -521,58 +630,61 @@ def store_setup(request):
             vendor.save()
             messages.info(request, 'Store setup skipped. You can complete it later.')
             return redirect('vendors:verification_center')
-        
+
         form = StoreSetupForm(request.POST, request.FILES, instance=store, vendor=vendor)
-        
+
         if form.is_valid():
             store = form.save()
             vendor.store_setup_completed = True
             vendor.save()
-            
+
             messages.success(request, 'Store setup complete! ✅')
             return redirect('vendors:verification_center')
     else:
         form = StoreSetupForm(instance=store, vendor=vendor)
-    
-    # ✅ FIX: Pass categories and vendor to template
+        # Prefill store phone with BVN-sourced phone as a starting suggestion
+        # (vendor can freely overwrite - see masked-phone design decision)
+        if is_new and vendor.phone:
+            form.initial['phone'] = vendor.phone
+
     context = {
         'form': form,
         'vendor': vendor,
         'graduation_years': range(2024, 2031),
         'is_new': is_new,
         'categories': MainCategory.objects.filter(is_active=True).order_by('sort_order'),
-        'store': store,  # In case we're editing
+        'store': store,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/verification/store_setup.html', context)
-    
+
 
 @vendor_required
 def student_verification(request):
     """
-    Step 4: Student & Alumni Verification (Optional)
+    Step 3: Student & Alumni Verification (Optional)
     Exclusive for Kaduna State University (KASU) community
     """
     vendor = request.user.vendorprofile
     current_year = datetime.now().year
-    
+
     if request.method == 'POST':
         form = StudentVerificationForm(request.POST, request.FILES, instance=vendor)
-        
+
         if form.is_valid():
             vendor = form.save(commit=False)
-            
-            # ✅ Force KASU as institution (hardcoded)
+
+            # Force KASU as institution (hardcoded)
             vendor.institution = "Kaduna State University (KASU)"
-            
+
             # Set status to pending for admin review
             vendor.student_status = 'pending'
-            
+
             vendor.save()
-            
+
             messages.success(
-                request, 
+                request,
                 '✅ Student/Alumni verification submitted! We\'ll review your documents within 24-48 hours and notify you via email.'
             )
             return redirect('vendors:verification_center')
@@ -580,191 +692,65 @@ def student_verification(request):
             messages.error(request, '❌ Please correct the errors below.')
     else:
         form = StudentVerificationForm(instance=vendor)
-    
+
     context = {
         'form': form,
         'vendor': vendor,
-        'graduation_years': range(current_year - 5, current_year + 8),  # ✅ 2021-2033 (5 years alumni + 7 years future)
+        'graduation_years': range(current_year - 5, current_year + 8),
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/verification/student_verification.html', context)
 
-@vendor_required
-@rate_limit_verification
-def nin_otp(request):
-    """
-    Step 1b: NIN OTP Verification
-    (Currently skipped in mock mode, but needed for production)
-    """
-    vendor = request.user.vendorprofile
-    
-    # Check if NIN entered first
-    if vendor.identity_status != 'nin_otp_sent':
-        messages.warning(request, 'Please enter NIN first')
-        return redirect('vendors:nin_entry')
-    
-    if request.method == 'POST':
-        form = NINOTPForm(request.POST)
-        
-        if form.is_valid():
-            otp_code = form.cleaned_data['otp_code']
-            
-            # Verify OTP via Dojah
-            nin_number = vendor.nin_number
-            success, data = dojah_service.verify_nin_otp(nin_number, otp_code)
-            
-            if success:
-                vendor.identity_status = 'nin_verified'
-                vendor.nin_verified_at = timezone.now()
-                
-                # ✅ CHECK FOR DUPLICATE NIN
-                duplicate_nin = VendorProfile.objects.filter(
-                    nin_number=vendor.nin_number
-                ).exclude(id=vendor.id).exists()
-                
-                if duplicate_nin:
-                    vendor.has_duplicate_nin = True
-                    logger.warning(f"⚠️ Duplicate NIN detected: {vendor.nin_number}")
-                    # Don't block, but flag for admin review
-                
-                # ✅ CHECK AGE (must be 18+)
-                if vendor.dob:
-                    today = date.today()
-                    age = today.year - vendor.dob.year - (
-                        (today.month, today.day) < (vendor.dob.month, vendor.dob.day)
-                    )
-                    
-                    if age < 18:
-                        vendor.is_underage = True
-                        logger.warning(f"⚠️ Underage vendor detected: {age} years old")
-                        # Flag for admin review
-                
-                # ✅ CAPTURE IP ADDRESS
-                vendor.nin_verification_ip = request.META.get('REMOTE_ADDR')
-                
-                vendor.save()
-                
-                messages.success(request, 'NIN verified successfully!')
-                return redirect('vendors:nin_success')
-            else:
-                messages.error(request, 'Invalid OTP. Please try again.')
-    else:
-        form = NINOTPForm()
-    
-    # Resend OTP option
-    context = {
-        'form': form,
-        'vendor': vendor,
-        'phone_last_4': vendor.phone[-4:] if vendor.phone else '****',
-        'hide_verification_badge': True,
-    }
-    
-    return render(request, 'vendors/verification/nin_otp.html', context)
-
-
-@vendor_required
-def nin_success(request):
-    """
-    Step 1c: NIN Success Page
-    """
-    vendor = request.user.vendorprofile
-    
-    if vendor.identity_status != 'nin_verified':
-        return redirect('vendors:nin_entry')
-    
-    return render(request, 'vendors/verification/nin_success.html', {'vendor': vendor, 'hide_verification_badge': True})
-
-
-@vendor_required
-@rate_limit_verification
-def bvn_otp(request):
-    """
-    Step 2b: BVN OTP Verification
-    """
-    vendor = request.user.vendorprofile
-    
-    if vendor.bank_status != 'bvn_otp_sent':
-        messages.warning(request, 'Please enter BVN first')
-        return redirect('vendors:bvn_entry')
-    
-    if request.method == 'POST':
-        form = BVNOTPForm(request.POST)
-        
-        if form.is_valid():
-            otp_code = form.cleaned_data['otp_code']
-            
-            # Verify OTP
-            bvn_number = vendor.bvn_number
-            success, data = dojah_service.verify_bvn_otp(bvn_number, otp_code)
-            
-            if success:
-                vendor.bank_status = 'bvn_verified'
-                vendor.bvn_verified_at = timezone.now()
-                vendor.save()
-                
-                # Update wallet
-                wallet = vendor.wallet
-                wallet.is_verified = True
-                wallet.verified_at = timezone.now()
-                wallet.save()
-                
-                messages.success(request, 'BVN verified successfully!')
-                return redirect('vendors:bvn_success')
-            else:
-                messages.error(request, 'Invalid OTP. Please try again.')
-    else:
-        form = BVNOTPForm()
-    
-    context = {
-        'form': form,
-        'vendor': vendor,
-        'phone_last_4': vendor.phone[-4:] if vendor.phone else '****',
-        'hide_verification_badge': True,
-    }
-    
-    return render(request, 'vendors/verification/bvn_otp.html', context)
-
-
-@vendor_required
-def bvn_success(request):
-    """
-    Step 2c: BVN Success Page
-    """
-    vendor = request.user.vendorprofile
-    
-    if vendor.bank_status != 'bvn_verified':
-        return redirect('vendors:bvn_entry')
-    
-    return render(request, 'vendors/verification/bvn_success.html', {'vendor': vendor, 'hide_verification_badge': True})
 
 @vendor_required
 def pending_review(request):
     """
-    Step 5: Waiting for Admin Review
-    Shows after all verification steps complete
+    Step 4: Waiting for Admin Review
+    Shown both for the overall vendor approval AND for vendors whose
+    BVN+selfie landed in the 75-90% confidence review band.
     """
     vendor = request.user.vendorprofile
-    
-    # Check if vendor completed all steps
-    if not vendor.can_sell:
-        messages.warning(request, 'Please complete verification steps first')
-        return redirect('vendors:verification_center')
-    
+
     # If already approved
     if vendor.verification_status == 'approved':
         messages.success(request, "You're already verified!")
         return redirect('vendors:dashboard')
-    
+
+    # Allow access if either the BVN step or the overall application is
+    # pending review - don't gate this page behind can_sell, since a
+    # vendor in bank_status='pending_review' hasn't reached can_sell yet
+    # but still needs somewhere to land after submitting.
+    if vendor.bank_status not in ('verified', 'pending_review'):
+        messages.warning(request, 'Please complete identity verification first')
+        return redirect('vendors:verification_center')
+
     context = {
         'vendor': vendor,
-        'submitted_at': vendor.bvn_verified_at or vendor.nin_verified_at,
+        'submitted_at': vendor.bvn_verified_at,
         'estimated_review_time': '24-48 hours',
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/verification/pending_review.html', context)
 
+
+@vendor_required
+def verification_success(request):
+    """
+    Dedicated success screen shown after auto-verify (confidence ≥ 90%).
+    Redirects away if vendor isn't actually verified — prevents direct URL access
+    before verification is complete.
+    """
+    vendor = request.user.vendorprofile
+ 
+    if vendor.bank_status != 'verified':
+        return redirect('vendors:verification_center')
+ 
+    return render(request, 'vendors/verification/verification_success.html', {
+        'vendor': vendor,
+        'hide_verification_badge': True,
+    })
 
 # ==========================================
 # PRODUCT VIEWS
@@ -774,19 +760,18 @@ def pending_review(request):
 def products_list(request):
     """List all vendor products with filters and stock status"""
     vendor = request.user.vendorprofile
-    
+
     # Filters
     status = request.GET.get('status', '')
     stock_filter = request.GET.get('stock', '')
     search = request.GET.get('search', '')
 
     products = vendor.products.all()
-    
+
     # Apply filters
     if status:
         products = products.filter(status=status)
-    
-    # ✅ NEW: Stock filter
+
     if stock_filter == 'low_stock':
         products = products.filter(
             track_inventory=True,
@@ -795,21 +780,20 @@ def products_list(request):
         )
     elif stock_filter == 'out_of_stock':
         products = products.filter(track_inventory=True, stock_quantity=0)
-    
+
     if search:
         products = products.filter(
-            Q(title__icontains=search) | 
+            Q(title__icontains=search) |
             Q(description__icontains=search) |
             Q(sku__icontains=search)
         )
 
     products = products.order_by('-created_at')
-    
+
     # Pagination
     paginator = Paginator(products, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
-    
-    # ✅ STATS
+
     context = {
         'products': page_obj,
         'total_products': vendor.products.count(),
@@ -821,7 +805,7 @@ def products_list(request):
             stock_quantity__lte=F('low_stock_threshold')
         ).count(),
         'out_of_stock_count': vendor.products.filter(
-            track_inventory=True, 
+            track_inventory=True,
             stock_quantity=0
         ).count(),
         'current_status': status,
@@ -829,7 +813,7 @@ def products_list(request):
         'search_query': search,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/products/list.html', context)
 
 
@@ -841,42 +825,38 @@ def product_create(request):
     if not hasattr(vendor, 'store'):
         messages.warning(request, 'Please complete store setup first')
         return redirect('vendors:store_setup')
-    
+
     if request.method == 'POST':
         subcategory_id = request.POST.get('subcategory')
         form = ProductForm(
             request.POST,
             vendor=vendor,
             subcategory_id=subcategory_id,
-            is_editing=False  # ✅ Explicitly mark as creation
+            is_editing=False
         )
-        # Provide a temporary Product instance so the inline formset can bind correctly
         temp_product = Product()
         formset = ProductImageFormSet(request.POST, request.FILES, instance=temp_product)
-        
-        # ✅ SERVER-SIDE VALIDATION: Block discontinued on create
+
         if 'status' in request.POST and request.POST['status'] == 'discontinued':
             messages.error(request, '❌ You cannot set a new product as discontinued.')
             form.add_error('status', 'Products can only be discontinued after creation.')
-        
+
         if form.is_valid() and formset.is_valid():
             try:
                 product = form.save()
-                
-                # Save images
+
                 formset.instance = product
                 formset.save()
-                
-                # ✅ CHECK: Ensure at least one primary image
+
                 if not product.images.filter(is_primary=True).exists():
                     first_image = product.images.first()
                     if first_image:
                         first_image.is_primary = True
                         first_image.save()
-                
+
                 messages.success(request, f'✅ Product "{product.title}" created successfully!')
                 return redirect('vendors:product_detail', slug=product.slug)
-                
+
             except Exception as e:
                 messages.error(request, f'❌ Error: {str(e)}')
                 import traceback
@@ -884,15 +864,14 @@ def product_create(request):
         else:
             messages.error(request, '❌ Please correct the errors below.')
     else:
-        form = ProductForm(vendor=vendor, is_editing=False)  # ✅ Mark as creation
+        form = ProductForm(vendor=vendor, is_editing=False)
         formset = ProductImageFormSet(instance=Product())
-    
-    # Get subcategories
+
     subcategories = SubCategory.objects.filter(
         main_category=vendor.store.main_category,
         is_active=True
     ).order_by('name')
-    
+
     context = {
         'form': form,
         'formset': formset,
@@ -900,7 +879,7 @@ def product_create(request):
         'subcategories': subcategories,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/products/create.html', context)
 
 
@@ -911,7 +890,7 @@ def product_edit(request, slug):
     product = request.product
     vendor = request.user.vendorprofile
 
-    
+
     if request.method == 'POST':
         form = ProductForm(
             request.POST,
@@ -921,22 +900,14 @@ def product_edit(request, slug):
             is_editing=True
         )
         formset = ProductImageFormSet(request.POST, request.FILES, instance=product)
-        
+
         if form.is_valid() and formset.is_valid():
             product = form.save()
             formset.save()
-            
+
             messages.success(request, '✅ Product updated successfully!')
             return redirect('vendors:product_detail', slug=product.slug)
         else:
-            # ✅ DEBUG: Print errors to console
-            print("=" * 50)
-            print("FORM ERRORS:", form.errors)
-            print("FORM NON-FIELD ERRORS:", form.non_field_errors())
-            print("FORMSET ERRORS:", formset.errors)
-            print("FORMSET NON-FORM ERRORS:", formset.non_form_errors())
-            print("=" * 50)
-            
             messages.error(request, '❌ Please correct the errors below.')
     else:
         form = ProductForm(
@@ -946,20 +917,17 @@ def product_edit(request, slug):
         )
         formset = ProductImageFormSet(instance=product)
 
-    # Get subcategories for editing
     import json
     subcategories = SubCategory.objects.filter(
         main_category=vendor.store.main_category,
         is_active=True
     ).values('id', 'name').order_by('name')
-    
-    # Get current attributes for the product
+
     current_attributes = SubCategoryAttribute.objects.filter(
         subcategory=product.subcategory,
         is_active=True
     ).order_by('sort_order')
 
-    # Build attributes JSON with current values
     attributes_json = json.dumps([
         {
             "id": attr.id,
@@ -973,7 +941,7 @@ def product_edit(request, slug):
         }
         for attr in current_attributes
     ])
-    
+
     context = {
         'form': form,
         'formset': formset,
@@ -985,7 +953,7 @@ def product_edit(request, slug):
         'attributes_json': attributes_json,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/products/edit.html', context)
 
 
@@ -994,19 +962,19 @@ def product_edit(request, slug):
 def product_delete(request, slug):
     """Delete product"""
     product = request.product
-    
+
     if request.method == 'POST':
         title = product.title
         product.delete()
-        
+
         messages.success(request, f'🗑️ Product "{title}" deleted successfully')
         return redirect('vendors:products_list')
-    
+
     context = {
         'product': product,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/products/delete_confirm.html', context)
 
 
@@ -1014,10 +982,9 @@ def product_delete(request, slug):
 @vendor_owns_product
 def product_detail(request, slug):
     """View product details"""
-    product = request.product  # Set by decorator
+    product = request.product
     vendor = request.user.vendorprofile
-    
-    # Get product stats
+
     context = {
         'product': product,
         'vendor': vendor,
@@ -1028,7 +995,7 @@ def product_detail(request, slug):
         ).aggregate(total=Sum('total'))['total'] or 0,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/products/detail.html', context)
 
 # ==========================================
@@ -1038,65 +1005,41 @@ def product_detail(request, slug):
 def product_detail_public(request, store_slug, product_slug):
     """
     Public-facing product detail page for buyers
-    
+
     URL: /shop/<store_slug>/products/<product_slug>/
-    
-    Shows:
-    - Product info (name, price, images, description)
-    - Dynamic specifications from attributes
-    - Simple stock status (In Stock / Out of Stock)
-    - Store info and link
-    - Units sold (social proof)
-    - Add to cart / Contact seller actions
-    
-    Does NOT show:
-    - Inventory internals
-    - Revenue/analytics
-    - Product ID/SKU/slug
-    - Vendor dashboard controls
     """
-    # Get store (allow owner to view even if not published)
     try:
         store = Store.objects.get(slug=store_slug)
     except Store.DoesNotExist:
         raise Http404("No Store matches the given query.")
 
-    # Check if current user is the store owner
     is_owner = (
-        request.user.is_authenticated and 
-        hasattr(request.user, 'vendorprofile') and 
+        request.user.is_authenticated and
+        hasattr(request.user, 'vendorprofile') and
         request.user.vendorprofile == store.vendor
     )
 
-    # If store is not published, only allow owner to view
     if not store.is_published and not is_owner:
         raise Http404("No Store matches the given query.")
-    
-    # Get product
-    # - For public visitors: must be published
-    # - For owner: can view their own unpublished products
+
     product_qs = Product.objects.filter(slug=product_slug, store=store)
     if not is_owner:
         product_qs = product_qs.filter(status='published')
     product = get_object_or_404(product_qs)
-    
-    # Increment view count
+
     product.views_count = F('views_count') + 1
     product.save(update_fields=['views_count'])
-    product.refresh_from_db()  # Get actual value
-    
-    # Get subcategory attributes for rendering specifications
+    product.refresh_from_db()
+
     attributes = SubCategoryAttribute.objects.filter(
         subcategory=product.subcategory,
         is_active=True
     ).order_by('sort_order')
-    
-    # Build specifications list with proper labels
+
     specifications = []
     for attr in attributes:
-        # ✅ FIX: Look up by ID (str), not by name
         value = product.attributes.get(str(attr.id))
-        if value:  # Only show if product has this attribute filled
+        if value:
             specifications.append({
                 'label': attr.name.replace('_', ' ').title(),
                 'value': value,
@@ -1115,10 +1058,10 @@ def product_detail_public(request, store_slug, product_slug):
         'in_stock': product.is_in_stock,
         'distance': get_distance_to_store(buyer_lat, buyer_lon, store),
     }
-    
+
     return render(request, 'products/product_detail.html', context)
 
-    
+
 # ==========================================
 # AJAX ENDPOINTS FOR DYNAMIC FORMS
 # ==========================================
@@ -1127,15 +1070,15 @@ def product_detail_public(request, store_slug, product_slug):
 def ajax_get_subcategories(request):
     """Get subcategories for vendor's main category"""
     vendor = request.user.vendorprofile
-    
+
     if not hasattr(vendor, 'store'):
         return JsonResponse({'subcategories': []})
-    
+
     subcategories = SubCategory.objects.filter(
         main_category=vendor.store.main_category,
         is_active=True
     ).values('id', 'name').order_by('name')
-    
+
     return JsonResponse({
         'subcategories': list(subcategories)
     })
@@ -1145,15 +1088,15 @@ def ajax_get_subcategories(request):
 def ajax_get_attributes(request):
     """Get attributes for a specific subcategory"""
     subcategory_id = request.GET.get('subcategory_id')
-    
+
     if not subcategory_id:
         return JsonResponse({'attributes': []})
-    
+
     attributes = SubCategoryAttribute.objects.filter(
         subcategory_id=subcategory_id,
         is_active=True
     ).order_by('sort_order')
-    
+
     attrs_data = []
     for attr in attributes:
         attrs_data.append({
@@ -1165,7 +1108,7 @@ def ajax_get_attributes(request):
             'help_text': attr.help_text,
             'options': attr.options if attr.field_type == 'dropdown' else []
         })
-    
+
     return JsonResponse({'attributes': attrs_data})
 
 
@@ -1188,6 +1131,9 @@ def orders_list(request):
 
     from apps.marketplace.models import SubOrder
     status_filter = request.GET.get('status', '')
+
+    if status_filter and status_filter.lower() == 'pending':
+        status_filter = 'PENDING_VENDOR'
 
     suborders = SubOrder.objects.filter(
         store=store
@@ -1215,29 +1161,28 @@ def order_detail(request, order_id):
     """
     View order details and update status
     """
-    order = request.order  # Set by decorator
-    
+    order = request.order
+
     if request.method == 'POST':
         form = OrderStatusUpdateForm(request.POST, instance=order)
-        
+
         if form.is_valid():
             order = form.save()
-            
-            # Send notification to customer
+
             notification_service.send_order_status_update(order, order.customer.email)
-            
+
             messages.success(request, f'Order status updated to {order.get_status_display()}')
             return redirect('vendors:order_detail', order_id=order.order_id)
     else:
         form = OrderStatusUpdateForm(instance=order)
-    
+
     context = {
         'order': order,
         'form': form,
         'items': order.items.all(),
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/orders/detail.html', context)
 
 @vendor_required
@@ -1248,27 +1193,25 @@ def order_status_update_ajax(request, order_id):
     AJAX endpoint for quick status update
     """
     order = request.order
-    
+
     new_status = request.POST.get('status')
     tracking_number = request.POST.get('tracking_number', '')
-    
-    # Validate status transition
+
     allowed_statuses = {
         'pending': ['confirmed', 'cancelled'],
         'confirmed': ['processing', 'cancelled'],
         'processing': ['shipped'],
         'shipped': ['delivered']
     }
-    
+
     if new_status in allowed_statuses.get(order.status, []):
         order.status = new_status
         if tracking_number:
             order.tracking_number = tracking_number
         order.save()
-        
-        # Send notification
+
         notification_service.send_order_status_update(order, order.customer.email)
-        
+
         return JsonResponse({'success': True, 'message': 'Status updated'})
     else:
         return JsonResponse({'success': False, 'error': 'Invalid status transition'}, status=400)
@@ -1284,12 +1227,15 @@ def wallet_overview(request):
     Wallet overview with balance and transactions
     """
     vendor = request.user.vendorprofile
+
+    from apps.vendors.services.wallet_service import release_all_due
+    release_all_due(vendor)
+
     wallet = vendor.wallet
-    
-    # Recent transactions
-    transactions = wallet.transactions.all()[:10]
-    
-    # Stats
+    wallet.refresh_from_db()
+
+    transactions = wallet.transactions.all().order_by('-created_at')[:10]
+
     context = {
         'wallet': wallet,
         'transactions': transactions,
@@ -1298,137 +1244,175 @@ def wallet_overview(request):
         'pending_balance': wallet.pending_balance,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/wallet/overview.html', context)
 
 
 @vendor_required
 def wallet_transactions(request):
-    """
-    Full transaction history
-    """
     vendor = request.user.vendorprofile
     wallet = vendor.wallet
-    
-    # Get transactions
+
     transactions = wallet.transactions.all().order_by('-created_at')
-    
-    # Pagination
-    paginator = Paginator(transactions, 50)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'wallet': wallet,
-        'transactions': page_obj
-    }
-    # wallet_transactions
+
+    tx_type = request.GET.get('type', '')
+    status = request.GET.get('status', '')
+    date_range = request.GET.get('date_range', '')
+
+    if tx_type:
+        transactions = transactions.filter(transaction_type__icontains=tx_type)
+    if status:
+        transactions = transactions.filter(status__iexact=status)
+    if date_range:
+        from django.utils import timezone
+        now = timezone.now()
+        if date_range == 'today':
+            transactions = transactions.filter(created_at__date=now.date())
+        elif date_range == 'week':
+            transactions = transactions.filter(created_at__gte=now - timezone.timedelta(days=7))
+        elif date_range == 'month':
+            transactions = transactions.filter(created_at__gte=now - timezone.timedelta(days=30))
+        elif date_range == 'year':
+            transactions = transactions.filter(created_at__gte=now - timezone.timedelta(days=365))
+
+    from django.db.models import Sum
+    credits = transactions.filter(transaction_type__in=['PENDING_CREDIT', 'AVAILABLE_CREDIT'])
+    debits = transactions.filter(transaction_type__in=['REVERSAL', 'WITHDRAWAL'])
+    total_credits = credits.aggregate(t=Sum('amount'))['t'] or 0
+    total_debits = debits.aggregate(t=Sum('amount'))['t'] or 0
+
+    paginator = Paginator(transactions, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     return render(request, 'vendors/wallet/transactions.html', {
-        'page_obj': page_obj,
-        'transactions': page_obj,
         'wallet': wallet,
+        'transactions': page_obj,
+        'total_credits': total_credits,
+        'total_debits': total_debits,
+        'net_balance': total_credits - total_debits,
+        'total_transactions': transactions.count(),
         'hide_verification_badge': True,
     })
 
 
 @vendor_required
 def request_payout(request):
-    """
-    Request payout/withdrawal
-    """
+    from apps.marketplace.models import WalletTransaction
+    """Instant payout to vendor's verified bank account."""
     vendor = request.user.vendorprofile
+
+    from apps.vendors.services.wallet_service import release_all_due
+    release_all_due(vendor)
+
     wallet = vendor.wallet
-    
-    # Check minimum balance
-    min_payout = Decimal('1000.00')
-    
-    if wallet.balance < min_payout:
-        messages.error(request, f'Minimum payout amount is ₦{min_payout}')
-        return redirect('vendors:wallet_overview')
-    
+    wallet.refresh_from_db()
+
+    min_payout = Decimal('500.00')
+
     if request.method == 'POST':
-        amount = Decimal(request.POST.get('amount', 0))
-        
-        # Validate amount
+        try:
+            amount = Decimal(request.POST.get('amount', '0'))
+        except Exception:
+            messages.error(request, 'Invalid amount.')
+            return redirect('vendors:request_payout')
+
+        if amount < min_payout:
+            messages.error(request, f'Minimum payout is ₦{min_payout:,.0f}')
+            return redirect('vendors:request_payout')
+
         if amount > wallet.balance:
-            messages.error(request, 'Insufficient balance')
-        elif amount < min_payout:
-            messages.error(request, f'Minimum payout is ₦{min_payout}')
-        else:
-            # Create transfer recipient if not exists
-            if not hasattr(wallet, 'paystack_recipient_code'):
-                success, recipient_data = paystack_service.create_transfer_recipient(
-                    account_number=wallet.account_number,
-                    bank_code=wallet.bank_code or '058',  # TODO: Get actual bank code
-                    name=wallet.account_holder_name
-                )
-                
-                if success:
-                    wallet.paystack_recipient_code = recipient_data.get('recipient_code')
-                    wallet.save()
-            
-            # Initiate transfer
-            reference = generate_reference('PAYOUT')
-            success, transfer_data = paystack_service.initiate_transfer(
-                recipient_code=wallet.paystack_recipient_code,
-                amount=amount,
-                reason=f'Payout to {vendor.full_name}',
-                reference=reference
+            messages.error(request, 'Amount exceeds available balance.')
+            return redirect('vendors:request_payout')
+
+        if not wallet.account_number or not wallet.bank_code:
+            messages.error(request, 'Please add your bank account details first.')
+            return redirect('vendors:payment_method')
+
+        # Name match check against BVN verified name
+        bvn_name = (vendor.full_name or '').strip().lower()
+        account_name = (wallet.account_holder_name or '').strip().lower()
+        if bvn_name and account_name and bvn_name != account_name:
+            messages.error(request,
+                f'Account name "{wallet.account_holder_name}" does not match your verified name "{vendor.full_name}". Please update your bank details.')
+            return redirect('vendors:payment_method')
+
+        from apps.vendors.services.paystack import paystack_service
+
+        if not wallet.paystack_recipient_code:
+            success, recipient_data = paystack_service.create_transfer_recipient(
+                account_number=wallet.account_number,
+                bank_code=wallet.bank_code,
+                name=wallet.account_holder_name,
             )
-            
-            if success:
-                # Deduct from balance
-                wallet.balance -= amount
-                wallet.total_withdrawn += amount
-                wallet.save()
-                
-                # Create transaction
-                Transaction.objects.create(
-                    wallet=wallet,
-                    transaction_type='payout',
-                    amount=amount,
-                    status='completed',
-                    reference=reference,
-                    balance_before=wallet.balance + amount,
-                    balance_after=wallet.balance
-                )
-                
-                # Send notification
-                notification_service.send_payout_successful(vendor, amount, wallet.bank_name)
-                
-                messages.success(request, f'Payout of ₦{amount} initiated successfully!')
-            else:
-                messages.error(request, f"Payout failed: {transfer_data.get('error')}")
-        
-        return redirect('vendors:wallet_overview')
-    
-    context = {
+            if not success:
+                messages.error(request, f'Could not set up transfer: {recipient_data}')
+                return redirect('vendors:request_payout')
+
+            wallet.paystack_recipient_code = recipient_data.get('recipient_code')
+            wallet.save(update_fields=['paystack_recipient_code'])
+
+        from apps.marketplace.services.payment_service import generate_reference
+        reference = generate_reference('PAYOUT')
+
+        success, transfer_data = paystack_service.initiate_transfer(
+            recipient_code=wallet.paystack_recipient_code,
+            amount=amount,
+            reason=f'KasuMarketplace payout — {vendor.full_name or vendor.user.email}',
+            reference=reference,
+        )
+
+        if success:
+            balance_before = wallet.balance
+            wallet.balance -= amount
+            wallet.total_withdrawn += amount
+            wallet.save(update_fields=['balance', 'total_withdrawn', 'updated_at'])
+
+            from apps.marketplace.models import WalletTransaction
+            WalletTransaction.objects.create(
+                wallet=wallet,
+                transaction_type='WITHDRAWAL',
+                amount=amount,
+                status='AVAILABLE',
+                reference=reference,
+                note=f'Payout to {wallet.bank_name} {wallet.account_number} — {request.POST.get("notes", "")}',
+            )
+
+            messages.success(request, f'₦{amount:,.2f} has been sent to your {wallet.bank_name} account ending in {wallet.account_number[-4:]}. It should arrive instantly.')
+            return redirect('vendors:wallet_overview')
+        else:
+            messages.error(request, f'Transfer failed: {transfer_data}. Please try again.')
+            return redirect('vendors:request_payout')
+
+    recent_payouts = WalletTransaction.objects.filter(
+        wallet=wallet,
+        transaction_type='WITHDRAWAL'
+    ).order_by('-created_at')[:5]
+
+    return render(request, 'vendors/wallet/payout_request.html', {
         'wallet': wallet,
+        'vendor': vendor,
         'min_payout': min_payout,
+        'recent_payouts': recent_payouts,
         'hide_verification_badge': True,
-    }
-    
-    return render(request, 'vendors/wallet/payout_request.html', context)
+    })
 @vendor_required
 def payment_method(request):
     """
     View/Edit bank account details
-    Account Holder Name is READ-ONLY if BVN is verified (auto-filled from BVN)
+    Account Holder Name is READ-ONLY if BVN+selfie is verified (auto-filled)
     Account Number and Bank Name can be changed
     """
     vendor = request.user.vendorprofile
     wallet = vendor.wallet
-    
-    # Check if BVN is verified (account holder name should be locked)
-    bvn_verified = vendor.bank_status == 'bvn_verified'
-    
+
+    # Check if BVN+selfie is verified (account holder name should be locked)
+    bvn_verified = vendor.bank_status == 'verified'
+
     if request.method == 'POST':
-        # Handle bank account update
         account_number = request.POST.get('account_number', '').strip()
         bank_name = request.POST.get('bank_name', '').strip()
-        confirm = request.POST.get('confirm')  # Checkbox confirmation
-        
-        # Validate required fields
+        confirm = request.POST.get('confirm')
+
         errors = []
         if not bank_name:
             errors.append('Bank name is required.')
@@ -1436,47 +1420,44 @@ def payment_method(request):
             errors.append('Account number is required.')
         if not confirm:
             errors.append('Please confirm that the details are correct.')
-        
+
         if errors:
             for error in errors:
                 messages.error(request, error)
         else:
             try:
-                # ✅ Account Holder Name is READ-ONLY if BVN verified
-                # Only update if BVN is NOT verified (shouldn't happen, but safety check)
                 if not bvn_verified:
                     account_holder_name = request.POST.get('account_name', '').strip()
                     if account_holder_name:
                         wallet.account_holder_name = account_holder_name
-                
-                # Account Number and Bank Name can always be updated
+
                 wallet.account_number = account_number
                 wallet.bank_name = bank_name
+                wallet.bank_code = request.POST.get('bank_code', '').strip()
                 wallet.save()
-                
+
                 logger.info(f'✅ Bank account updated for vendor {vendor.vendor_id}: Bank={bank_name}, Account={account_number}')
                 messages.success(request, '✅ Bank account updated successfully!')
                 return redirect('vendors:payment_method')
             except Exception as e:
                 logger.error(f'❌ Error updating bank account: {str(e)}')
                 messages.error(request, f'Failed to update bank account: {str(e)}')
-    
-    # Create a simple form-like object for template compatibility
+
     class SimpleForm:
         def __init__(self):
             self.bank_name = type('obj', (object,), {'html_name': 'bank_name', 'id_for_label': 'id_bank_name'})()
             self.account_number = type('obj', (object,), {'html_name': 'account_number', 'id_for_label': 'id_account_number'})()
             self.account_name = type('obj', (object,), {'html_name': 'account_name', 'id_for_label': 'id_account_name'})()
-    
+
     context = {
         'wallet': wallet,
         'vendor': vendor,
-        'bank_account': wallet,  # For template compatibility
-        'form': SimpleForm(),  # Simple form object for template
-        'bvn_verified': bvn_verified,  # Pass flag to template
+        'bank_account': wallet,
+        'form': SimpleForm(),
+        'bvn_verified': bvn_verified,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/wallet/payment_method.html', context)
 
 
@@ -1491,25 +1472,22 @@ def store_settings(request):
     Displays warning if store name is locked
     """
     vendor = request.user.vendorprofile
-    
-    # Check if store exists
+
     try:
         store = vendor.store
     except Store.DoesNotExist:
         messages.warning(request, 'Please complete store setup first')
         return redirect('vendors:store_setup')
-    
+
     if request.method == 'POST':
         form = StoreSettingsForm(request.POST, request.FILES, instance=store)
-        
+
         if form.is_valid():
-            # Check if store name is being changed
             old_store_name = store.store_name
             new_store_name = form.cleaned_data.get('store_name')
-            
+
             store = form.save()
-            
-            # Log store name change
+
             if old_store_name != new_store_name:
                 logger.warning(
                     f"🔄 STORE NAME CHANGED: '{old_store_name}' → '{new_store_name}' "
@@ -1522,22 +1500,26 @@ def store_settings(request):
                 )
             else:
                 messages.success(request, '✅ Store settings updated successfully!')
-            
+
             return redirect('vendors:store_settings')
         else:
             messages.error(request, '❌ Please correct the errors below.')
     else:
         form = StoreSettingsForm(instance=store)
-    
-    # Get change limit info for template
+
     can_change_name = store.can_change_store_name()
     days_until_name_change = store.days_until_next_name_change()
     can_change_category = store.can_request_category_change()
     days_until_category_change = store.days_until_next_category_change()
-    
-    # Get published products count
+
+    # Compute the next allowed category change date (if available)
+    if getattr(store, 'main_category_last_changed_at', None):
+        category_next_change_date = store.main_category_last_changed_at + timedelta(days=365)
+    else:
+        category_next_change_date = None
+
     active_products_count = vendor.products.filter(status='published').count()
-    
+
     context = {
         'store': store,
         'form': form,
@@ -1547,9 +1529,10 @@ def store_settings(request):
         'days_until_name_change': days_until_name_change,
         'can_change_category': can_change_category,
         'days_until_category_change': days_until_category_change,
+        'category_next_change_date': category_next_change_date,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/store/settings.html', context)
 
 
@@ -1562,23 +1545,22 @@ def store_public_preview(request):
     Preview public storefront
     """
     vendor = request.user.vendorprofile
-    
+
     try:
         store = vendor.store
     except Store.DoesNotExist:
         messages.warning(request, 'Store not set up yet')
         return redirect('vendors:store_setup')
-    
-    # Get products
+
     products = vendor.products.filter(status='published')[:12]
-    
+
     context = {
         'store': store,
         'products': products,
         'is_preview': True,
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/store/preview.html', context)
 
 
@@ -1593,39 +1575,35 @@ def category_change_request(request):
     Enforces 1-YEAR LIMIT on category change requests
     """
     vendor = request.user.vendorprofile
-    
-    # Check if store exists
+
     try:
         store = vendor.store
     except Store.DoesNotExist:
         messages.warning(request, 'Store not set up yet')
         return redirect('vendors:store_setup')
-    
-    # Check if category is locked
+
     if not store.main_category_locked:
         messages.info(request, 'Your category is not locked yet. You can change it in store settings.')
         return redirect('vendors:store_settings')
-    
-    # Check if they can request a change (1-year limit)
+
     if not store.can_request_category_change():
         days_left = store.days_until_next_category_change()
         next_change_date = (
             store.main_category_last_changed_at + timezone.timedelta(days=365)
         ).strftime('%B %d, %Y')
-        
+
         messages.warning(
             request,
             f'🔒 Category change requests are limited to once per year. '
             f'You can submit a new request on {next_change_date} ({days_left} days remaining).'
         )
         return redirect('vendors:store_settings')
-    
-    # Check for pending requests
+
     pending_request = CategoryChangeRequest.objects.filter(
         store=store,
         status='pending'
     ).first()
-    
+
     if pending_request:
         messages.info(
             request,
@@ -1634,18 +1612,18 @@ def category_change_request(request):
             f'Please wait for admin review.'
         )
         return redirect('vendors:store_settings')
-    
+
     if request.method == 'POST':
         form = CategoryChangeRequestForm(request.POST, store=store)
-        
+
         if form.is_valid():
             change_request = form.save()
-            
+
             logger.info(
                 f"📋 Category change request submitted: {store.store_name} "
                 f"({change_request.current_category.name} → {change_request.requested_category.name})"
             )
-            
+
             messages.success(
                 request,
                 f'✅ Category change request submitted successfully! '
@@ -1657,12 +1635,11 @@ def category_change_request(request):
             messages.error(request, '❌ Please correct the errors below.')
     else:
         form = CategoryChangeRequestForm(store=store)
-    
-    # Get change history
+
     previous_requests = CategoryChangeRequest.objects.filter(
         store=store
     ).exclude(status='pending').order_by('-created_at')[:5]
-    
+
     context = {
         'form': form,
         'store': store,
@@ -1672,7 +1649,7 @@ def category_change_request(request):
         'days_until_next_change': store.days_until_next_category_change(),
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/store/category_change_request.html', context)
 
 
@@ -1682,23 +1659,21 @@ def category_change_status(request):
     View status of category change requests
     """
     vendor = request.user.vendorprofile
-    
+
     try:
         store = vendor.store
     except Store.DoesNotExist:
         messages.warning(request, 'Store not set up yet')
         return redirect('vendors:store_setup')
-    
-    # Get all requests
+
     all_requests = CategoryChangeRequest.objects.filter(
         store=store
     ).order_by('-created_at')
-    
-    # Separate by status
+
     pending_requests = all_requests.filter(status='pending')
     approved_requests = all_requests.filter(status='approved')
     rejected_requests = all_requests.filter(status='rejected')
-    
+
     context = {
         'store': store,
         'vendor': vendor,
@@ -1709,7 +1684,7 @@ def category_change_status(request):
         'days_until_next_change': store.days_until_next_category_change(),
         'hide_verification_badge': True,
     }
-    
+
     return render(request, 'vendors/store/category_change_status.html', context)
 
 
@@ -1717,45 +1692,34 @@ def approve_category_change(category_request_id, admin_user):
     """
     Helper function to approve category change request
     Called from admin panel action
-    
-    Args:
-        category_request_id: ID of CategoryChangeRequest
-        admin_user: User object of admin approving
-    
-    Returns:
-        tuple: (success: bool, message: str)
     """
     try:
         change_request = CategoryChangeRequest.objects.get(id=category_request_id)
-        
+
         if change_request.status != 'pending':
             return False, f'Request is already {change_request.status}'
-        
-        # Update store category
+
         store = change_request.store
         old_category = store.main_category
         new_category = change_request.requested_category
-        
+
         store.main_category = new_category
         store.main_category_last_changed_at = timezone.now()
         store.main_category_change_count = (store.main_category_change_count or 0) + 1
         store.save()
-        
-        # Update request
+
         change_request.status = 'approved'
         change_request.reviewed_by = admin_user
         change_request.reviewed_at = timezone.now()
         change_request.save()
-        
+
         logger.info(
             f"✅ Category change APPROVED: {store.store_name} "
             f"({old_category.name} → {new_category.name}) by {admin_user.email}"
         )
-        
-        # TODO: Send notification email to vendor
-        
+
         return True, f'Category changed from {old_category.name} to {new_category.name}'
-        
+
     except CategoryChangeRequest.DoesNotExist:
         return False, 'Category change request not found'
     except Exception as e:
@@ -1767,39 +1731,28 @@ def reject_category_change(category_request_id, admin_user, reason=''):
     """
     Helper function to reject category change request
     Called from admin panel action
-    
-    Args:
-        category_request_id: ID of CategoryChangeRequest
-        admin_user: User object of admin rejecting
-        reason: Optional rejection reason
-    
-    Returns:
-        tuple: (success: bool, message: str)
     """
     try:
         change_request = CategoryChangeRequest.objects.get(id=category_request_id)
-        
+
         if change_request.status != 'pending':
             return False, f'Request is already {change_request.status}'
-        
-        # Update request
+
         change_request.status = 'rejected'
         change_request.reviewed_by = admin_user
         change_request.reviewed_at = timezone.now()
         if reason:
             change_request.admin_comment = reason
         change_request.save()
-        
+
         logger.info(
             f"❌ Category change REJECTED: {change_request.store.store_name} "
             f"({change_request.current_category.name} → {change_request.requested_category.name}) "
             f"by {admin_user.email}"
         )
-        
-        # TODO: Send notification email to vendor
-        
+
         return True, 'Category change request rejected'
-        
+
     except CategoryChangeRequest.DoesNotExist:
         return False, 'Category change request not found'
     except Exception as e:
@@ -1809,19 +1762,14 @@ def reject_category_change(category_request_id, admin_user, reason=''):
 def get_store_change_summary(store):
     """
     Get summary of store changes for display
-    
-    Returns:
-        dict: Summary of change limits and history
     """
     return {
-        # Store Name
         'can_change_name': store.can_change_store_name(),
         'days_until_name_change': store.days_until_next_name_change(),
         'name_change_count': store.store_name_change_count or 0,
         'name_last_changed': store.store_name_last_changed_at,
         'original_name': store.original_store_name,
-        
-        # Category
+
         'can_change_category': store.can_request_category_change(),
         'days_until_category_change': store.days_until_next_category_change(),
         'category_change_count': store.main_category_change_count or 0,
@@ -1834,32 +1782,22 @@ def get_store_change_summary(store):
 def check_vendor_can_edit_profile(vendor):
     """
     Check what profile fields vendor can edit
-    
-    Returns:
-        dict: Permissions for each field type
     """
     return {
-        # Read-Only (Cannot Edit)
         'cannot_edit': {
-            'full_name': 'Verified from NIN',
+            'full_name': 'Verified from BVN',
             'email': 'Account email',
-            'nin_number': 'Verified identity',
-            'bvn_number': 'Verified banking',
-            'dob': 'From NIN',
-            'gender': 'From NIN',
-            'primary_phone': 'From NIN',
-            'address': 'From NIN',
-            'state': 'From NIN',
-            'lga': 'From NIN',
+            'bvn_number': 'Verified identity',
+            'dob': 'From BVN',
+            'gender': 'From BVN',
+            'primary_phone': 'From BVN',
         },
-        
-        # Can Edit
+
         'can_edit': {
             'alternative_phone': 'Backup contact',
             'whatsapp': 'WhatsApp contact',
         },
-        
-        # Special Cases
+
         'special': {
             'store_name': {
                 'can_edit': vendor.store.can_change_store_name() if hasattr(vendor, 'store') else False,
@@ -1879,52 +1817,47 @@ def store_public(request, slug):
     """
     Public-facing store (accessible to customers)
     No login required
-    
-    Store owners can preview their store even if not published.
-    Non-owners can only see published stores.
     """
-    # First, try to get the store by slug (without is_published filter)
     try:
         store = Store.objects.get(slug=slug)
     except Store.DoesNotExist:
         raise Http404("No Store matches the given query.")
-    
-    # Check if store is published
-    is_owner = (request.user.is_authenticated and 
-                hasattr(request.user, 'vendorprofile') and 
+
+    is_owner = (request.user.is_authenticated and
+                hasattr(request.user, 'vendorprofile') and
                 request.user.vendorprofile == store.vendor)
-    
-    # If not published, only allow owner to view
+
     if not store.is_published and not is_owner:
         raise Http404("No Store matches the given query.")
-    
-    # Get published products
+
     products = store.vendor.products.filter(status='published').order_by('-created_at')
-    
-    # Pagination
+
     from django.core.paginator import Paginator
     paginator = Paginator(products, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     from apps.marketplace.services.distance_service import get_distance_to_store
     buyer_lat = request.session.get('buyer_lat')
     buyer_lon = request.session.get('buyer_lon')
+
+    suborders = SubOrder.objects.filter(store=store)
 
     context = {
         'store': store,
         'vendor': store.vendor,
         'products': page_obj,
         'total_products': products.count(),
-        'total_orders': store.vendor.orders.all().count(),
-        'orders_pending': store.vendor.orders.filter(status='pending').count(),
-        'orders_confirmed': store.vendor.orders.filter(status='confirmed').count(),
-        'orders_cancelled': store.vendor.orders.filter(status__in=['cancelled', 'refunded']).count(),
+        'total_orders': suborders.count(),
+        'products_sold': SubOrderItem.objects.filter(
+            sub_order__store=store,
+            sub_order__status='CONFIRMED'
+        ).aggregate(total=Sum('quantity'))['total'] or 0,
         'is_owner': is_owner,
         'is_preview': not store.is_published and is_owner,
         'distance': get_distance_to_store(buyer_lat, buyer_lon, store),
     }
-    
+
     return render(request, 'vendors/store/public_storefront.html', context)
 
 
@@ -1938,21 +1871,25 @@ def notifications_list(request):
     List all notifications
     """
     vendor = request.user.vendorprofile
-    
+
+    filter_value = request.GET.get('filter', '')
     notifications = vendor.notifications.all().order_by('-created_at')
-    
-    # Mark as read
-    unread = notifications.filter(is_read=False)
-    unread.update(is_read=True, read_at=timezone.now())
-    
-    # Pagination
+
+    if filter_value == 'unread':
+        notifications = notifications.filter(is_read=False)
+    elif filter_value in ['order', 'payment', 'system', 'refund', 'verification', 'admin_message']:
+        notifications = notifications.filter(notification_type=filter_value)
+
     paginator = Paginator(notifications, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
+    unread_count = vendor.notifications.filter(is_read=False).count()
+
     return render(request, 'vendors/notifications/list.html', {
         'page_obj': page_obj,
         'notifications': page_obj,
+        'unread_count': unread_count,
         'hide_verification_badge': True,
     })
 
@@ -1963,17 +1900,15 @@ def notification_detail(request, notification_id):
     """
     vendor = request.user.vendorprofile
     notification = get_object_or_404(Notification, id=notification_id, vendor=vendor)
-    
-    # Mark as read
+
     if not notification.is_read:
         notification.is_read = True
         notification.read_at = timezone.now()
         notification.save()
-    
+
     return render(request, 'vendors/notifications/detail.html', {'notification': notification, 'hide_verification_badge': True})
 
 
-# Notification actions
 @vendor_required
 @require_http_methods(["POST"])
 def notification_mark_read(request, notification_id):
@@ -2015,15 +1950,15 @@ def get_subcategories_ajax(request):
     Get subcategories for a main category (AJAX)
     """
     main_category_id = request.GET.get('main_category_id')
-    
+
     if not main_category_id:
         return JsonResponse({'error': 'Missing main_category_id'}, status=400)
-    
+
     subcategories = SubCategory.objects.filter(
         main_category_id=main_category_id,
         is_active=True
     ).values('id', 'name')
-    
+
     return JsonResponse({'subcategories': list(subcategories)})
 
 
@@ -2035,36 +1970,29 @@ def get_category_attributes_ajax(request):
     Used for dynamic product form
     """
     subcategory_id = request.GET.get('subcategory_id')
-    
+
     if not subcategory_id:
         return JsonResponse({'error': 'Missing subcategory_id'}, status=400)
-    
+
     try:
         subcategory = SubCategory.objects.get(id=subcategory_id)
         attributes = subcategory.attributes.filter(is_active=True).values(
-            'id', 'name', 'field_type', 'options', 'is_required', 
+            'id', 'name', 'field_type', 'options', 'is_required',
             'placeholder', 'help_text', 'sort_order'
         ).order_by('sort_order')
-        
+
         return JsonResponse({
             'subcategory': subcategory.name,
             'attributes': list(attributes)
         })
-    
+
     except SubCategory.DoesNotExist:
         return JsonResponse({'error': 'Subcategory not found'}, status=404)
-    
+
 
 
 """
 Vendor Order Management Views
-Add these to apps/vendors/views.py
-
-Also add to apps/vendors/urls.py:
-    path('orders/', views.vendor_order_list, name='vendor_order_list'),
-    path('orders/<int:suborder_id>/', views.vendor_order_detail, name='vendor_order_detail'),
-    path('orders/<int:suborder_id>/accept/', views.vendor_order_accept, name='vendor_order_accept'),
-    path('orders/<int:suborder_id>/reject/', views.vendor_order_reject, name='vendor_order_reject'),
 """
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -2094,11 +2022,9 @@ def vendor_order_list(request):
     if status_filter:
         suborders = suborders.filter(status=status_filter)
 
-    # Lazy timeout check
     for sub in suborders:
         sub.check_and_apply_timeout()
 
-    # Counts for tabs
     pending_count = SubOrder.objects.filter(store=store, status='PENDING_VENDOR').count()
     accepted_count = SubOrder.objects.filter(store=store, status='ACCEPTED').count()
 
@@ -2123,12 +2049,12 @@ def vendor_order_detail(request, suborder_id):
         SubOrder.objects.select_related(
             'main_order__buyer',
             'store',
+            'dispute',
         ).prefetch_related('items__product'),
         pk=suborder_id,
         store=vendor.store,
     )
 
-    # Lazy timeout check
     sub_order.check_and_apply_timeout()
 
     context = {
@@ -2144,27 +2070,25 @@ def vendor_order_detail(request, suborder_id):
 def vendor_order_accept(request, suborder_id):
     """
     Vendor accepts a SubOrder.
-    - Status → ACCEPTED
-    - Buyer email sent
-    - Buyer can now see vendor contact
     """
     vendor = request.user.vendorprofile
-    sub_order = get_object_or_404(
-        SubOrder,
-        pk=suborder_id,
-        store=vendor.store,
-        status='PENDING_VENDOR',
-    )
+
+    sub_order = SubOrder.objects.filter(pk=suborder_id, store=vendor.store).first()
+    if not sub_order:
+        raise Http404("SubOrder not found")
+
+    if sub_order.status != 'PENDING_VENDOR':
+        messages.warning(request, f"Order cannot be accepted (currently {sub_order.status}).")
+        return redirect('vendors:vendor_order_detail', suborder_id=sub_order.pk)
 
     sub_order.status = 'ACCEPTED'
     sub_order.save(update_fields=['status', 'updated_at'])
 
-    # Send buyer notification
     try:
         from apps.marketplace.services.email_service import send_order_accepted
         send_order_accepted(sub_order)
     except Exception:
-        pass  # Email failure must not block order flow
+        pass
 
     messages.success(request, f'Order #{sub_order.pk} accepted. Buyer has been notified.')
     return redirect('vendors:vendor_order_detail', suborder_id=sub_order.pk)
@@ -2175,17 +2099,16 @@ def vendor_order_accept(request, suborder_id):
 def vendor_order_reject(request, suborder_id):
     """
     Vendor rejects a SubOrder.
-    - Status → REJECTED
-    - Refund triggered automatically via signal
-    - Buyer email sent
     """
     vendor = request.user.vendorprofile
-    sub_order = get_object_or_404(
-        SubOrder,
-        pk=suborder_id,
-        store=vendor.store,
-        status='PENDING_VENDOR',
-    )
+
+    sub_order = SubOrder.objects.filter(pk=suborder_id, store=vendor.store).first()
+    if not sub_order:
+        raise Http404("SubOrder not found")
+
+    if sub_order.status != 'PENDING_VENDOR':
+        messages.warning(request, f"Order cannot be rejected (currently {sub_order.status}).")
+        return redirect('vendors:vendor_order_detail', suborder_id=sub_order.pk)
 
     rejection_reason = request.POST.get('rejection_reason', '').strip()
 
@@ -2193,7 +2116,6 @@ def vendor_order_reject(request, suborder_id):
     sub_order.rejection_reason = rejection_reason
     sub_order.save(update_fields=['status', 'rejection_reason', 'updated_at'])
 
-    # Send buyer notification (refund triggered by signal)
     try:
         from apps.marketplace.services.email_service import send_order_rejected
         send_order_rejected(sub_order)
@@ -2201,4 +2123,4 @@ def vendor_order_reject(request, suborder_id):
         pass
 
     messages.success(request, f'Order #{sub_order.pk} rejected. Buyer will be refunded.')
-    return redirect('vendors:vendor_order_list')
+    return redirect('vendors:orders_list')

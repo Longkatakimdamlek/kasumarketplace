@@ -12,7 +12,10 @@ from django.urls import reverse
 from django.utils import timezone
 from decimal import Decimal
 from difflib import SequenceMatcher
+import logging
 import uuid
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -21,39 +24,51 @@ User = get_user_model()
 # VENDOR PROFILE & VERIFICATION
 # ==========================================
 
+"""
+VendorProfile — complete replacement class.
+
+Paste this in place of the ENTIRE existing `class VendorProfile(models.Model):`
+block in apps/vendors/models.py — from "class VendorProfile(models.Model):"
+down to (but not including) the next class definition ("class VerificationAttempt...").
+
+Requires at the top of models.py (add if not already present):
+    import logging
+    logger = logging.getLogger(__name__)
+"""
+
 class VendorProfile(models.Model):
     """
     Main vendor profile - linked to User model
     Tracks verification status and personal information
+
+    Identity verification: BVN + live selfie only (no OTP).
+    Dojah's /api/v1/kyc/bvn/verify returns identity fields + a
+    selfie_verification.confidence_value in one call. We use the confidence
+    score (not Dojah's own coarse match boolean) to drive a 3-tier outcome:
+    auto-verify, pending admin review, or fail. See views.bvn_verification.
     """
-    
-    # Verification Status Choices
+
+    # Verification Status Choices (overall vendor approval, unchanged)
     VERIFICATION_STATUS_CHOICES = [
         ('pending', 'Pending Verification'),
-        ('nin_verified', 'NIN Verified'),
         ('bvn_verified', 'BVN Verified'),
         ('student_verified', 'Student Verified'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
         ('suspended', 'Suspended'),
     ]
-    
-    IDENTITY_STATUS_CHOICES = [
-        ('not_started', 'Not Started'),
-        ('nin_entered', 'NIN Entered'),
-        ('nin_otp_sent', 'OTP Sent'),
-        ('nin_verified', 'Verified'),
-        ('failed', 'Failed'),
-    ]
-    
+
+    # Bank/identity verification status — single source of truth now.
+    # 'verified'        = auto-verified, confidence >= DOJAH_SELFIE_AUTO_VERIFY_THRESHOLD
+    # 'pending_review'  = borderline confidence, awaiting admin approve/reject
+    # 'failed'          = confidence too low, or admin rejected after review
     BANK_STATUS_CHOICES = [
         ('not_started', 'Not Started'),
-        ('bvn_entered', 'BVN Entered'),
-        ('bvn_otp_sent', 'OTP Sent'),
-        ('bvn_verified', 'Verified'),
+        ('verified', 'Verified'),
+        ('pending_review', 'Pending Admin Review'),
         ('failed', 'Failed'),
     ]
-    
+
     STUDENT_STATUS_CHOICES = [
         ('not_applicable', 'Not a Student'),
         ('not_started', 'Not Started'),
@@ -61,201 +76,162 @@ class VendorProfile(models.Model):
         ('verified', 'Verified'),
         ('rejected', 'Rejected'),
     ]
-    
+
     GENDER_CHOICES = [
         ('male', 'Male'),
         ('female', 'Female'),
         ('other', 'Other'),
     ]
-    
+
+    # ==========================================
     # Basic Info
+    # ==========================================
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='vendorprofile')
     vendor_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    
-    # Personal Information (Auto-filled from NIN)
+
+    # ==========================================
+    # Personal Information (auto-filled from BVN response, immutable once verified)
+    # ==========================================
     full_name = models.CharField(max_length=200, blank=True)
-    phone = models.CharField(max_length=20, blank=True)
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="From BVN phone_number1. Admin-only — masked to vendor via get_masked_phone()."
+    )
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True)
     dob = models.DateField(null=True, blank=True, verbose_name="Date of Birth")
-    address = models.TextField(blank=True)
-    state = models.CharField(max_length=50, blank=True)
-    lga = models.CharField(max_length=100, blank=True, verbose_name="LGA")
-    
-    # NIN/BVN Data (Encrypted in production)
-    nin_number = models.CharField(
-        max_length=11, 
-        blank=True, 
-        validators=[RegexValidator(r'^\d{11}$', 'NIN must be 11 digits')],
-        verbose_name="NIN"
+    calculated_age = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Vendor's age calculated from DOB at time of verification"
     )
+    is_underage = models.BooleanField(
+        default=False,
+        help_text="True if vendor is under 18 years old"
+    )
+
+    # NOTE: address / state / lga intentionally NOT here.
+    # BVN does not return these fields. They are collected on the Store model
+    # during store setup instead.
+
+    # ==========================================
+    # BVN Data — sole identity verification method
+    # ==========================================
     bvn_number = models.CharField(
-        max_length=11, 
+        max_length=11,
         blank=True,
         validators=[RegexValidator(r'^\d{11}$', 'BVN must be 11 digits')],
         verbose_name="BVN"
     )
-    photo_from_nin = CloudinaryField('photo_from_nin', blank=True, null=True)
-    
-    # Student Information (Optional)
+
+    # ==========================================
+    # Selfie verification results (immutable once bank_status == 'verified')
+    # ==========================================
+    identity_selfie = CloudinaryField(
+        'identity_selfie',
+        blank=True,
+        null=True,
+        help_text="Live selfie captured during BVN identity verification. "
+                   "Separate from `selfie` (student verification photo) — never overwrite that field."
+    )
+    selfie_match = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Dojah's own match result (true/false, hardcoded 90% cutoff). "
+                   "Business logic uses selfie_confidence directly, not this field."
+    )
+    selfie_confidence = models.DecimalField(
+        max_digits=6,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text="Dojah confidence_value, 0-100. Drives the 3-tier verification outcome."
+    )
+    selfie_image_url = models.URLField(
+        blank=True,
+        help_text="Dojah-hosted reference copy of the selfie (selfie_image_url from API response)"
+    )
+
+    # ==========================================
+    # Student Information (Optional) — UNCHANGED, separate from identity verification
+    # ==========================================
     matric_number = models.CharField(max_length=50, blank=True)
     department = models.CharField(max_length=100, blank=True)
     level = models.CharField(max_length=20, blank=True)
     student_id_image = CloudinaryField('student_id_image', blank=True, null=True)
-    selfie = CloudinaryField('selfie', blank=True, null=True)
-    
+    selfie = CloudinaryField(
+        'selfie', blank=True, null=True,
+        help_text="Student verification selfie. NOT the same field as identity_selfie."
+    )
+
+    # ==========================================
     # Verification Status
+    # ==========================================
     verification_status = models.CharField(
-        max_length=20, 
-        choices=VERIFICATION_STATUS_CHOICES, 
+        max_length=20,
+        choices=VERIFICATION_STATUS_CHOICES,
         default='pending'
     )
-    identity_status = models.CharField(
-        max_length=20, 
-        choices=IDENTITY_STATUS_CHOICES, 
-        default='not_started'
-    )
     bank_status = models.CharField(
-        max_length=20, 
-        choices=BANK_STATUS_CHOICES, 
+        max_length=20,
+        choices=BANK_STATUS_CHOICES,
         default='not_started'
     )
     student_status = models.CharField(
-        max_length=20, 
-        choices=STUDENT_STATUS_CHOICES, 
+        max_length=20,
+        choices=STUDENT_STATUS_CHOICES,
         default='not_applicable'
     )
-    
+
+    # ==========================================
     # Store Setup Progress
+    # ==========================================
     store_setup_completed = models.BooleanField(default=False)
     store_setup_skipped = models.BooleanField(default=False)
-    
+
+    # ==========================================
     # Admin Review
+    # ==========================================
     admin_comment = models.TextField(blank=True, help_text="Admin notes on verification")
     reviewed_by = models.ForeignKey(
-        User, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='reviewed_vendors'
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
-    
+
+    # ==========================================
     # Verification Timestamps
-    nin_verified_at = models.DateTimeField(null=True, blank=True)
+    # ==========================================
     bvn_verified_at = models.DateTimeField(null=True, blank=True)
     student_verified_at = models.DateTimeField(null=True, blank=True)
     approved_at = models.DateTimeField(null=True, blank=True)
-    
-    # Progress Tracking (JSON field for flexibility)
+
+    # ==========================================
+    # Progress Tracking
+    # ==========================================
     verification_progress = models.JSONField(
-        default=dict, 
+        default=dict,
         blank=True,
         help_text="Tracks current step, timestamps, attempts"
     )
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        verbose_name = "Vendor Profile"
-        verbose_name_plural = "Vendor Profiles"
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"{self.full_name or self.user.email} - {self.verification_status}"
-    
-    @property
-    def is_verified(self):
-        """Check if vendor is fully verified and approved"""
-        return self.verification_status == 'approved'
-    
-    @property
-    def can_sell(self):
-        """Check if vendor can list products (NIN + BVN verified)"""
-        return self.identity_status == 'nin_verified' and self.bank_status == 'bvn_verified'
-    
-    @property
-    def current_step(self):
-        """Calculate which verification step user should see next"""
-        if self.identity_status != 'nin_verified':
-            if self.identity_status == 'nin_otp_sent':
-                return 'nin_otp'
-            return 'nin_entry'
-        
-        if self.bank_status != 'bvn_verified':
-            if self.bank_status == 'bvn_otp_sent':
-                return 'bvn_otp'
-            return 'bvn_entry'
-        
-        if not self.store_setup_completed and not self.store_setup_skipped:
-            return 'store_setup'
-        
-        if self.student_status == 'not_started':
-            return 'student_verification'
-        
-        return 'admin_review'
-    
-    @property
-    def completion_percentage(self):
-        """Calculate verification progress (0-100)"""
-        total_steps = 6
-        completed = 0
-        
-        if self.identity_status == 'nin_verified':
-            completed += 2  # NIN entry + verification
-        elif self.identity_status in ['nin_entered', 'nin_otp_sent']:
-            completed += 1
-        
-        if self.bank_status == 'bvn_verified':
-            completed += 2
-        elif self.bank_status in ['bvn_entered', 'bvn_otp_sent']:
-            completed += 1
-        
-        if self.store_setup_completed or self.store_setup_skipped:
-            completed += 1
-        
-        if self.student_status == 'verified':
-            completed += 1
-        
-        return int((completed / total_steps) * 100)
-    
-    def get_absolute_url(self):
-        return reverse('vendors:dashboard')
-    
 
+    # ==========================================
+    # IP Tracking
+    # ==========================================
     registration_ip = models.GenericIPAddressField(
         null=True, blank=True,
         help_text="IP address used during registration"
-    )
-    nin_verification_ip = models.GenericIPAddressField(
-        null=True, blank=True,
-        help_text="IP address used during NIN verification"
     )
     bvn_verification_ip = models.GenericIPAddressField(
         null=True, blank=True,
         help_text="IP address used during BVN verification"
     )
-    
+
+    # ==========================================
     # Alert Flags (for admin monitoring)
-    has_name_mismatch = models.BooleanField(
-        default=False,
-        help_text="True if NIN name ≠ BVN name"
-    )
-    name_mismatch_details = models.CharField(
-        max_length=500,
-        blank=True,
-        help_text="Details about name mismatch (e.g., 'NIN: John Doe vs BVN: John D. Doe')"
-    )
-    has_duplicate_nin = models.BooleanField(
-        default=False,
-        help_text="True if NIN exists on another account"
-    )
-    duplicate_nin_vendor_id = models.CharField(
-        max_length=100,
-        blank=True,
-        help_text="Vendor ID of account with same NIN"
-    )
+    # ==========================================
     has_duplicate_bvn = models.BooleanField(
         default=False,
         help_text="True if BVN exists on another account"
@@ -265,108 +241,192 @@ class VendorProfile(models.Model):
         blank=True,
         help_text="Vendor ID of account with same BVN"
     )
-    is_underage = models.BooleanField(
-        default=False,
-        help_text="True if vendor is under 18 years old"
-    )
-    calculated_age = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="Vendor's age calculated from DOB"
-    )
-    
+
     admin_internal_notes = models.TextField(
         blank=True,
         help_text="Private notes visible only to admins (not shown to vendor)"
     )
-    
+
     risk_score = models.IntegerField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text="Automated risk assessment score (0-100, higher = riskier)"
     )
-    
-    bvn_full_name = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Full name from BVN verification (for comparison)"
-    )
-    
-    # ✅ METHODS FOR RISK ASSESSMENT AND SECURITY
-    
-    def calculate_risk_score(self):
-        """Calculate automated risk score based on flags"""
-        score = 0
-        
-        if self.has_name_mismatch:
-            score += 40
-        if self.has_duplicate_nin:
-            score += 50
-        if self.has_duplicate_bvn:
-            score += 50
-        if self.is_underage:
-            score += 100  # Critical - should not allow selling
-        
-        # Cap at 100
-        self.risk_score = min(score, 100)
-        return self.risk_score
-    
-    def get_masked_nin(self):
-        """Return masked NIN for vendor view"""
-        if not self.nin_number or len(self.nin_number) < 11:
-            return "***-****-****"
-        return f"***-****-{self.nin_number[-4:]}"
-    
-    def get_masked_bvn(self):
-        """Return masked BVN for vendor view"""
-        if not self.bvn_number or len(self.bvn_number) < 11:
-            return "***-****-****"
-        return f"***-****-{self.bvn_number[-4:]}"
-    
+
+    # ==========================================
+    # Timestamps
+    # ==========================================
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Vendor Profile"
+        verbose_name_plural = "Vendor Profiles"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.full_name or self.user.email} - {self.verification_status}"
+
+    # ==========================================
+    # Properties
+    # ==========================================
+
+    @property
+    def is_verified(self):
+        """Check if vendor is fully verified and approved"""
+        return self.verification_status == 'approved'
+
+    @property
+    def can_sell(self):
+        """Check if vendor can list products (BVN+selfie verified)"""
+        return self.bank_status == 'verified'
+
+    @property
+    def current_step(self):
+        """Calculate which verification step user should see next"""
+        if self.bank_status == 'pending_review':
+            return 'pending_review'
+
+        if self.bank_status != 'verified':
+            return 'bvn_verification'
+
+        if not self.store_setup_completed and not self.store_setup_skipped:
+            return 'store_setup'
+
+        if self.student_status == 'not_started':
+            return 'student_verification'
+
+        return 'admin_review'
+
+    @property
+    def completion_percentage(self):
+        """Calculate verification progress (0-100). 4 total steps."""
+        total_steps = 4
+        completed = 0
+
+        if self.bank_status == 'verified':
+            completed += 1
+        elif self.bank_status == 'pending_review':
+            completed += 0.5
+
+        if self.store_setup_completed or self.store_setup_skipped:
+            completed += 1
+
+        if self.student_status == 'verified':
+            completed += 1
+
+        if self.verification_status == 'approved':
+            completed += 1
+
+        return int((completed / total_steps) * 100)
+
     @property
     def age(self):
         """Calculate current age from DOB"""
         if not self.dob:
             return None
-        
+
         from datetime import date
         today = date.today()
         age = today.year - self.dob.year - (
             (today.month, today.day) < (self.dob.month, self.dob.day)
         )
         return age
-    
-    def check_name_match(self, bvn_name):
-        """
-        Check if BVN name matches NIN name using fuzzy matching
-        Returns: (matches: bool, similarity_score: float, details: str)
-        """
-        if not self.full_name or not bvn_name:
-            return False, 0.0, "Missing name data"
-        
-        nin_name = self.full_name.strip().lower()
-        bvn_name_clean = bvn_name.strip().lower()
-        
-        # Calculate similarity
-        similarity = SequenceMatcher(None, nin_name, bvn_name_clean).ratio()
-        
-        # 80% similarity threshold
-        matches = similarity >= 0.80
-        
-        details = f"NIN: '{self.full_name}' vs BVN: '{bvn_name}' (Similarity: {similarity:.2%})"
-        
-        return matches, similarity, details
 
+    def get_absolute_url(self):
+        return reverse('vendors:dashboard')
+
+    # ==========================================
+    # Risk assessment
+    # ==========================================
+
+    def calculate_risk_score(self):
+        """Calculate automated risk score based on flags"""
+        score = 0
+
+        if self.has_duplicate_bvn:
+            score += 50
+        if self.is_underage:
+            score += 100  # Critical - should not allow selling
+        if self.bank_status == 'pending_review':
+            score += 20  # borderline selfie matches get a small bump for admin visibility
+
+        self.risk_score = min(score, 100)
+        return self.risk_score
+
+    # ==========================================
+    # Masking helpers (admin-only data hidden from vendor view)
+    # ==========================================
+
+    def get_masked_bvn(self):
+        """Return masked BVN for vendor view"""
+        if not self.bvn_number or len(self.bvn_number) < 11:
+            return "***-****-****"
+        return f"***-****-{self.bvn_number[-4:]}"
+
+    def get_masked_phone(self):
+        """Return masked phone for vendor view — admin-only field, full BVN-sourced number hidden"""
+        if not self.phone or len(self.phone) < 4:
+            return "***-***-****"
+        return f"***-***-{self.phone[-4:]}"
+
+    # ==========================================
+    # Immutability enforcement
+    # ==========================================
+
+    def save(self, *args, **kwargs):
+        """
+        Once bank_status == 'verified', the identity fields below become
+        permanently locked. Any attempt to change them through this model
+        (including via admin) is silently reverted and logged as a warning.
+        This is enforced here, not just hidden from forms, so it can't be
+        bypassed by editing the DB through any other code path that still
+        calls .save().
+        """
+        if self.pk:
+            original = VendorProfile.objects.filter(pk=self.pk).values(
+                'bank_status', 'bvn_number', 'full_name', 'gender', 'dob',
+                'selfie_match', 'selfie_confidence'
+            ).first()
+
+            if original and original['bank_status'] == 'verified':
+                locked_fields = [
+                    'bvn_number', 'full_name', 'gender', 'dob',
+                    'selfie_match', 'selfie_confidence'
+                ]
+                for field in locked_fields:
+                    if getattr(self, field) != original[field]:
+                        logger.warning(
+                            f"🚫 BLOCKED: Attempted to modify locked field '{field}' "
+                            f"on verified VendorProfile {self.pk}"
+                        )
+                        setattr(self, field, original[field])
+
+        super().save(*args, **kwargs)
+        
+
+
+class PendingReviewVendor(VendorProfile):
+    """
+    Proxy model — same DB table as VendorProfile, filtered to
+    bank_status='pending_review' in the admin queryset.
+    Gives the review queue its own Django admin menu entry and
+    its own ModelAdmin class (PendingReviewAdmin in admin.py)
+    without touching VendorProfile's admin at all.
+    """
+    class Meta:
+        proxy = True
+        verbose_name        = 'Pending Verification Review'
+        verbose_name_plural = 'Pending Verification Reviews'
 
 
 class VerificationAttempt(models.Model):
     """
-    Audit log for verification attempts (NIN, BVN, Student)
+    Audit log for verification attempts (BVN, Student, OTP)
     Tracks all API calls and responses for compliance
     """
     
     ATTEMPT_TYPE_CHOICES = [
-        ('nin', 'NIN Verification'),
         ('bvn', 'BVN Verification'),
         ('student', 'Student Verification'),
         ('otp', 'OTP Verification'),
@@ -383,7 +443,7 @@ class VerificationAttempt(models.Model):
     attempt_type = models.CharField(max_length=20, choices=ATTEMPT_TYPE_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     
-    # Response Data (sanitized - no full BVN/NIN stored)
+    # Response Data (sanitized - no full BVN stored)
     request_data = models.JSONField(default=dict, blank=True)
     response_data = models.JSONField(default=dict, blank=True)
     error_message = models.TextField(blank=True)
@@ -894,12 +954,9 @@ class Product(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
 
-        # ✅ INVENTORY OVERRIDE LOGIC
-        # If tracking inventory and stock is 0, force out_of_stock status
-        if self.track_inventory and self.stock_quantity <= 0:
-            # Vendor wanted to publish but stock is 0
-            if self.status == 'published':
-                self.status = 'out_of_stock'
+        # Keep published products visible in the marketplace even when stock is zero.
+        # Availability is handled by the stock-based properties and UI, not by
+        # mutating the product status away from 'published'.
 
         # Set published timestamp when status changes to published
         if self.status == 'published' and not self.published_at:
@@ -910,6 +967,24 @@ class Product(models.Model):
             self.full_clean()
         except Exception:
             pass
+
+        # Make the store visible in the marketplace whenever it has a published product.
+        # This also covers existing products already in the database that need their
+        # store visibility synced after the fix.
+        if self.store_id:
+            try:
+                store = self.store
+            except Store.DoesNotExist:
+                store = None
+
+            has_published_products = (
+                self.status == 'published' or
+                Product.objects.filter(store=store, status='published').exclude(pk=self.pk).exists()
+            )
+
+            if store and has_published_products and not store.is_published:
+                store.is_published = True
+                store.save(update_fields=['is_published'])
 
         super().save(*args, **kwargs)
 
@@ -1041,6 +1116,7 @@ class Wallet(models.Model):
     account_number = models.CharField(max_length=20, blank=True)
     bank_name = models.CharField(max_length=100, blank=True)
     bank_code = models.CharField(max_length=10, blank=True)
+    paystack_recipient_code = models.CharField(max_length=100, blank=True, help_text="Paystack transfer recipient code")
     account_holder_name = models.CharField(max_length=200, blank=True)
     
     # Balances

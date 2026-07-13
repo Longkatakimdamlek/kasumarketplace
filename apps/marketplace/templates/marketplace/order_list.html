@@ -37,15 +37,21 @@
 
     <!-- SubOrder header -->
     <div class="flex items-center justify-between px-5 py-4 border-b border-border">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-xs shrink-0">
-          {{ sub.store.store_name|first|upper }}
+      <a href="{% url 'marketplace:store_detail' sub.store.slug %}" class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 rounded-xl overflow-hidden bg-primary/10 shrink-0">
+          {% if sub.store.logo %}
+          <img src="{{ sub.store.logo.url }}" alt="{{ sub.store.store_name }}" class="w-full h-full object-cover" />
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center font-bold text-primary text-xs">
+            {{ sub.store.store_name|first|upper }}
+          </div>
+          {% endif %}
         </div>
-        <div>
-          <p class="text-sm font-semibold text-dark">{{ sub.store.store_name }}</p>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-dark hover:text-primary transition truncate">{{ sub.store.store_name }}</p>
           <p class="text-xs text-muted">₦{{ sub.subtotal|floatformat:0 }}</p>
         </div>
-      </div>
+      </a>
       {% include 'marketplace/partials/status_badge.html' with status=sub.status %}
     </div>
 
@@ -53,14 +59,14 @@
     <div class="px-5 py-4 space-y-3">
       {% for item in sub.items.all %}
       <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-xl overflow-hidden bg-surface shrink-0">
+        <a href="{% url 'marketplace:product_detail' item.product.slug %}" class="w-12 h-12 rounded-xl overflow-hidden bg-surface shrink-0">
           {% with img=item.product.images.all|first %}
           {% if img %}<img src="{{ img.image.url }}" class="w-full h-full object-cover" />
           {% else %}<div class="w-full h-full bg-border rounded-xl"></div>{% endif %}
           {% endwith %}
-        </div>
+        </a>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-dark line-clamp-1">{{ item.product_title }}</p>
+          <a href="{% url 'marketplace:product_detail' item.product.slug %}" class="text-sm font-medium text-dark line-clamp-1 hover:text-primary transition">{{ item.product_title }}</a>
           <p class="text-xs text-muted">x{{ item.quantity }} · ₦{{ item.unit_price|floatformat:0 }} each</p>
         </div>
         <p class="text-sm font-bold text-dark shrink-0">₦{{ item.subtotal|floatformat:0 }}</p>
@@ -140,10 +146,21 @@
         ⏳ Waiting for vendor to accept your order. They have until {{ sub.vendor_deadline|date:"M d, g:i A" }}.
       </div>
     </div>
-    {% elif sub.status == 'REJECTED' %}
+    {% elif sub.status == 'REJECTED' or sub.status == 'REFUNDED' %}
     <div class="px-5 pb-4">
       <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700">
-        ❌ Vendor rejected this order. A refund of ₦{{ sub.subtotal|floatformat:0 }} will be processed within 24 hours.
+        <p class="font-semibold">❌ Vendor rejected this order.</p>
+        {% if sub.status == 'REFUNDED' %}
+        <p class="mt-1">A refund of ₦{{ sub.subtotal|floatformat:0 }} has been processed.</p>
+        {% else %}
+        <p class="mt-1">A refund of ₦{{ sub.subtotal|floatformat:0 }} will be processed within 24 hours.</p>
+        {% endif %}
+        {% if sub.rejection_reason %}
+        <div class="mt-2 rounded-lg border border-red-200 bg-white/70 p-2">
+          <p class="font-semibold uppercase tracking-wide text-[10px] text-red-600">Reason from vendor</p>
+          <p class="mt-1 text-red-700">{{ sub.rejection_reason }}</p>
+        </div>
+        {% endif %}
       </div>
     </div>
     {% elif sub.status == 'CANCELLED' %}
@@ -160,8 +177,18 @@
     </div>
     {% elif sub.status == 'DISPUTED' %}
     <div class="px-5 pb-4">
-      <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-700">
-        🚨 Dispute opened. Our team will review and contact you. Funds are locked until resolved.
+      <div class="rounded-xl p-3 text-xs border
+        {% if sub.dispute.status == 'OPEN' %}bg-rose-50 border-rose-200 text-rose-700
+        {% elif sub.dispute.status == 'UNDER_REVIEW' %}bg-amber-50 border-amber-200 text-amber-700
+        {% elif sub.dispute.status == 'RESOLVED_RELEASE' %}bg-emerald-50 border-emerald-200 text-emerald-700
+        {% elif sub.dispute.status == 'RESOLVED_REFUND' %}bg-purple-50 border-purple-200 text-purple-700
+        {% else %}bg-gray-50 border-gray-200 text-gray-600{% endif %}">
+        {% if sub.dispute.status == 'OPEN' %}🚨 Dispute opened. Our team will review and contact you. Funds are locked.
+        {% elif sub.dispute.status == 'UNDER_REVIEW' %}🔍 Your dispute is under review. We'll notify you of the outcome.
+        {% elif sub.dispute.status == 'RESOLVED_RELEASE' %}✅ Dispute resolved. Funds released to vendor.{% if sub.dispute.admin_note %} Admin note: {{ sub.dispute.admin_note }}{% endif %}
+        {% elif sub.dispute.status == 'RESOLVED_REFUND' %}💜 Dispute resolved. Refund of ₦{{ sub.subtotal|floatformat:0 }} processed. Allow up to 24 hours.{% if sub.dispute.admin_note %} Admin note: {{ sub.dispute.admin_note }}{% endif %}
+        {% elif sub.dispute.status == 'CLOSED' %}🔒 Dispute closed.{% if sub.dispute.admin_note %} {{ sub.dispute.admin_note }}{% endif %}
+        {% else %}🚨 Dispute opened. Funds are locked pending review.{% endif %}
       </div>
     </div>
     {% elif sub.status == 'REFUNDED' %}
