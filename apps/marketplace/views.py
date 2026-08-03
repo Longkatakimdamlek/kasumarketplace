@@ -17,6 +17,7 @@ Views:
 
 import json
 import logging
+from datetime import timedelta
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -27,12 +28,14 @@ from django.contrib import messages
 from django.conf import settings
 from django.utils import timezone
 from django.db.models import Q
+from django.db.models import Sum
 
 from apps.vendors.models import Product, Store, MainCategory, SubCategory
 from apps.marketplace.models import (
     Cart, CartItem,
     MainOrder, SubOrder,
     PaymentTransaction,
+    Promotion,
 )
 from apps.marketplace.services.cart_service import (
     get_or_create_cart,
@@ -190,7 +193,41 @@ def product_list(request):
         distance = get_distance_to_store(buyer_lat, buyer_lon, product.store)
         product.distance = distance
         featured.append(product)
+    
+    # ---- Weekly top seller (single store) — used by mobile hero's dedicated slide ----
+    week_ago = timezone.now() - timedelta(days=7)
 
+    top_seller_store = Store.objects.filter(
+        is_published=True,
+        suborders__payment_status='SUCCESS',
+        suborders__created_at__gte=week_ago,
+    ).annotate(
+        weekly_units_sold=Sum('suborders__items__quantity')
+    ).order_by('-weekly_units_sold').first()
+
+    # Sponsored stores first, fallback to top sellers by WEEKLY units sold
+    # (previously ranked by all-time cumulative sales_count — see audit notes)
+    sponsored_stores = list(
+        Store.objects.filter(
+            is_published=True, is_sponsored=True
+        ).exclude(sponsored_until__lt=timezone.now())[:6]
+    )
+
+    if len(sponsored_stores) < 6:
+        top_stores = Store.objects.filter(
+            is_published=True,
+            suborders__payment_status='SUCCESS',
+            suborders__created_at__gte=week_ago,
+        ).annotate(
+            weekly_units_sold=Sum('suborders__items__quantity')
+        ).order_by('-weekly_units_sold').exclude(
+            id__in=[s.id for s in sponsored_stores]
+        )[:6 - len(sponsored_stores)]
+        spotlight_stores = sponsored_stores + list(top_stores)
+    else:
+        spotlight_stores = sponsored_stores
+
+    vendor_promotions = Promotion.objects.filter(is_active=True)[:5]
     context = {
         'annotated_products': annotated,
         'featured_products': featured,
@@ -200,6 +237,10 @@ def product_list(request):
         'selected_subcategory': subcategory_slug,
         'buyer_lat': buyer_lat,
         'buyer_lon': buyer_lon,
+        'vendor_promotions': vendor_promotions,
+        'spotlight_stores': spotlight_stores,
+        'top_seller_store': top_seller_store,
+        'store_promotion_contact_email': 'support@kasumarketplace.com.ng',
         'paystack_public_key': settings.PAYSTACK_PUBLIC_KEY,
     }
 

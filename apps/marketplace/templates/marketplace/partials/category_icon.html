@@ -1,0 +1,22 @@
+{% load static %}
+{% if category.name == 'Fashion & Accessories' %}
+  <img src="{% static 'images/category-icons/fashion-accessories.webp' %}" alt="Fashion & Accessories category" class="category-image category-image--{{ variant }} object-contain" loading="lazy" width="40" height="40">
+{% elif category.name == 'Tech & Electronics' %}
+  <img src="{% static 'images/category-icons/tech-electronics.webp' %}" alt="Tech & Electronics category" class="category-image category-image--{{ variant }} object-contain" loading="lazy" width="40" height="40">
+{% elif category.name == 'Food & Beverages' %}
+  <img src="{% static 'images/category-icons/food-beverages.webp' %}" alt="Food & Beverages category" class="category-image category-image--{{ variant }} object-contain" loading="lazy" width="40" height="40">
+{% elif category.name == 'Beauty & Personal Care' %}
+  <img src="{% static 'images/category-icons/beauty-personal-care.webp' %}" alt="Beauty & Personal Care category" class="category-image category-image--{{ variant }} object-contain" loading="lazy" width="40" height="40">
+{% elif category.name == 'Education & Stationery' %}
+  <img src="{% static 'images/category-icons/education-stationery.webp' %}" alt="Education & Stationery category" class="category-image category-image--{{ variant }} object-contain" loading="lazy" width="40" height="40">
+{% elif category.name == 'Home & Lifestyle' %}
+  <img src="{% static 'images/category-icons/home-lifestyle.webp' %}" alt="Home & Lifestyle category" class="category-image category-image--{{ variant }} object-contain" loading="lazy" width="40" height="40">
+{% elif category.name == 'Sports & Fitness' %}
+  <img src="{% static 'images/category-icons/sports-fitness.webp' %}" alt="Sports & Fitness category" class="category-image category-image--{{ variant }} object-contain" loading="lazy" width="40" height="40">
+{% elif category.name == 'Services' %}
+  <img src="{% static 'images/category-icons/services.webp' %}" alt="Services category" class="category-image category-image--{{ variant }} object-contain" loading="lazy" width="40" height="40">
+{% elif category.name == 'Events & Entertainment' %}
+  <img src="{% static 'images/category-icons/events-entertainment.webp' %}" alt="Events & Entertainment category" class="category-image category-image--{{ variant }} object-contain" loading="lazy" width="40" height="40">
+{% else %}
+  <img src="{% static 'images/category-icons/miscellaneous.webp' %}" alt="{{ category.name }} category" class="category-image category-image--{{ variant }} object-contain" loading="lazy" width="40" height="40">
+{% endif %}

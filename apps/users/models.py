@@ -378,12 +378,18 @@ class OTPVerification(models.Model):
         if self.attempts >= self.MAX_ATTEMPTS:
             self.is_locked = True
             self.locked_at = timezone.now()
-            self.save(update_fields=['attempts', 'is_locked', 'locked_at'])
+            try:
+                self.save(update_fields=['attempts', 'is_locked', 'locked_at'])
+            except DatabaseError:
+                self.save()
             return {'success': False, 'error': 'Maximum verification attempts exceeded. OTP is now locked.'}
         
         # Verify OTP hash
         if not check_password(otp_code, self.otp_hash):
-            self.save(update_fields=['attempts'])
+            try:
+                self.save(update_fields=['attempts'])
+            except DatabaseError:
+                self.save()
             remaining = self.MAX_ATTEMPTS - self.attempts
             return {
                 'success': False,
@@ -393,7 +399,10 @@ class OTPVerification(models.Model):
         # OTP is valid - mark as used
         self.is_used = True
         self.used_at = timezone.now()
-        self.save(update_fields=['is_used', 'used_at'])
+        try:
+            self.save(update_fields=['is_used', 'used_at'])
+        except DatabaseError:
+            self.save()
         
         return {'success': True, 'error': None}
     

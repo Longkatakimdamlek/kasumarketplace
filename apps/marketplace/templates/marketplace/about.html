@@ -3,180 +3,131 @@
 {% block title %}About KasuMarketplace — The Student Marketplace for KASU{% endblock %}
 
 {% block content %}
-<div class="bg-gradient-to-br from-primary via-emerald-600 to-emerald-800 text-white min-h-screen flex flex-col">
-  <!-- Hero Section -->
-  <div class="max-w-7xl mx-auto px-6 py-16 md:py-20 flex-1 flex items-center">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-      <div>
-        <span class="inline-block bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full mb-4">🎓 About Us</span>
-        <h1 class="font-display font-bold text-4xl md:text-5xl leading-tight mb-6">
-          Empowering Students Through Campus Commerce
-        </h1>
-        <p class="text-white/90 text-lg leading-relaxed mb-8">
-          KasuMarketplace is a modern online marketplace built specifically for students of 
-          Kaduna State University (KASU). Our goal is simple — to create a safe and trusted 
-          platform where students can buy, sell, and grow their businesses within the campus community.
-        </p>
-      </div>
-      
-      <!-- Decorative Shapes -->
-      <div class="hidden md:flex relative h-96 items-center justify-center">
-        <div class="absolute inset-0 flex items-center justify-center">
-          <div class="w-56 h-56 rounded-3xl bg-white/10 rotate-12 absolute"></div>
-          <div class="w-40 h-40 rounded-2xl bg-white/15 -rotate-6 translate-x-12 -translate-y-8 absolute"></div>
-          <div class="text-8xl relative z-10">🛍️</div>
+<style>
+  .about-page { overflow: hidden; background: #f7faf9; color: #10261e; }
+  .about-shell { width: min(100% - 2rem, 72rem); margin-inline: auto; }
+  .about-eyebrow { display: inline-flex; align-items: center; gap: .5rem; border: 1px solid rgba(255,255,255,.24); background: rgba(255,255,255,.1); border-radius: 999px; padding: .45rem .75rem; font-size: .72rem; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+  .about-hero { position: relative; isolation: isolate; background: #063c2d; color: #fff; padding: 3.5rem 0 4rem; }
+  .about-hero::before { content: ""; position: absolute; z-index: -1; width: 32rem; height: 32rem; right: -16rem; top: -12rem; border-radius: 50%; background: radial-gradient(circle, #34d399 0, rgba(52,211,153,.14) 42%, transparent 70%); }
+  .about-hero::after { content: ""; position: absolute; z-index: -1; inset: 0; opacity: .16; background-image: linear-gradient(rgba(255,255,255,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px); background-size: 2.2rem 2.2rem; mask-image: linear-gradient(to bottom, black, transparent); }
+  .hero-grid { display: grid; gap: 2.5rem; align-items: center; }
+  .about-title { margin: 1.15rem 0; max-width: 46rem; font-family: inherit; font-size: clamp(2.55rem, 10vw, 5.5rem); font-weight: 800; letter-spacing: -.065em; line-height: .97; }
+  .about-title em { color: #9cf5c7; font-style: normal; }
+  .about-lede { max-width: 38rem; color: rgba(255,255,255,.78); font-size: 1.05rem; line-height: 1.7; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.7rem; }
+  .about-button { display: inline-flex; align-items: center; justify-content: center; min-height: 3.2rem; padding: 0 1.15rem; border-radius: .8rem; font-weight: 800; transition: transform .25s ease, box-shadow .25s ease, background .25s ease; }
+  .about-button:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0,0,0,.18); }
+  .hero-visual { position: relative; min-height: 17rem; perspective: 900px; }
+  .hero-card { position: absolute; border: 1px solid rgba(255,255,255,.14); border-radius: 1.25rem; backdrop-filter: blur(14px); box-shadow: 0 24px 50px rgba(0,0,0,.24); }
+  .hero-card-main { width: min(82%, 21rem); top: 1rem; left: 50%; padding: .9rem; background: rgba(255,255,255,.13); transform: translateX(-52%) rotate(-4deg); animation: about-float 5s ease-in-out infinite; }
+  .hero-card-mini { right: 1%; bottom: 1.5rem; padding: .95rem 1.05rem; background: #d8fbe7; color: #093b29; transform: rotate(7deg); animation: about-float 5s ease-in-out 1s infinite; }
+  .hero-card-top { left: 2%; top: 0; padding: .65rem .8rem; background: #f6b94e; color: #352004; font-weight: 800; transform: rotate(-8deg); }
+  .product-art { display: grid; place-items: center; height: 8.5rem; border-radius: .9rem; background: linear-gradient(135deg, #1bb779, #0a6b4e); font-size: 4rem; }
+  .section { padding: 4.5rem 0; }
+  .section-soft { background: #edf6f1; }
+  .section-kicker { color: #0a9a62; font-size: .72rem; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+  .section-heading { max-width: 48rem; margin: .7rem 0 1rem; color: #10261e; font-size: clamp(2rem, 6vw, 3.4rem); font-weight: 800; letter-spacing: -.052em; line-height: 1.02; }
+  .section-copy { max-width: 43rem; color: #60736b; line-height: 1.8; }
+  .mission-grid, .vision-grid { display: grid; gap: 2rem; align-items: center; }
+  .quote-card { position: relative; overflow: hidden; border-radius: 1.5rem; padding: 1.7rem; background: #0e4f3a; color: #fff; box-shadow: 0 18px 45px rgba(7,65,47,.18); }
+  .quote-card::after { content: "“"; position: absolute; right: .8rem; bottom: -3rem; color: rgba(255,255,255,.08); font-family: Georgia, serif; font-size: 15rem; line-height: 1; }
+  .quote-card p { position: relative; font-size: 1.2rem; font-weight: 650; line-height: 1.55; }
+  .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: .65rem; margin-top: 1.25rem; }
+  .stat { border-top: 1px solid rgba(255,255,255,.22); padding-top: .7rem; font-size: .72rem; color: rgba(255,255,255,.64); }
+  .stat b { display: block; color: #fff; font-size: 1.15rem; }
+  .tilt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; margin-top: 2.2rem; }
+  .tilt-wrap { perspective: 1000px; }
+  .tilt-card { --mx: 50%; --my: 50%; position: relative; height: 100%; min-height: 13.8rem; overflow: hidden; border: 1px solid rgba(13,77,56,.1); border-radius: 1rem; padding: .9rem; background: #fff; box-shadow: 0 4px 0 rgba(8,69,49,.035), 0 12px 24px rgba(8,69,49,.06); transform-style: preserve-3d; transition: transform .18s ease-out, box-shadow .25s ease; }
+  .tilt-card::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle at var(--mx) var(--my), rgba(48,221,150,.22), transparent 37%); transition: opacity .2s ease; }
+  .tilt-card:hover { box-shadow: 0 24px 42px rgba(6,74,52,.15); }
+  .tilt-card:hover::before { opacity: 1; }
+  .tilt-card > * { position: relative; transform: translateZ(24px); }
+  .feature-icon { display: grid; place-items: center; width: 2.45rem; height: 2.45rem; border-radius: .75rem; background: #e2f8eb; font-size: 1.18rem; }
+  .feature-title { margin: .85rem 0 .45rem; color: #17352a; font-size: 1rem; font-weight: 800; letter-spacing: -.025em; line-height: 1.12; }
+  .feature-copy { color: #62766d; font-size: .78rem; line-height: 1.52; }
+  .categories { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .8rem; }
+  .category-pill { border: 1px solid #cce7d9; border-radius: 999px; padding: .3rem .45rem; background: #f9fffb; color: #287053; font-size: .65rem; font-weight: 700; }
+  .values-list { display: grid; gap: .7rem; margin-top: 2rem; }
+  .value-item { display: grid; grid-template-columns: 2.75rem 1fr auto; gap: 1rem; align-items: center; border: 1px solid #dbe9e1; border-radius: 1rem; padding: 1rem; background: #fff; transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
+  .value-item:hover { transform: translateX(6px); border-color: #88d9ad; box-shadow: 0 12px 24px rgba(13,77,56,.08); }
+  .value-icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: .8rem; background: #e8f8ee; font-size: 1.25rem; }
+  .value-item h3 { color: #17352a; font-weight: 800; }
+  .value-item p { margin-top: .18rem; color: #667a70; font-size: .86rem; line-height: 1.5; }
+  .value-arrow { color: #27a66c; font-size: 1.2rem; transition: transform .2s ease; }.value-item:hover .value-arrow { transform: translateX(4px); }
+  .cta-panel { position: relative; overflow: hidden; border-radius: 1.5rem; padding: 2.25rem 1.35rem; background: #0b513b; color: #fff; text-align: center; }.cta-panel::before { content: ""; position: absolute; width: 26rem; height: 26rem; left: 50%; bottom: -22rem; transform: translateX(-50%); border: 1px solid rgba(255,255,255,.14); border-radius: 50%; box-shadow: 0 0 0 3rem rgba(255,255,255,.04), 0 0 0 6rem rgba(255,255,255,.03); }
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }.reveal.is-visible { opacity: 1; transform: translateY(0); }
+  @keyframes about-float { 50% { transform: translateX(-52%) rotate(-1deg) translateY(-8px); } } .hero-card-mini { animation-name: about-float-mini; } @keyframes about-float-mini { 50% { transform: rotate(7deg) translateY(-8px); } }
+  @media (min-width: 640px) { .about-shell { width: min(100% - 3rem, 72rem); } .about-hero { padding: 5.5rem 0 6rem; } .hero-visual { min-height: 21rem; } .hero-card-main { width: min(100%, 21rem); padding: 1.25rem; } .product-art { height: 11.5rem; font-size: 5.25rem; } .tilt-grid { gap: 1rem; } .tilt-card { min-height: 15.5rem; padding: 1.35rem; border-radius: 1.25rem; } .feature-icon { width: 3rem; height: 3rem; border-radius: .9rem; font-size: 1.45rem; } .feature-title { margin: 1.3rem 0 .55rem; font-size: 1.2rem; } .feature-copy { font-size: .92rem; line-height: 1.65; } .categories { gap: .6rem; margin-top: 1.35rem; } .category-pill { padding: .45rem .75rem; font-size: .8rem; } .cta-panel { padding: 4.5rem 2rem; } }
+  @media (min-width: 768px) { .hero-grid { grid-template-columns: 1.12fr .88fr; } .mission-grid, .vision-grid { grid-template-columns: 1.1fr .9fr; } .tilt-grid { grid-template-columns: repeat(2,1fr); } .tilt-wrap:last-child { grid-column: span 2; } .values-list { grid-template-columns: repeat(2,1fr); } .value-item { grid-template-columns: 2.75rem 1fr auto; } }
+  @media (min-width: 1024px) { .section { padding: 6.5rem 0; } .tilt-grid { grid-template-columns: repeat(3,1fr); } .tilt-wrap:last-child { grid-column: auto; } }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } .hero-card { animation: none; } .tilt-card, .value-item, .about-button { transition: none; } }
+</style>
+
+<main class="about-page">
+  <section class="about-hero">
+    <div class="about-shell hero-grid">
+      <div class="reveal">
+        <span class="about-eyebrow">🎓 KASU's student marketplace</span>
+        <h1 class="about-title">Built by students.<br><em>Built for campus.</em></h1>
+        <p class="about-lede">KasuMarketplace brings buying, selling, and student ambition into one trusted place—so campus commerce can feel as connected as campus life.</p>
+        <div class="hero-actions">
+          <a class="about-button bg-white text-primary" href="{% url 'marketplace:product_list' %}">Explore the marketplace <span class="ml-2">→</span></a>
+          <a class="about-button border border-white/25 text-white" href="#our-story">Our story</a>
         </div>
+      </div>
+      <div class="hero-visual reveal" aria-hidden="true">
+        <div class="hero-card hero-card-top">Made for KASU</div>
+        <div class="hero-card hero-card-main"><div class="product-art">🛍️</div><div class="flex items-center justify-between pt-4"><div><p class="text-sm text-white/60">Campus, connected</p><p class="font-bold">Everything you need, nearby.</p></div><span class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center">↗</span></div></div>
+        <div class="hero-card hero-card-mini"><p class="text-xs opacity-70">A place to</p><p class="font-bold">shop · sell · grow</p></div>
       </div>
     </div>
-  </div>
-</div>
+  </section>
 
-<!-- Main Content -->
-<div class="max-w-7xl mx-auto px-6 py-16 md:py-20">
+  <section id="our-story" class="section"><div class="about-shell mission-grid"><div class="reveal"><p class="section-kicker">Why we exist</p><h2 class="section-heading">Campus commerce should be simple, not scattered.</h2><p class="section-copy">From WhatsApp groups to social posts and word of mouth, student businesses deserve a better home. KasuMarketplace brings products, people, and possibilities into one secure, organised platform.</p><p class="section-copy mt-4">From gadgets and fashion to food, beauty, academic materials, and everyday essentials, students can discover great finds and support local businesses with confidence.</p></div><aside class="quote-card reveal"><p>“A marketplace that makes it easier for every KASU student to earn, discover, and connect.”</p><div class="stat-row"><div class="stat"><b>One</b>campus hub</div><div class="stat"><b>Local</b>student sellers</div><div class="stat"><b>Built</b>for daily life</div></div></aside></div></section>
 
-  <!-- Mission Section -->
-  <div class="mb-16 md:mb-20">
-    <h2 class="font-display font-bold text-3xl md:text-4xl text-dark mb-6">Our Mission</h2>
-    <p class="text-lg text-muted leading-relaxed max-w-3xl">
-      Our mission is to empower students of Kaduna State University by giving them a digital 
-      platform to trade, earn, and connect. KasuMarketplace simplifies buying and selling on 
-      campus by bringing vendors and buyers together in one secure marketplace. 
+  <section class="section section-soft"><div class="about-shell"><div class="reveal"><p class="section-kicker">Built around you</p><h2 class="section-heading">More than a marketplace.</h2><p class="section-copy">A practical launchpad for student entrepreneurs and a safer, easier way for the KASU community to shop.</p></div><div class="tilt-grid">
+    <div class="tilt-wrap reveal"><article class="tilt-card" data-tilt><div class="feature-icon">🏪</div><h3 class="feature-title">Open your own store</h3><p class="feature-copy">Create a storefront, manage inventory, receive orders, and build a brand that reaches the university community.</p></article></div>
+    <div class="tilt-wrap reveal"><article class="tilt-card" data-tilt><div class="feature-icon">✅</div><h3 class="feature-title">Verified vendors</h3><p class="feature-copy">Identity verification helps buyers connect with genuine sellers and strengthens trust across the marketplace.</p></article></div>
+    <div class="tilt-wrap reveal"><article class="tilt-card" data-tilt><div class="feature-icon">🔒</div><h3 class="feature-title">Secure payments</h3><p class="feature-copy">Transactions are securely processed through Paystack, giving buyers and vendors more peace of mind.</p></article></div>
+    <div class="tilt-wrap reveal"><article class="tilt-card" data-tilt><div class="feature-icon">🚶</div><h3 class="feature-title">Made for campus life</h3><p class="feature-copy">Discover products nearby, arrange secure campus meet-ups, and get what you need without the usual wait.</p></article></div>
+    <div class="tilt-wrap reveal"><article class="tilt-card" data-tilt><div class="feature-icon">🛒</div><h3 class="feature-title">Everything, together</h3><p class="feature-copy">Browse multiple verified vendors and categories in one purposeful, easy-to-use place.</p><div class="categories"><span class="category-pill">Gadgets</span><span class="category-pill">Fashion</span><span class="category-pill">Food</span><span class="category-pill">Beauty</span><span class="category-pill">Books</span><span class="category-pill">Services</span></div></article></div>
+  </div></div></section>
 
-      From gadgets and fashion to academic materials and daily essentials, students can 
-      easily find what they need while supporting fellow students who run businesses 
-      within the university community.
-    </p>
-  </div>
+  <section class="section"><div class="about-shell vision-grid"><aside class="quote-card reveal"><p>“We start at KASU—with a vision to empower student entrepreneurs across Nigeria.”</p><div class="mt-6 inline-flex items-center gap-2 text-sm text-emerald-100"><span class="w-2 h-2 bg-emerald-300 rounded-full"></span> Growing together, campus by campus</div></aside><div class="reveal"><p class="section-kicker">Our vision</p><h2 class="section-heading">A future full of student-led businesses.</h2><p class="section-copy">We envision a future where every student entrepreneur has access to digital commerce opportunities and every campus has a marketplace that supports local businesses.</p><p class="section-copy mt-4">KasuMarketplace begins at Kaduna State University, with a long-term vision to become Nigeria's leading campus marketplace—empowering thousands of entrepreneurs and connecting millions of buyers with trusted businesses.</p></div></div></section>
 
-  <!-- Why Choose Us -->
-  <div class="mb-16 md:mb-20">
-    <h2 class="font-display font-bold text-3xl md:text-4xl text-dark mb-8">Why KasuMarketplace?</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <section class="section section-soft"><div class="about-shell"><div class="reveal"><p class="section-kicker">Our values</p><h2 class="section-heading">How we show up for our community.</h2></div><div class="values-list">
+    <article class="value-item reveal"><span class="value-icon">🤝</span><div><h3>Trust</h3><p>Transparency, verification, secure transactions, and a safer environment for everyone.</p></div><span class="value-arrow">→</span></article>
+    <article class="value-item reveal"><span class="value-icon">💡</span><div><h3>Innovation</h3><p>We listen closely and solve real campus challenges—not simply follow trends.</p></div><span class="value-arrow">→</span></article>
+    <article class="value-item reveal"><span class="value-icon">🎓</span><div><h3>Student empowerment</h3><p>Every store is an ambition; we provide the tools to learn, earn, and grow.</p></div><span class="value-arrow">→</span></article>
+    <article class="value-item reveal"><span class="value-icon">🌍</span><div><h3>Community</h3><p>Every purchase supports fellow students and keeps opportunity within KASU.</p></div><span class="value-arrow">→</span></article>
+    <article class="value-item reveal"><span class="value-icon">⭐</span><div><h3>Excellence</h3><p>A reliable, modern marketplace that students can confidently return to every day.</p></div><span class="value-arrow">→</span></article>
+  </div></div></section>
 
-      <!-- Feature 1 -->
-      <div class="bg-card rounded-2xl p-6 shadow-card">
-        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-          <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m7 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-        <h3 class="font-display font-bold text-lg text-dark mb-2">Student Vendors</h3>
-        <p class="text-muted">
-          Students can easily open their own online store and start selling to fellow students 
-          on campus. KasuMarketplace encourages entrepreneurship and student businesses.
-        </p>
-      </div>
+  <section class="section"><div class="about-shell"><div class="cta-panel reveal"><p class="about-eyebrow">Join the community</p><h2 class="mt-5 text-3xl md:text-5xl font-bold tracking-tight relative">Shop smarter. Sell confidently.<br>Grow together.</h2><p class="relative max-w-2xl mx-auto mt-5 text-white/75 leading-relaxed">Whether you're looking for your next purchase or ready to build your own business, KasuMarketplace is your gateway to trusted campus commerce.</p><div class="hero-actions justify-center relative"><a class="about-button bg-white text-primary" href="{% url 'marketplace:product_list' %}">Browse products <span class="ml-2">→</span></a><a class="about-button border border-white/25 text-white" href="{% url 'users:vendor_signup' %}">Start selling</a></div></div></div></section>
+</main>
 
-      <!-- Feature 2 -->
-      <div class="bg-card rounded-2xl p-6 shadow-card">
-        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-          <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-        <h3 class="font-display font-bold text-lg text-dark mb-2">Secure Transactions</h3>
-        <p class="text-muted">
-          We are building strong verification and secure payment systems to ensure 
-          every buyer and seller can trade confidently on the platform.
-        </p>
-      </div>
-
-      <!-- Feature 3 -->
-      <div class="bg-card rounded-2xl p-6 shadow-card">
-        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-          <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-          </svg>
-        </div>
-        <h3 class="font-display font-bold text-lg text-dark mb-2">Built for Campus Life</h3>
-        <p class="text-muted">
-          Designed specifically for campus needs — fast delivery, easy meetups, 
-          and convenient transactions within the university environment.
-        </p>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Values Section -->
-  <div class="mb-16 md:mb-20">
-    <h2 class="font-display font-bold text-3xl md:text-4xl text-dark mb-8">Our Values</h2>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-      <div class="flex gap-4">
-        <div class="flex-shrink-0">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">🤝</div>
-        </div>
-        <div>
-          <h4 class="font-display font-bold text-lg text-dark mb-1">Trust</h4>
-          <p class="text-muted">
-            Building a marketplace where students can confidently trade with one another.
-          </p>
-        </div>
-      </div>
-
-      <div class="flex gap-4">
-        <div class="flex-shrink-0">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">💡</div>
-        </div>
-        <div>
-          <h4 class="font-display font-bold text-lg text-dark mb-1">Innovation</h4>
-          <p class="text-muted">
-            Continuously improving the platform to make campus commerce easier and smarter.
-          </p>
-        </div>
-      </div>
-
-      <div class="flex gap-4">
-        <div class="flex-shrink-0">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">🎓</div>
-        </div>
-        <div>
-          <h4 class="font-display font-bold text-lg text-dark mb-1">Student Empowerment</h4>
-          <p class="text-muted">
-            Helping students start businesses, earn income, and grow entrepreneurial skills.
-          </p>
-        </div>
-      </div>
-
-      <div class="flex gap-4">
-        <div class="flex-shrink-0">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">🌍</div>
-        </div>
-        <div>
-          <h4 class="font-display font-bold text-lg text-dark mb-1">Community</h4>
-          <p class="text-muted">
-            Strengthening the KASU community by supporting student businesses and campus vendors.
-          </p>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- CTA Section -->
-  <div class="bg-gradient-to-br from-primary to-emerald-700 text-white rounded-3xl p-12 text-center">
-    <h2 class="font-display font-bold text-3xl md:text-4xl mb-4">
-      Join the KasuMarketplace Community
-    </h2>
-
-    <p class="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-      Whether you want to shop for great products or start selling your own items, 
-      KasuMarketplace gives you the tools to participate in a thriving campus marketplace.
-    </p>
-
-    <div class="flex flex-col sm:flex-row gap-4 justify-center">
-      <a href="{% url 'marketplace:product_list' %}" class="px-8 py-3 bg-white text-primary font-bold rounded-xl hover:bg-surface transition">
-        Browse Products
-      </a>
-
-      <a href="{% url 'users:vendor_signup' %}" class="px-8 py-3 bg-white/20 text-white font-semibold rounded-xl hover:bg-white/30 transition">
-        Start Selling
-      </a>
-    </div>
-  </div>
-
-</div>
-
+<script>
+  (function () {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const revealItems = document.querySelectorAll('.about-page .reveal');
+    if (reducedMotion || !('IntersectionObserver' in window)) {
+      revealItems.forEach((item) => item.classList.add('is-visible'));
+    } else {
+      const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+        if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
+      }), { threshold: .12 });
+      revealItems.forEach((item) => observer.observe(item));
+    }
+    if (!reducedMotion && window.matchMedia('(pointer: fine)').matches) {
+      document.querySelectorAll('[data-tilt]').forEach((card) => {
+        card.addEventListener('pointermove', (event) => {
+          const box = card.getBoundingClientRect(); const x = (event.clientX - box.left) / box.width; const y = (event.clientY - box.top) / box.height;
+          card.style.setProperty('--mx', (x * 100) + '%'); card.style.setProperty('--my', (y * 100) + '%');
+          card.style.transform = 'rotateX(' + ((.5 - y) * 9) + 'deg) rotateY(' + ((x - .5) * 11) + 'deg) translateY(-6px)';
+        });
+        card.addEventListener('pointerleave', () => { card.style.transform = ''; });
+      });
+    }
+  }());
+</script>
 {% endblock %}

@@ -5,8 +5,8 @@
 
 {% block preview_banner %}
 {% if is_preview %}
-<div class="sticky top-14 z-40 border-b border-brand/20 bg-brand/10 px-4 py-3 md:top-16 md:px-8">
-    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
+<div class="sticky top-14 z-40 border-b border-brand/20 bg-brand/10 px-4 py-3 lg:top-16 lg:px-6">
+    <div class="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
             <svg class="size-5 shrink-0 text-brand" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
@@ -24,339 +24,496 @@
 
 {% block content %}
 <main>
-    <!-- ===================== STORE BANNER ===================== -->
-    <div class="relative h-32 w-full overflow-hidden bg-brand/10 sm:h-40 md:h-48">
-        {% if store.banner %}
-        <img src="{{ store.banner.url }}" alt="{{ store.store_name }}" loading="eager"
-             class="size-full object-cover">
-        {% else %}
-        <div class="absolute inset-0 bg-gradient-to-br from-brand via-brand/70 to-brand/40"></div>
-        {% endif %}
-    </div>
 
-    <div class="mx-auto max-w-7xl px-4 md:px-8">
-        <div class="grid gap-8 lg:grid-cols-[1fr_20rem] lg:gap-12">
+    <!-- =====================================================================
+         MOBILE / TABLET HERO (below lg) — unchanged from the approved
+         mobile design, just re-gated from md: to lg: per the new spec.
+    ===================================================================== -->
+    <div class="lg:hidden">
 
-            <!-- ===================== STORE IDENTITY + DESCRIPTION ===================== -->
-            <div class="animate-fade-up">
-                <div class="-mt-10 flex items-end justify-between gap-3 md:-mt-14">
+        <div class="relative h-56 w-full overflow-hidden rounded-b-[2rem] bg-brand/10">
+            {% if store.banner %}
+            <img src="{{ store.banner.url }}" alt="{{ store.store_name }}" loading="eager" class="size-full object-cover">
+            {% else %}
+            <div class="absolute inset-0 bg-gradient-to-br from-brand via-brand/70 to-brand/40"></div>
+            {% endif %}
+            <svg class="absolute inset-x-0 bottom-0 h-10 w-full text-white" viewBox="0 0 1440 40" preserveAspectRatio="none" aria-hidden="true">
+                <path fill="currentColor" d="M0 24C180 4 360 4 540 24s360 20 540 0 240-20 360 0v16H0Z"/>
+            </svg>
+        </div>
+
+        <div class="flex flex-col items-center px-5">
+            <div class="relative -mt-16 shrink-0">
+                <div class="size-[120px] overflow-hidden rounded-full border-4 border-white bg-white shadow-lg">
                     {% if store.logo %}
-                    <div class="size-20 shrink-0 overflow-hidden rounded-2xl border-4 border-white bg-white shadow-md md:size-24">
-                        <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="size-full object-cover">
-                    </div>
+                    <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="size-full object-cover">
                     {% else %}
-                    <div class="size-20 shrink-0 md:size-24"></div>
-                    {% endif %}
-
-                    <!-- Icon-only contact buttons, pinned top-right of the logo row.
-                         lg:hidden because the sticky "Get in touch" card (below)
-                         already covers this role on desktop — showing both was
-                         the duplicate-icons bug caught in QC. -->
-                    {% if store.phone or store.whatsapp %}
-                    <div class="mb-1 flex items-center gap-2 lg:hidden">
-                        {% if store.phone %}
-                        <a href="tel:{{ store.phone }}" aria-label="Call {{ store.store_name }}"
-                           class="grid size-11 place-items-center rounded-full border border-brand/25 bg-white text-brand shadow-sm transition-all hover:bg-brand/10 active:scale-95">
-                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                            </svg>
-                        </a>
-                        {% endif %}
-                        {% if store.whatsapp %}
-                        <a href="https://wa.me/{{ store.whatsapp|cut:'+' }}" target="_blank" rel="noopener noreferrer" aria-label="Message {{ store.store_name }} on WhatsApp"
-                           class="grid size-11 place-items-center rounded-full bg-brand text-brand-foreground shadow-sm shadow-brand/30 transition-all hover:bg-brand/90 active:scale-95">
-                            <svg class="size-4" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                            </svg>
-                        </a>
-                        {% endif %}
-                    </div>
+                    <div class="flex size-full items-center justify-center bg-brand/10 text-3xl font-bold text-brand">{{ store.store_name|slice:":1" }}</div>
                     {% endif %}
                 </div>
-
-                <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <h1 class="text-pretty text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">{{ store.store_name }}</h1>
-                    {% if store.is_verified %}
-                    {% include 'vendors/components/verification_badge.html' with status="completed" label="Verified Seller" size="sm" show_icon=True %}
-                    {% endif %}
-                    <span class="inline-flex items-center rounded-full bg-brand/10 px-2.5 py-1 text-xs font-semibold text-brand">
-                        {{ store.main_category.name }}
-                    </span>
-                </div>
-
-                {% if store.tagline %}
-                <p class="mt-2 text-sm text-gray-600 md:text-base">{{ store.tagline }}</p>
-                {% endif %}
-
-                <!-- Stat pill row -->
-                <div class="mt-3 flex flex-wrap items-center gap-2">
-                    <span class="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700">
-                        <svg class="size-3.5 fill-brand text-brand" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                        </svg>
-                        {{ store.average_rating|floatformat:1|default:"0.0" }}
-                    </span>
-                    <span class="inline-flex items-center rounded-full bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand">
-                        {{ total_orders|default:0 }} orders
-                    </span>
-                    <span class="inline-flex items-center rounded-full bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand">
-                        {{ total_products|default:0 }} products
-                    </span>
-                    <span class="inline-flex items-center rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600">
-                        Member since {{ store.created_at|date:"M Y" }}
-                    </span>
-                </div>
-
-                <!-- Description -->
-                {% if store.description %}
-                <div class="mt-4">
-                    <p id="store-description" class="text-pretty text-[15px] leading-relaxed text-gray-600 line-clamp-2">{{ store.description }}</p>
-                    <button type="button" id="description-toggle"
-                            class="mt-1.5 text-sm font-semibold text-brand hover:opacity-80" aria-expanded="false">
-                        Read more
-                    </button>
+                {% if store.is_verified %}
+                <div class="absolute -bottom-0.5 -right-0.5 rounded-full bg-white p-0.5 shadow-sm">
+                    {% include 'vendors/components/verification_badge.html' with status="completed" size="sm" show_icon=True icon_only=True %}
                 </div>
                 {% endif %}
             </div>
 
-            <!-- ===================== STICKY CONTACT CARD — DESKTOP ===================== -->
-            {% if store.phone or store.whatsapp %}
-            <aside class="hidden lg:block">
-                <div class="sticky top-24 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Get in touch</p>
-                    <div class="mt-4 grid grid-cols-2 gap-3">
-                        {% if store.phone %}
-                        <a href="tel:{{ store.phone }}"
-                           class="flex h-12 items-center justify-center gap-2 rounded-xl border border-brand/25 bg-brand/10 text-sm font-semibold text-brand transition-all hover:bg-brand/15 active:scale-[0.98]">
-                            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                            </svg>
-                            Call
-                        </a>
-                        {% endif %}
-                        {% if store.whatsapp %}
-                        <a href="https://wa.me/{{ store.whatsapp|cut:'+' }}" target="_blank" rel="noopener noreferrer"
-                           class="flex h-12 items-center justify-center gap-2 rounded-xl bg-brand text-sm font-semibold text-brand-foreground shadow-sm shadow-brand/30 transition-all hover:bg-brand/90 active:scale-[0.98]">
-                            <svg class="size-4" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                            </svg>
-                            WhatsApp
-                        </a>
-                        {% endif %}
-                    </div>
-                    <dl class="mt-6 space-y-3 border-t border-gray-100 pt-5 text-sm">
-                        {% if store.address %}
-                        <div class="flex items-start gap-2 text-gray-600">
-                            <svg class="mt-0.5 size-4 shrink-0 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            </svg>
-                            <dd>{{ store.address|truncatewords:10 }}</dd>
-                        </div>
-                        {% endif %}
-                        <div class="flex items-center gap-2 text-gray-600">
-                            <svg class="size-4 fill-brand text-brand" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                            </svg>
-                            <dd>{{ store.average_rating|floatformat:1|default:"0.0" }} rating</dd>
-                        </div>
-                        {% if store.is_verified %}
-                        <div class="flex items-center gap-2 text-gray-600">
-                            <svg class="size-4 text-brand" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <dd>Verified seller</dd>
-                        </div>
-                        {% endif %}
-                    </dl>
+            <h1 class="mt-4 text-center text-[28px] font-bold leading-tight tracking-tight text-gray-900">{{ store.store_name|upper }}</h1>
+
+            {% if store.address %}
+            <div class="mt-1.5 flex items-center gap-1 text-[15px] text-gray-500">
+                <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span>{{ store.address }}</span>
+            </div>
+            {% endif %}
+
+            {% if store.main_category %}
+            <span class="mt-2.5 inline-flex items-center rounded-full bg-brand px-3.5 py-1.5 text-xs font-semibold text-brand-foreground">{{ store.main_category.name }}</span>
+            {% endif %}
+
+            {% if store.tagline %}
+            <p class="mt-2 text-center text-sm text-gray-500">{{ store.tagline }}</p>
+            {% endif %}
+
+            <div class="mt-5 flex items-center gap-5">
+                <button type="button" id="mobile-like-btn" aria-pressed="false" aria-label="Like this store" class="flex flex-col items-center gap-1.5">
+                    <span class="grid size-12 place-items-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-all active:scale-95">
+                        <svg id="mobile-like-icon" class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.682a4.5 4.5 0 010-6.364z"/>
+                        </svg>
+                    </span>
+                    <span class="text-xs font-medium text-gray-500">Like</span>
+                </button>
+                {% if store.whatsapp %}
+                <a href="https://wa.me/{{ store.whatsapp|cut:'+' }}" target="_blank" rel="noopener noreferrer" aria-label="Message {{ store.store_name }} on WhatsApp" class="flex flex-col items-center gap-1.5">
+                    <span class="grid size-12 place-items-center rounded-full border border-gray-200 bg-white shadow-sm transition-all active:scale-95" style="color:#25D366">
+                        <svg class="size-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    </span>
+                    <span class="text-xs font-medium text-gray-500">WhatsApp</span>
+                </a>
+                {% endif %}
+                {% if store.phone %}
+                <a href="tel:{{ store.phone }}" aria-label="Call {{ store.store_name }}" class="flex flex-col items-center gap-1.5">
+                    <span class="grid size-12 place-items-center rounded-full border border-gray-200 bg-white text-brand shadow-sm transition-all active:scale-95">
+                        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                    </span>
+                    <span class="text-xs font-medium text-gray-500">Call</span>
+                </a>
+                {% endif %}
+                <button type="button" id="mobile-share-btn" aria-label="Share this store" class="flex flex-col items-center gap-1.5">
+                    <span class="grid size-12 place-items-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-all active:scale-95">
+                        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342a3 3 0 100-2.684m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.658m0-9.026a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 0L8.684 10.658m6.632 6.026a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
+                        </svg>
+                    </span>
+                    <span class="text-xs font-medium text-gray-500">Share</span>
+                </button>
+            </div>
+
+            <div class="mt-6 grid w-full grid-cols-4 gap-2">
+                <div class="flex flex-col items-center gap-1.5 rounded-2xl border border-gray-200 bg-white px-2 py-4">
+                    <span class="grid size-8 place-items-center rounded-full bg-amber-50">
+                        <svg class="size-4 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </span>
+                    <span class="text-xl font-bold text-gray-900">{{ store.average_rating|floatformat:1|default:"0.0" }}</span>
+                    <span class="text-[11px] font-medium text-gray-500">Rating</span>
                 </div>
-            </aside>
+                <div class="flex flex-col items-center gap-1.5 rounded-2xl border border-gray-200 bg-white px-2 py-4">
+                    <span class="grid size-8 place-items-center rounded-full bg-brand/10">
+                        <svg class="size-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 11H6L5 9z"/></svg>
+                    </span>
+                    <span class="text-xl font-bold text-gray-900">{{ total_orders|default:0 }}</span>
+                    <span class="text-[11px] font-medium text-gray-500">Orders</span>
+                </div>
+                <div class="flex flex-col items-center gap-1.5 rounded-2xl border border-gray-200 bg-white px-2 py-4">
+                    <span class="grid size-8 place-items-center rounded-full bg-emerald-50">
+                        <svg class="size-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </span>
+                    <span class="text-xl font-bold text-gray-900">{{ total_products|default:0 }}</span>
+                    <span class="text-[11px] font-medium text-gray-500">Products</span>
+                </div>
+                <div class="flex flex-col items-center gap-1.5 rounded-2xl border border-gray-200 bg-white px-2 py-4">
+                    <span class="grid size-8 place-items-center rounded-full bg-blue-50">
+                        <svg class="size-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </span>
+                    <span class="text-xl font-bold text-gray-900">{{ store.created_at|date:"Y" }}</span>
+                    <span class="text-[11px] font-medium leading-tight text-gray-500 text-center">Member<br>Since</span>
+                </div>
+            </div>
+
+            {% if store.description %}
+            <div class="mt-5 w-full rounded-2xl border border-gray-200 bg-white p-4">
+                <p id="mobile-store-description" class="text-sm leading-relaxed text-gray-600 transition-all duration-300 line-clamp-2">{{ store.description|truncatewords:20 }}</p>
+                <button type="button" id="mobile-description-toggle" aria-expanded="false" class="mt-1.5 text-sm font-semibold text-brand hover:opacity-80">Read More</button>
+                <p id="mobile-store-description-full" class="hidden text-sm leading-relaxed text-gray-600">{{ store.description }}</p>
+            </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- ===================== SEARCH, SORT & PRODUCT GRID ===================== -->
-    <section class="mx-auto max-w-7xl px-4 pb-4 pt-8 md:px-8 md:pt-14">
-        <div class="flex items-center gap-3">
-            <button type="button" id="filter-toggle" aria-expanded="false" aria-controls="filter-panel"
-                    class="flex shrink-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-gray-500 transition-colors hover:text-brand">
-                All Products
-                <span id="visible-count" class="text-gray-900 normal-case tracking-normal">({% if products.paginator %}{{ products.paginator.count }}{% else %}{{ products|length }}{% endif %})</span>
-                <svg id="filter-caret" class="size-3.5 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-            </button>
 
-            <div class="relative ml-auto w-40 sm:w-64">
-                <svg class="pointer-events-none absolute left-3.5 top-1/2 size-3.5 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
-                </svg>
-                <input type="search" id="product-search" placeholder="Search Products" aria-label="Search products on this page"
-                       class="h-10 w-full rounded-full border border-gray-300 bg-white pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 transition-colors hover:border-brand/40 focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30">
-            </div>
+    <!-- =====================================================================
+         DESKTOP HERO (lg and up) — matches the approved wireframe:
+         banner, then a single bordered info card (logo | name/location/
+         category/tagline | inline action-button row), then a stats card
+         and a description card side by side below it.
+    ===================================================================== -->
+    <div class="hidden lg:block animate-fade-in">
+        <!-- Banner -->
+        <div class="relative h-[280px] w-full overflow-hidden bg-brand/10">
+            {% if store.banner %}
+            <img src="{{ store.banner.url }}" alt="{{ store.store_name }}" loading="eager" class="size-full object-cover">
+            {% else %}
+            <div class="absolute inset-0 bg-gradient-to-br from-brand via-brand/70 to-brand/40"></div>
+            {% endif %}
+            <svg class="absolute inset-x-0 bottom-0 h-10 w-full text-white" viewBox="0 0 1440 40" preserveAspectRatio="none" aria-hidden="true">
+                <path fill="currentColor" d="M0 24C180 4 360 4 540 24s360 20 540 0 240-20 360 0v16H0Z"/>
+            </svg>
         </div>
 
-        <!-- Filter panel — collapsed by default, opened by the caret above -->
-        <div id="filter-panel" class="hidden overflow-hidden">
-            <div class="mt-3 flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
-                <label for="product-sort" class="text-xs font-semibold text-gray-500">Sort by</label>
-                <select id="product-sort" aria-label="Sort products"
-                        class="h-10 flex-1 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 transition-colors hover:border-brand/40 focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 sm:flex-none sm:w-56">
-                    <option value="featured">Featured</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                    <option value="name">Alphabetical</option>
-                </select>
-            </div>
-        </div>
+        <div class="relative z-10 mx-auto max-w-[1600px] px-10">
 
-        {% if products %}
-        <div id="product-grid" class="mt-6 grid grid-cols-2 gap-3 min-[440px]:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5">
-            {% for product in products %}
-            <div data-product-card
-                 data-title="{{ product.title|lower }}"
-                 data-price="{{ product.price|stringformat:'f' }}"
-                 class="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-300 md:hover:-translate-y-1 md:hover:shadow-xl md:hover:shadow-black/5">
-                <a href="{% url 'product_detail_public' store_slug=store.slug product_slug=product.slug %}" class="flex flex-1 flex-col">
-                    <div class="relative aspect-square overflow-hidden bg-gray-100">
-                        {% if product.images.first %}
-                        <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}" loading="lazy"
-                             class="size-full object-cover transition-transform duration-500 md:group-hover:scale-105">
+            <!-- Info card — logo | store info | action buttons, all in one row -->
+            <div class="relative z-10 -mt-[72px] flex min-h-40 items-start gap-5 pt-14 pb-5">
+                <div class="absolute left-8 top-0 shrink-0">
+                    <div class="size-36 overflow-hidden rounded-full border-4 border-white bg-white shadow-md ring-1 ring-hairline">
+                        {% if store.logo %}
+                        <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="size-full object-cover">
                         {% else %}
-                        <div class="flex size-full items-center justify-center">
-                            <svg class="size-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                            </svg>
-                        </div>
+                        <div class="flex size-full items-center justify-center bg-brand/10 text-2xl font-bold text-brand">{{ store.store_name|slice:":1" }}</div>
                         {% endif %}
-                        {% if product.compare_at_price %}
-                        <span class="absolute left-2 top-2 rounded-md bg-brand px-2 py-1 text-xs font-bold text-brand-foreground shadow-sm">
-                            -{{ product.discount_percentage|floatformat:0 }}%
+                    </div>
+                    {% if store.is_verified %}
+                    <div class="absolute bottom-0 right-0 rounded-full bg-white p-0.5 shadow-sm">
+                        {% include 'vendors/components/verification_badge.html' with status="completed" size="sm" show_icon=True icon_only=True %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="min-w-0 flex-1 pl-44">
+                    <h1 class="truncate text-xl font-bold tracking-tight text-ink">{{ store.store_name|upper }}</h1>
+                    <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-ink-soft">
+                        {% if store.address %}
+                        <span class="flex items-center gap-1">
+                            <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            {{ store.address }}
                         </span>
                         {% endif %}
-                        {% if not product.is_in_stock %}
-                        <div class="absolute inset-0 grid place-items-center bg-white/60 backdrop-blur-[1px]">
-                            <span class="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white">Out of stock</span>
-                        </div>
+                        {% if store.main_category %}
+                        <span class="inline-flex items-center rounded-full bg-brand/10 px-2.5 py-0.5 text-[11px] font-semibold text-brand">{{ store.main_category.name }}</span>
                         {% endif %}
                     </div>
-                    <div class="flex flex-1 flex-col gap-2 p-3 pb-0">
-                        <h3 class="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug text-gray-900">{{ product.title }}</h3>
-                        <div class="mt-auto flex items-baseline gap-2">
-                            <span class="text-base font-bold text-brand">₦{{ product.price|floatformat:2 }}</span>
-                            {% if product.compare_at_price %}
-                            <span class="text-sm text-gray-400 line-through">₦{{ product.compare_at_price|floatformat:2 }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="flex items-center justify-between text-xs text-gray-500">
-                            <span>{{ product.sales_count|default:0 }} sold</span>
-                            <span class="flex items-center gap-1">
-                                <span class="size-1.5 rounded-full {% if product.is_in_stock %}bg-emerald-500{% else %}bg-gray-400{% endif %}"></span>
-                                {% if product.is_in_stock %}In Stock{% else %}Out of Stock{% endif %}
-                            </span>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Quick add-to-cart — sits below price/stock, outside the <a> so it
-                     never triggers navigation to the product page (a <button> cannot
-                     legally nest inside an <a>, and shoppers can add without opening
-                     the product, per the approved wireframe). -->
-                <div class="p-3 pt-2">
-                    {% if product.is_in_stock %}
-                    <button type="button"
-                            onclick="quickAddToCart(this, {{ product.pk }})"
-                            data-default-label="Add to cart"
-                            class="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-brand/10 text-xs font-semibold text-brand transition-all hover:bg-brand hover:text-brand-foreground active:scale-[0.97]">
-                        <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                        </svg>
-                        Add to cart
-                    </button>
-                    {% else %}
-                    <button type="button" disabled
-                            class="h-9 w-full cursor-not-allowed rounded-lg bg-gray-100 text-xs font-semibold text-gray-400">
-                        Out of stock
-                    </button>
+                    {% if store.tagline %}
+                    <p class="mt-1 text-xs text-ink-soft">{{ store.tagline }}</p>
                     {% endif %}
                 </div>
+
+                <div class="flex shrink-0 items-center gap-2 pt-1">
+                    <button type="button" id="desktop-like-btn" aria-pressed="false" aria-label="Like this store" title="Like" class="grid size-10 place-items-center rounded-full border border-hairline bg-white text-ink-soft shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                        <svg id="desktop-like-icon" class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.682a4.5 4.5 0 010-6.364z"/>
+                        </svg>
+                        <span class="sr-only">Like</span>
+                    </button>
+                    {% if store.whatsapp %}
+                    <a href="https://wa.me/{{ store.whatsapp|cut:'+' }}" target="_blank" rel="noopener noreferrer" aria-label="Message on WhatsApp" title="WhatsApp" class="grid size-10 place-items-center rounded-full border border-hairline bg-white text-[#25D366] shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                        <svg class="size-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                        </svg>
+                        <span class="sr-only">WhatsApp</span>
+                    </a>
+                    {% endif %}
+                    {% if store.phone %}
+                    <a href="tel:{{ store.phone }}" aria-label="Call {{ store.store_name }}" title="Call" class="grid size-10 place-items-center rounded-full border border-hairline bg-white text-brand shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                        </svg>
+                        <span class="sr-only">Call</span>
+                    </a>
+                    {% endif %}
+                    <button type="button" id="desktop-share-btn" aria-label="Share this store" title="Share" class="grid size-10 place-items-center rounded-full border border-hairline bg-white text-ink-soft shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342a3 3 0 100-2.684m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.658m0-9.026a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 0L8.684 10.658m6.632 6.026a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
+                        </svg>
+                        <span class="sr-only">Share</span>
+                    </button>
+                </div>
             </div>
-            {% endfor %}
-        </div>
 
-        <p id="no-results" class="mt-10 hidden flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 py-20 text-center text-sm text-gray-500">
-            No products on this page match "<span id="no-results-query"></span>".
-        </p>
+            <!-- Stats card + description card, side by side -->
+            <div class="mt-0 flex gap-3">
+                <div class="flex flex-[1.4] items-center justify-around divide-x divide-hairline rounded-2xl border border-hairline bg-white py-3">
+                    <div class="flex flex-col items-center gap-0.5 px-4">
+                        <span class="text-xl font-bold text-ink">{{ store.average_rating|floatformat:1|default:"0.0" }}</span>
+                        <span class="text-[11px] font-medium text-ink-soft">Rating</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-0.5 px-4">
+                        <span class="text-xl font-bold text-ink">{{ total_orders|default:0 }}</span>
+                        <span class="text-[11px] font-medium text-ink-soft">Orders</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-0.5 px-4">
+                        <span class="text-xl font-bold text-ink">{{ total_products|default:0 }}</span>
+                        <span class="text-[11px] font-medium text-ink-soft">Products</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-0.5 px-4">
+                        <span class="text-xl font-bold text-ink">{{ store.created_at|date:"Y" }}</span>
+                        <span class="text-[11px] font-medium text-ink-soft">Member Since</span>
+                    </div>
+                </div>
 
-        {% if products.has_other_pages %}
-        <nav aria-label="Pagination" class="mt-10 flex items-center justify-center gap-2">
-            {% if products.has_previous %}
-            <a href="?page={{ products.previous_page_number }}" aria-label="Previous page"
-               class="grid size-10 place-items-center rounded-full border border-gray-300 text-gray-700 transition-colors hover:bg-gray-50">
-                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            </a>
-            {% endif %}
-            {% for p in products.paginator.page_range %}
-            <a href="?page={{ p }}" aria-current="{% if p == products.number %}page{% endif %}"
-               class="grid size-10 place-items-center rounded-full text-sm font-semibold transition-colors {% if p == products.number %}bg-brand text-brand-foreground shadow-sm shadow-brand/30{% else %}border border-gray-300 text-gray-700 hover:bg-gray-50{% endif %}">
-                {{ p }}
-            </a>
-            {% endfor %}
-            {% if products.has_next %}
-            <a href="?page={{ products.next_page_number }}" aria-label="Next page"
-               class="grid size-10 place-items-center rounded-full border border-gray-300 text-gray-700 transition-colors hover:bg-gray-50">
-                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </a>
-            {% endif %}
-        </nav>
-        {% endif %}
-
-        {% else %}
-        <div class="mt-6 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 py-20 text-center">
-            <div class="grid size-16 place-items-center rounded-full bg-brand/10 text-brand">
-                <svg class="size-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                </svg>
+                {% if store.description %}
+                <div class="flex flex-1 items-center rounded-2xl border border-hairline bg-white px-4 py-3">
+                    <div>
+                        <p id="desktop-store-description" class="text-xs leading-relaxed text-ink-soft line-clamp-2">{{ store.description }}</p>
+                        <button type="button" id="desktop-description-toggle" aria-expanded="false" class="mt-1 text-xs font-semibold text-brand hover:opacity-80">Read More</button>
+                    </div>
+                </div>
+                {% endif %}
             </div>
-            <h3 class="mt-5 text-lg font-semibold text-gray-900">No products yet</h3>
-            <p class="mt-1.5 max-w-xs text-sm text-gray-500">This store hasn't listed any products yet.</p>
-            {% if is_owner %}
-            <a href="{% url 'vendors:product_create' %}"
-               class="mt-6 flex h-11 items-center justify-center rounded-xl bg-brand px-6 text-sm font-semibold text-brand-foreground shadow-sm shadow-brand/30 transition-all hover:bg-brand/90 active:scale-[0.98]">
-                Add your first product
-            </a>
-            {% endif %}
         </div>
-        {% endif %}
+    </div>
+
+    <!-- =====================================================================
+         MAIN CONTENT — sidebar (desktop) + product grid.
+    ===================================================================== -->
+    <section class="mx-auto max-w-[1600px] px-4 pb-4 pt-8 lg:px-10 lg:pt-8">
+        <div class="lg:grid lg:grid-cols-[300px_1fr] lg:gap-10">
+
+            <!-- ===================== LEFT SIDEBAR (desktop only, sticky) ===================== -->
+            <aside class="hidden lg:block">
+                <div class="sticky top-28 space-y-4">
+
+                    <!-- Store Categories -->
+                    <div class="rounded-2xl border border-hairline bg-white p-5">
+                        <p class="text-sm font-bold text-ink">Store Categories</p>
+                        <nav class="mt-3 space-y-0.5">
+                            <a href="{% url 'vendors:store_public' store.slug %}"
+                               class="flex items-center justify-between rounded-lg px-2.5 py-2 text-sm font-medium transition-colors {% if not selected_subcategory_id %}bg-brand/10 text-brand{% else %}text-ink-soft hover:bg-surface{% endif %}">
+                                All Products
+                            </a>
+                            {% for subcat in subcategories %}
+                            <a href="?subcategory={{ subcat.id }}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if in_stock_only %}&in_stock=1{% endif %}"
+                               class="flex items-center justify-between rounded-lg px-2.5 py-2 text-sm font-medium transition-colors {% if selected_subcategory_id == subcat.id %}bg-brand/10 text-brand{% else %}text-ink-soft hover:bg-surface{% endif %}">
+                                {{ subcat.name }}
+                            </a>
+                            {% endfor %}
+                        </nav>
+                    </div>
+
+                    <!-- Price Filter + Availability (single form, GET, preserves subcategory) -->
+                    <form method="get" action="{% url 'vendors:store_public' store.slug %}" class="rounded-2xl border border-hairline bg-white p-5">
+                        {% if selected_subcategory_id %}
+                        <input type="hidden" name="subcategory" value="{{ selected_subcategory_id }}">
+                        {% endif %}
+
+                        <p class="text-sm font-bold text-ink">Price Filter</p>
+                        <div class="mt-3 flex items-center gap-2">
+                            <input type="number" name="min_price" value="{{ min_price }}" placeholder="Min" min="0"
+                                   class="h-10 w-full rounded-lg border border-hairline bg-surface px-3 text-sm text-ink placeholder:text-ink-soft/60 focus-visible:border-brand focus-visible:outline-none">
+                            <span class="text-ink-soft">–</span>
+                            <input type="number" name="max_price" value="{{ max_price }}" placeholder="Max" min="0"
+                                   class="h-10 w-full rounded-lg border border-hairline bg-surface px-3 text-sm text-ink placeholder:text-ink-soft/60 focus-visible:border-brand focus-visible:outline-none">
+                        </div>
+
+                        <p class="mt-5 text-sm font-bold text-ink">Availability</p>
+                        <label class="mt-3 flex items-center gap-2.5 text-sm text-ink-soft">
+                            <input type="checkbox" name="in_stock" value="1" {% if in_stock_only %}checked{% endif %}
+                                   class="size-4 rounded border-hairline text-brand focus:ring-brand">
+                            In Stock Only
+                        </label>
+
+                        <button type="submit" class="mt-5 h-10 w-full rounded-lg bg-brand text-sm font-semibold text-brand-foreground transition-colors hover:bg-brand/90">
+                            Apply Filters
+                        </button>
+                        {% if selected_subcategory_id or min_price or max_price or in_stock_only %}
+                        <a href="{% url 'vendors:store_public' store.slug %}" class="mt-2 block text-center text-xs font-medium text-ink-soft hover:text-brand">Clear all filters</a>
+                        {% endif %}
+                    </form>
+
+                    <!-- Sort -->
+                    <div class="rounded-2xl border border-hairline bg-white p-5">
+                        <label for="product-sort" class="text-sm font-bold text-ink">Sort</label>
+                        <select id="product-sort" aria-label="Sort products"
+                                class="mt-3 h-10 w-full rounded-lg border border-hairline bg-surface px-3 text-sm font-medium text-ink focus-visible:border-brand focus-visible:outline-none">
+                            <option value="featured">Featured</option>
+                            <option value="price-asc">Price: Low to High</option>
+                            <option value="price-desc">Price: High to Low</option>
+                            <option value="name">Alphabetical</option>
+                        </select>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- ===================== RIGHT CONTENT ===================== -->
+            <div>
+                <!-- Search Products (unique to this section — not duplicated in header) -->
+                <div class="relative">
+                    <svg class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
+                    </svg>
+                    <input type="search" id="product-search" placeholder="Search products in this store..." aria-label="Search products on this page"
+                           class="h-12 w-full rounded-full border border-hairline bg-white pl-11 pr-4 text-sm text-ink placeholder:text-ink-soft/60 transition-colors focus-visible:border-brand focus-visible:outline-none">
+                </div>
+
+                <p id="visible-count" class="mt-4 text-sm text-ink-soft">
+                    {% if products.paginator %}{{ products.paginator.count }}{% else %}{{ products|length }}{% endif %} products
+                </p>
+
+                <!-- Mobile/tablet-only sort control (sidebar with sort is desktop-only) -->
+                <div class="mt-3 lg:hidden">
+                    <select id="product-sort-mobile" aria-label="Sort products"
+                            class="h-11 w-full rounded-full border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 focus-visible:border-brand focus-visible:outline-none">
+                        <option value="featured">Sort: Featured</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                        <option value="name">Alphabetical</option>
+                    </select>
+                </div>
+
+                {% if products %}
+                <div id="product-grid" class="mt-6 grid grid-cols-2 gap-4 min-[440px]:grid-cols-3 lg:grid-cols-4 lg:gap-6">
+                    {% for product in products %}
+                    <div data-product-card
+                         data-title="{{ product.title|lower }}"
+                         data-price="{{ product.price|stringformat:'f' }}"
+                         class="group tilt-card flex flex-col overflow-hidden rounded-[24px] border border-hairline bg-white transition-all duration-300 lg:hover:-translate-y-1 lg:hover:shadow-xl lg:hover:shadow-black/5"
+                         style="transform-style: preserve-3d; transition: transform 0.25s ease;">
+                        <a href="{% url 'product_detail_public' store_slug=store.slug product_slug=product.slug %}" class="flex flex-1 flex-col">
+                            <div class="relative aspect-square overflow-hidden bg-gray-100">
+                                {% if product.images.first %}
+                                <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}" loading="lazy"
+                                     class="size-full object-cover transition-transform duration-500 lg:group-hover:scale-105">
+                                {% else %}
+                                <div class="flex size-full items-center justify-center">
+                                    <svg class="size-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                    </svg>
+                                </div>
+                                {% endif %}
+                                {% if product.compare_at_price %}
+                                <span class="absolute left-3 top-3 rounded-md bg-brand px-2 py-1 text-xs font-bold text-brand-foreground shadow-sm">
+                                    -{{ product.discount_percentage|floatformat:0 }}%
+                                </span>
+                                {% endif %}
+                                {% if not product.is_in_stock %}
+                                <div class="absolute inset-0 grid place-items-center bg-white/60 backdrop-blur-[1px]">
+                                    <span class="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white">Out of stock</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex flex-1 flex-col gap-2 p-4 pb-0">
+                                <h3 class="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug text-ink">{{ product.title }}</h3>
+                                <div class="mt-auto flex items-baseline gap-2">
+                                    <span class="text-base font-bold text-ink">₦{{ product.price|floatformat:2 }}</span>
+                                    {% if product.compare_at_price %}
+                                    <span class="text-sm text-ink-soft/70 line-through">₦{{ product.compare_at_price|floatformat:2 }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-ink-soft">
+                                    <span>{{ product.sales_count|default:0 }} sold</span>
+                                    <span class="flex items-center gap-1">
+                                        <span class="size-1.5 rounded-full {% if product.is_in_stock %}bg-emerald-500{% else %}bg-gray-400{% endif %}"></span>
+                                        {% if product.is_in_stock %}In Stock{% else %}Out of Stock{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <div class="p-4 pt-3">
+                            {% if product.is_in_stock %}
+                            <button type="button"
+                                    onclick="quickAddToCart(this, {{ product.pk }})"
+                                    data-default-label="Add to cart"
+                                    class="flex h-10 w-full items-center justify-center gap-1.5 rounded-full bg-brand text-xs font-semibold text-brand-foreground transition-all hover:bg-brand/90 active:scale-[0.97]">
+                                <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                </svg>
+                                Add to Cart
+                            </button>
+                            {% else %}
+                            <button type="button" disabled class="h-10 w-full cursor-not-allowed rounded-full bg-gray-100 text-xs font-semibold text-gray-400">
+                                Out of stock
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <p id="no-results" class="mt-10 hidden flex-col items-center justify-center rounded-2xl border border-dashed border-hairline py-20 text-center text-sm text-ink-soft">
+                    No products on this page match "<span id="no-results-query"></span>".
+                </p>
+
+                {% if products.has_other_pages %}
+                {% with base_qs="" %}
+                <nav aria-label="Pagination" class="mt-10 flex items-center justify-center gap-2">
+                    {% if products.has_previous %}
+                    <a href="?page={{ products.previous_page_number }}{% if selected_subcategory_id %}&subcategory={{ selected_subcategory_id }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if in_stock_only %}&in_stock=1{% endif %}"
+                       aria-label="Previous page" class="grid size-10 place-items-center rounded-full border border-hairline text-ink transition-colors hover:bg-surface">
+                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </a>
+                    {% endif %}
+                    {% for p in products.paginator.page_range %}
+                    <a href="?page={{ p }}{% if selected_subcategory_id %}&subcategory={{ selected_subcategory_id }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if in_stock_only %}&in_stock=1{% endif %}"
+                       aria-current="{% if p == products.number %}page{% endif %}"
+                       class="grid size-10 place-items-center rounded-full text-sm font-semibold transition-colors {% if p == products.number %}bg-brand text-brand-foreground{% else %}border border-hairline text-ink hover:bg-surface{% endif %}">
+                        {{ p }}
+                    </a>
+                    {% endfor %}
+                    {% if products.has_next %}
+                    <a href="?page={{ products.next_page_number }}{% if selected_subcategory_id %}&subcategory={{ selected_subcategory_id }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if in_stock_only %}&in_stock=1{% endif %}"
+                       aria-label="Next page" class="grid size-10 place-items-center rounded-full border border-hairline text-ink transition-colors hover:bg-surface">
+                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                    {% endif %}
+                </nav>
+                {% endwith %}
+                {% endif %}
+
+                {% else %}
+                <div class="mt-6 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-hairline py-20 text-center">
+                    <div class="grid size-16 place-items-center rounded-full bg-brand/10 text-brand">
+                        <svg class="size-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                    </div>
+                    <h3 class="mt-5 text-lg font-semibold text-ink">
+                        {% if selected_subcategory_id or min_price or max_price or in_stock_only %}No products match these filters{% else %}No products yet{% endif %}
+                    </h3>
+                    <p class="mt-1.5 max-w-xs text-sm text-ink-soft">
+                        {% if selected_subcategory_id or min_price or max_price or in_stock_only %}Try clearing a filter or viewing all products.{% else %}This store hasn't listed any products yet.{% endif %}
+                    </p>
+                    {% if is_owner and not selected_subcategory_id and not min_price and not max_price and not in_stock_only %}
+                    <a href="{% url 'vendors:product_create' %}"
+                       class="mt-6 flex h-11 items-center justify-center rounded-full bg-brand px-6 text-sm font-semibold text-brand-foreground transition-all hover:bg-brand/90 active:scale-[0.98]">
+                        Add your first product
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </section>
 </main>
 
-<!-- Toast for quick add-to-cart feedback -->
-<div id="toast" class="pointer-events-none fixed bottom-6 left-1/2 z-50 max-w-xs -translate-x-1/2 rounded-2xl bg-gray-900 px-5 py-3 text-center text-sm font-medium text-white shadow-xl transition-all"
-     style="transform: translate(-50%, 100px); opacity: 0;"></div>
 {% endblock %}
 
 {% block extra_body %}
-<style>
-    #toast.show { transform: translate(-50%, 0) !important; opacity: 1 !important; }
-</style>
 <script>
-    // CSRF (same pattern used on the product detail page)
     function getCookie(name) {
         let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
         return v ? v[2] : null;
     }
     const CSRF = getCookie('csrftoken');
 
-    function showToast(msg, type) {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.className = 'pointer-events-none fixed bottom-6 left-1/2 z-50 max-w-xs -translate-x-1/2 rounded-2xl px-5 py-3 text-center text-sm font-medium text-white shadow-xl transition-all show ' + (type === 'error' ? 'bg-red-500' : 'bg-gray-900');
-        setTimeout(() => t.classList.remove('show'), 2500);
-    }
-
-    // Quick add-to-cart directly from the product card — adds qty 1 without
-    // navigating to the product detail page.
     function quickAddToCart(btn, productId) {
         const originalLabel = btn.innerHTML;
         btn.disabled = true;
@@ -375,10 +532,14 @@
                 btn.textContent = 'Added ✓';
                 setTimeout(() => { btn.innerHTML = originalLabel; }, 1500);
                 const badge = document.getElementById('cart-badge');
-                if (badge && data.cart_total_items > 0) {
-                    badge.textContent = data.cart_total_items;
-                    badge.classList.remove('hidden');
-                    badge.classList.add('grid');
+                const badgeDesktop = document.getElementById('cart-badge-desktop');
+                if (data.cart_total_items > 0) {
+                    [badge, badgeDesktop].forEach(function (b) {
+                        if (!b) return;
+                        b.textContent = data.cart_total_items;
+                        b.classList.remove('hidden');
+                        b.classList.add('grid');
+                    });
                 }
             } else {
                 showToast(data.message || 'Could not add to cart', 'error');
@@ -392,49 +553,95 @@
         });
     }
 
-    // Filter panel toggle
+    // Read-more toggle — MOBILE/TABLET
     (function () {
-        const toggle = document.getElementById('filter-toggle');
-        const panel = document.getElementById('filter-panel');
-        const caret = document.getElementById('filter-caret');
-        if (!toggle || !panel) return;
+        const truncated = document.getElementById('mobile-store-description');
+        const full = document.getElementById('mobile-store-description-full');
+        const toggle = document.getElementById('mobile-description-toggle');
+        if (!truncated || !full || !toggle) return;
         toggle.addEventListener('click', function () {
             const expanded = toggle.getAttribute('aria-expanded') === 'true';
-            panel.classList.toggle('hidden', expanded);
-            caret.style.transform = expanded ? '' : 'rotate(180deg)';
+            truncated.classList.toggle('hidden', !expanded);
+            full.classList.toggle('hidden', expanded);
             toggle.setAttribute('aria-expanded', String(!expanded));
+            toggle.textContent = expanded ? 'Read More' : 'Read Less';
         });
     })();
 
-    // Read-more toggle for store description
+    // Read-more toggle — DESKTOP
     (function () {
-        const desc = document.getElementById('store-description');
-        const toggle = document.getElementById('description-toggle');
+        const desc = document.getElementById('desktop-store-description');
+        const toggle = document.getElementById('desktop-description-toggle');
         if (!desc || !toggle) return;
         toggle.addEventListener('click', function () {
             const expanded = toggle.getAttribute('aria-expanded') === 'true';
             desc.classList.toggle('line-clamp-2', expanded);
             toggle.setAttribute('aria-expanded', String(!expanded));
-            toggle.textContent = expanded ? 'Read more' : 'Read less';
+            toggle.textContent = expanded ? 'Read More' : 'Read Less';
         });
     })();
 
-    // Client-side search + sort — scoped to the products already rendered on
-    // this server-paginated page (search/sort do not cross page boundaries;
-    // the input placeholder says "this page" so that's clear to shoppers).
+    // Favorite / Like button — placeholder toggle (mobile + desktop instances)
+    (function () {
+        ['mobile', 'desktop'].forEach(function (prefix) {
+            const btn = document.getElementById(prefix + '-like-btn');
+            const icon = document.getElementById(prefix + '-like-icon');
+            if (!btn || !icon) return;
+            btn.addEventListener('click', function () {
+                const liked = btn.getAttribute('aria-pressed') === 'true';
+                btn.setAttribute('aria-pressed', String(!liked));
+                icon.setAttribute('fill', liked ? 'none' : 'currentColor');
+                icon.classList.toggle('text-red-500', !liked);
+                btn.classList.toggle('text-red-500', !liked);
+                btn.classList.toggle('text-gray-500', liked);
+            });
+        });
+    })();
+
+    // Share button — native share sheet, falls back to copying the URL (mobile + desktop instances)
+    (function () {
+        ['mobile-share-btn', 'desktop-share-btn'].forEach(function (id) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            btn.addEventListener('click', async function () {
+                const shareData = { title: document.title, text: 'Check out this store on KasuMarketplace', url: window.location.href };
+                if (navigator.share) {
+                    try { await navigator.share(shareData); } catch (e) { /* user cancelled */ }
+                } else {
+                    try {
+                        await navigator.clipboard.writeText(window.location.href);
+                        showToast('Link copied to clipboard', 'success');
+                    } catch (e) {
+                        showToast('Could not copy link', 'error');
+                    }
+                }
+            });
+        });
+    })();
+
+    // Client-side search + sort — scoped to products rendered on this page.
+    // Two sort selects exist (desktop sidebar + mobile row); both drive the
+    // same grid and stay in sync with each other.
     (function () {
         const grid = document.getElementById('product-grid');
         if (!grid) return;
         const cards = Array.from(grid.querySelectorAll('[data-product-card]'));
         const searchInput = document.getElementById('product-search');
-        const sortSelect = document.getElementById('product-sort');
+        const sortSelectDesktop = document.getElementById('product-sort');
+        const sortSelectMobile = document.getElementById('product-sort-mobile');
         const noResults = document.getElementById('no-results');
         const noResultsQuery = document.getElementById('no-results-query');
         const visibleCount = document.getElementById('visible-count');
 
+        function currentSort() {
+            return (sortSelectDesktop && sortSelectDesktop.offsetParent !== null)
+                ? sortSelectDesktop.value
+                : (sortSelectMobile ? sortSelectMobile.value : 'featured');
+        }
+
         function apply() {
             const query = searchInput.value.trim().toLowerCase();
-            const sort = sortSelect.value;
+            const sort = currentSort();
 
             let visible = cards.filter(card => card.dataset.title.includes(query));
 
@@ -449,7 +656,7 @@
                 grid.appendChild(card);
             });
 
-            if (visibleCount) visibleCount.textContent = sorted.length;
+            if (visibleCount) visibleCount.textContent = sorted.length + ' products';
 
             if (sorted.length === 0 && query) {
                 noResults.classList.remove('hidden');
@@ -462,7 +669,14 @@
         }
 
         searchInput.addEventListener('input', apply);
-        sortSelect.addEventListener('change', apply);
+        if (sortSelectDesktop) sortSelectDesktop.addEventListener('change', function () {
+            if (sortSelectMobile) sortSelectMobile.value = sortSelectDesktop.value;
+            apply();
+        });
+        if (sortSelectMobile) sortSelectMobile.addEventListener('change', function () {
+            if (sortSelectDesktop) sortSelectDesktop.value = sortSelectMobile.value;
+            apply();
+        });
     })();
 </script>
 {% endblock %}

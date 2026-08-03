@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from .decorators import vendor_required
+from decimal import Decimal, InvalidOperation
 
 """
 Vendor App Views
@@ -1812,6 +1813,7 @@ def check_vendor_can_edit_profile(vendor):
 
 # ==========================================
 # PUBLIC STOREFRONT VIEW
+# ==========================================================================
 
 def store_public(request, slug):
     """
@@ -1830,7 +1832,43 @@ def store_public(request, slug):
     if not store.is_published and not is_owner:
         raise Http404("No Store matches the given query.")
 
-    products = store.vendor.products.filter(status='published').order_by('-created_at')
+    all_products = store.vendor.products.filter(status='published').order_by('-created_at')
+    total_products_count = all_products.count()  # computed BEFORE any filter is applied
+
+    # ---- Sidebar data: subcategories under this store's locked main category ----
+    subcategories = SubCategory.objects.filter(
+        main_category=store.main_category,
+        is_active=True
+    ).order_by('name')
+
+    products = all_products
+
+    # ---- Filter: subcategory ----
+    selected_subcategory_id = request.GET.get('subcategory')
+    if selected_subcategory_id:
+        products = products.filter(subcategory_id=selected_subcategory_id)
+
+    # ---- Filter: price range ----
+    min_price_raw = request.GET.get('min_price', '').strip()
+    max_price_raw = request.GET.get('max_price', '').strip()
+    min_price = None
+    max_price = None
+    try:
+        if min_price_raw:
+            min_price = Decimal(min_price_raw)
+            products = products.filter(price__gte=min_price)
+        if max_price_raw:
+            max_price = Decimal(max_price_raw)
+            products = products.filter(price__lte=max_price)
+    except InvalidOperation:
+        pass  # ignore malformed price input rather than 500ing
+
+    # ---- Filter: availability ----
+    in_stock_only = request.GET.get('in_stock') == '1'
+    if in_stock_only:
+        products = products.filter(
+            Q(track_inventory=False) | Q(stock_quantity__gt=0)
+        )
 
     from django.core.paginator import Paginator
     paginator = Paginator(products, 12)
@@ -1847,19 +1885,23 @@ def store_public(request, slug):
         'store': store,
         'vendor': store.vendor,
         'products': page_obj,
-        'total_products': products.count(),
+        'total_products': total_products_count,
         'total_orders': suborders.count(),
         'products_sold': SubOrderItem.objects.filter(
             sub_order__store=store,
             sub_order__status='CONFIRMED'
         ).aggregate(total=Sum('quantity'))['total'] or 0,
+        'subcategories': subcategories,
+        'selected_subcategory_id': int(selected_subcategory_id) if selected_subcategory_id else None,
+        'min_price': min_price_raw,
+        'max_price': max_price_raw,
+        'in_stock_only': in_stock_only,
         'is_owner': is_owner,
         'is_preview': not store.is_published and is_owner,
         'distance': get_distance_to_store(buyer_lat, buyer_lon, store),
     }
 
     return render(request, 'vendors/store/public_storefront.html', context)
-
 
 # ==========================================
 # NOTIFICATIONS

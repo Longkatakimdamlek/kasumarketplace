@@ -1,0 +1,23 @@
+{# Shared notification and loading primitives. Set loader_text when including if needed. #}
+<div id="marketplace-toast-region" class="marketplace-toast-region" aria-live="polite" aria-relevant="additions" aria-atomic="false"></div>
+{% if messages %}<div class="django-toast-source" hidden aria-hidden="true">{% for message in messages %}<span data-level="{{ message.tags }}" data-text="{{ message }}"></span>{% endfor %}</div>{% endif %}
+
+<div id="marketplace-loader" class="marketplace-loader" role="status" aria-live="polite" aria-busy="true" aria-hidden="true" data-default-text="{{ loader_text|default:'Loading Marketplace...' }}">
+  <div class="marketplace-loader__backdrop" aria-hidden="true"></div>
+  <div class="marketplace-loader__content">
+    <div class="marketplace-loader__orbit" aria-hidden="true">
+      <span style="--i:0"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6zM8 8V6a4 4 0 0 1 8 0v2"/></svg></span>
+      <span style="--i:1"><svg viewBox="0 0 24 24"><path d="M3 4h2l2 11h10l2-7H6M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm7 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg></span>
+      <span style="--i:2"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 19h2"/></svg></span>
+      <span style="--i:3"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="1"/><path d="M2 19h20M9 19l1-3m4 0 1 3"/></svg></span>
+      <span style="--i:4"><svg viewBox="0 0 24 24"><path d="m7 4 5 2 5-2 4 4-3 4-2-1v9H8v-9l-2 1-3-4z"/></svg></span>
+      <span style="--i:5"><svg viewBox="0 0 24 24"><path d="M3 15c4 0 5-5 7-8 2 4 5 6 11 7v4H3zM6 18h13"/></svg></span>
+      <span style="--i:6"><svg viewBox="0 0 24 24"><path d="m3 7 9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4m-9 4v10"/></svg></span>
+      <span style="--i:7"><svg viewBox="0 0 24 24"><rect x="7" y="6" width="10" height="12" rx="3"/><path d="M9 2h6l1 4H8zM8 18l1 4h6l1-4M12 9v3l2 1"/></svg></span>
+      <span style="--i:8"><svg viewBox="0 0 24 24"><path d="M4 14v-3a8 8 0 0 1 16 0v3M4 14h4v6H6a2 2 0 0 1-2-2zm16 0h-4v6h2a2 2 0 0 0 2-2z"/></svg></span>
+      <span style="--i:9"><svg viewBox="0 0 24 24"><path d="M4 10h16v11H4zM3 6h18v4H3zM12 6v15M12 6c-3 0-5-1-5-3 3 0 5 1 5 3zm0 0c3 0 5-1 5-3-3 0-5 1-5 3z"/></svg></span>
+    </div>
+    <div class="marketplace-loader__brand" aria-label="KasuMarketplace"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 7h9l5 7 5-7h9l-9 13 10 21H29l-5-10-5 10H9l10-21z"/></svg><span>Kasu<span>Marketplace</span></span></div>
+    <p class="marketplace-loader__text" data-loader-message>{{ loader_text|default:'Loading Marketplace...' }}</p>
+  </div>
+</div>

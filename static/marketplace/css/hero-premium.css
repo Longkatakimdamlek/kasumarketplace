@@ -1,0 +1,106 @@
+/* Layered, product-led atmosphere for the desktop marketplace hero. */
+#hero-3d {
+  background: #072c1a;
+  isolation: isolate;
+}
+
+#hero-gradient {
+  background:
+    radial-gradient(circle at 76% 18%, rgba(88, 211, 142, 0.34), transparent 24%),
+    radial-gradient(circle at 90% 80%, rgba(255, 193, 114, 0.18), transparent 30%),
+    radial-gradient(circle at 12% 96%, rgba(10, 119, 70, 0.5), transparent 42%),
+    linear-gradient(125deg, #062819 0%, #0b3f26 48%, #082f20 100%);
+}
+
+.hero-premium-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.52;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    radial-gradient(circle at 72% 45%, transparent 0 29%, rgba(255, 255, 255, 0.07) 29.2% 29.45%, transparent 29.7%),
+    radial-gradient(circle at 72% 45%, transparent 0 42%, rgba(255, 255, 255, 0.05) 42.2% 42.4%, transparent 42.7%);
+  background-size: 34px 34px, 34px 34px, 540px 540px, 740px 740px;
+  mask-image: linear-gradient(90deg, transparent 0%, black 37%, black 100%);
+}
+
+.hero-premium-grid::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.38) 0.55px, transparent 0.7px);
+  background-size: 5px 5px;
+  mix-blend-mode: soft-light;
+}
+
+.hero-orbit {
+  position: absolute;
+  z-index: 2;
+  width: 390px;
+  height: 390px;
+  right: -92px;
+  top: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.hero-orbit::before,
+.hero-orbit::after {
+  content: '';
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 50%;
+}
+
+.hero-orbit::before { inset: 43px; }
+.hero-orbit::after { inset: 91px; }
+
+.hero-deal-card {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 126px;
+  padding: 12px 14px;
+  color: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.19), rgba(255, 255, 255, 0.06));
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.hero-deal-card small {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero-deal-card strong { font-size: 0.83rem; line-height: 1.25; }
+
+.hero-deal-card--top { top: 13%; right: 7%; transform: rotate(7deg); }
+.hero-deal-card--bottom { right: 18%; bottom: 11%; transform: rotate(-7deg); }
+
+@media (max-width: 1150px) {
+  .hero-deal-card { opacity: 0.58; }
+  .hero-deal-card--top { right: 3%; }
+  .hero-deal-card--bottom { right: 7%; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-deal-card--top { animation: hero-card-drift 7s ease-in-out infinite; }
+  .hero-deal-card--bottom { animation: hero-card-drift 8s ease-in-out -2s infinite reverse; }
+}
+
+@keyframes hero-card-drift { 50% { translate: 0 -9px; } }

@@ -48,7 +48,7 @@
 
         <!-- ===================== IMAGE GALLERY ===================== -->
         <div class="animate-fade-up">
-            <div class="relative aspect-square overflow-hidden bg-white md:rounded-2xl">
+            <div class="relative aspect-square overflow-hidden bg-white md:rounded-2xl tilt-card" style="transform-style: preserve-3d; transition: transform 0.25s ease;">
                 {% if product.images.all %}
                 <img id="main-img" src="{{ product.images.all.0.image.url }}" alt="{{ product.title }}"
                      class="size-full object-cover">

@@ -288,24 +288,17 @@
             justify-content: center;
         }
     </style>
+    <link rel="stylesheet" href="{% static 'marketplace/css/global-ui.css' %}">
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Messages -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="container" style="position: fixed; top: 20px; right: 20px; max-width: 300px; z-index: 9999;">
-                <div class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %}">
-                    {{ message }}
-                </div>
-            </div>
-        {% endfor %}
-    {% endif %}
+    {% include 'components/marketplace_ui.html' with loader_text='Preparing your account...' %}
     
     <!-- Main Content -->
     {% block content %}{% endblock %}
     
     {% block extra_js %}{% endblock %}
+    <script src="{% static 'marketplace/js/global-ui.js' %}" defer></script>
 </body>
 </html>

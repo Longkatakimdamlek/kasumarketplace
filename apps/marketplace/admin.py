@@ -1,7 +1,8 @@
 from django.utils.html import format_html
 from django.utils import timezone
 from django.contrib import admin, messages
-
+from apps.vendors.models import Product, ProductImage, Store
+from .models import Promotion
 from .models import (
     Cart, CartItem,
     PaymentTransaction,
@@ -616,3 +617,8 @@ class DisputeAdmin(admin.ModelAdmin):
                     self.message_user(request, f'Email failed: {e}', messages.WARNING)
         else:
             super().save_model(request, obj, form, change)
+
+@admin.register(Promotion)
+class PromotionAdmin(admin.ModelAdmin):
+    list_display = ['title', 'is_active', 'sort_order']
+    list_editable = ['is_active', 'sort_order']

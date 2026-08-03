@@ -942,8 +942,8 @@ class SubCategoryInline(admin.TabularInline):
 
 @admin.register(MainCategory)
 class MainCategoryAdmin(admin.ModelAdmin):
-    list_display  = ['name', 'slug', 'subcategory_count', 'store_count', 'is_active', 'sort_order']
-    list_editable = ['is_active', 'sort_order']
+    list_display  = ['name', 'icon', 'slug', 'subcategory_count', 'store_count', 'is_active', 'sort_order']
+    list_editable = ['icon', 'is_active', 'sort_order']
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
     inlines = [SubCategoryInline]
@@ -986,11 +986,15 @@ class SubCategoryAttributeAdmin(admin.ModelAdmin):
 class StoreAdmin(admin.ModelAdmin):
     list_display = [
         'store_name', 'vendor_name', 'main_category',
-        'category_locked_badge', 'is_published',
+        'category_locked_badge', 'is_published', 'sponsorship_status',
         'total_products', 'total_orders', 'total_sales', 'average_rating'
     ]
-    list_filter   = ['main_category', 'is_published', 'main_category_locked', 'created_at']
+    list_filter   = [
+        'main_category', 'is_published', 'is_sponsored',
+        'main_category_locked', 'created_at', 'sponsored_until'
+    ]
     search_fields = ['store_name', 'vendor__full_name', 'vendor__user__email']
+    actions = ['activate_sponsorship', 'deactivate_sponsorship']
     readonly_fields = [
         'slug', 'vendor', 'main_category_locked', 'main_category_locked_at',
         'total_products', 'total_orders', 'total_sales', 'average_rating',
@@ -1012,6 +1016,13 @@ class StoreAdmin(admin.ModelAdmin):
         ('Social Links', {'fields': ('instagram', 'facebook', 'twitter')}),
         ('Policies',     {'fields': ('shipping_policy', 'return_policy')}),
         ('Settings',     {'fields': ('is_published', 'allow_reviews')}),
+        ('Sponsorship', {
+            'fields': ('is_sponsored', 'sponsored_until'),
+            'description': (
+                'Sponsored stores are prioritised in the marketplace spotlight. '
+                'Leave the expiry blank for an ongoing sponsorship.'
+            ),
+        }),
         ('Stats (Auto-calculated)', {
             'fields': ('total_products', 'total_orders', 'total_sales', 'average_rating')
         }),
@@ -1034,6 +1045,37 @@ class StoreAdmin(admin.ModelAdmin):
             return format_html('<span style="color:red;font-weight:bold;">🔒 Locked</span>')
         return format_html('<span style="color:green;">🔓 Unlocked</span>')
     category_locked_badge.short_description = 'Category Status'
+
+    def sponsorship_status(self, obj):
+        if not obj.is_sponsored:
+            return format_html('<span style="color:#6b7280;">Not sponsored</span>')
+        if obj.sponsored_until and obj.sponsored_until < timezone.now():
+            return format_html('<strong style="color:#dc2626;">Expired</strong>')
+        if obj.sponsored_until:
+            return format_html(
+                '<strong style="color:#15803d;">Sponsored</strong><br><small>Until {}</small>',
+                timezone.localtime(obj.sponsored_until).strftime('%d %b %Y, %H:%M')
+            )
+        return format_html('<strong style="color:#15803d;">Sponsored</strong><br><small>No expiry</small>')
+    sponsorship_status.short_description = 'Sponsorship'
+
+    @admin.action(description='Activate sponsorship for selected stores')
+    def activate_sponsorship(self, request, queryset):
+        count = queryset.count()
+        # An expired date would keep a newly activated store hidden from the
+        # homepage, so clear it when the sponsorship is activated again.
+        queryset.filter(sponsored_until__lt=timezone.now()).update(sponsored_until=None)
+        queryset.update(is_sponsored=True)
+        self.message_user(
+            request,
+            f'Sponsorship activated for {count} store(s). Set an expiry date from each store page if needed.',
+            messages.SUCCESS,
+        )
+
+    @admin.action(description='Deactivate sponsorship for selected stores')
+    def deactivate_sponsorship(self, request, queryset):
+        count = queryset.update(is_sponsored=False, sponsored_until=None)
+        self.message_user(request, f'Sponsorship deactivated for {count} store(s).', messages.SUCCESS)
 
     def logo_preview(self, obj):
         if obj.logo:

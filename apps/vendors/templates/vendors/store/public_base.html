@@ -6,52 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ store.store_name }} - KasuMarketplace{% endblock %}</title>
 
-    <!-- Favicons (kept consistent with the vendor dashboard) -->
     <link rel="icon" href="{% static 'images/favicon/favicon.ico' %}" />
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon/favicon_32x32.png' %}" />
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicon/favicon_180x180.png' %}" />
-    <meta name="theme-color" content="{{ store.primary_color|default:'#6a3df5' }}" />
+    <meta name="theme-color" content="{{ store.primary_color|default:'#0f766e' }}" />
 
-    <!-- Tailwind CSS CDN (JIT) — same convention used across the rest of the app -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'marketplace/css/global-ui.css' %}">
 
     <!--
-        SINGLE SOURCE OF VENDOR THEMING
-        Every public storefront page shares this one config block. The vendor's
-        brand color is read once here and exposed both as Tailwind utility
-        classes (bg-brand, text-brand, border-brand, bg-brand/10 …) and as a
-        CSS custom property for the handful of places raw CSS is simpler than
-        a utility class. Nothing below this point should ever write
-        style="background-color: {{ store.primary_color }}" inline again.
-
-        ACCESSIBILITY SAFEGUARD: nav/footer/button text is always white
-        (brand-foreground). Vendors pick their own primary_color with no
-        constraints, so a light color (pale yellow, mint, etc.) would make
-        that white text unreadable. Before handing the color to Tailwind, we
-        check its luminance and automatically darken it if needed — the
-        vendor's chosen hue is preserved, only its lightness is clamped, so
-        their brand still reads as "their color" but text stays legible.
+        SINGLE SOURCE OF VENDOR THEMING (unchanged from before)
     -->
     <script>
         (function () {
             function ensureReadableBrand(hex) {
-                hex = (hex || '#6a3df5').trim();
+                hex = (hex || '#0f766e').trim();
                 var m = hex.replace('#', '');
-                if (!/^[0-9a-fA-F]{6}$/.test(m)) return '#6a3df5';
+                if (!/^[0-9a-fA-F]{6}$/.test(m)) return '#0f766e';
                 var r = parseInt(m.slice(0, 2), 16), g = parseInt(m.slice(2, 4), 16), b = parseInt(m.slice(4, 6), 16);
                 var luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
                 if (luminance > 0.6) {
-                    var factor = 0.55 + (1 - luminance) * 0.3; // darken proportionally, hue preserved
+                    var factor = 0.55 + (1 - luminance) * 0.3;
                     r = Math.round(r * factor); g = Math.round(g * factor); b = Math.round(b * factor);
                 }
                 return '#' + [r, g, b].map(function (v) { return v.toString(16).padStart(2, '0'); }).join('');
             }
-            window.__BRAND__ = ensureReadableBrand('{{ store.primary_color|default:"#6a3df5"|escapejs }}');
+            window.__BRAND__ = ensureReadableBrand('{{ store.primary_color|default:"#0f766e"|escapejs }}');
             document.documentElement.style.setProperty('--brand', window.__BRAND__);
 
             tailwind.config = {
@@ -60,6 +44,10 @@
                         colors: {
                             brand: window.__BRAND__,
                             'brand-foreground': '#ffffff',
+                            surface: '#F8F9FA',
+                            ink: '#111111',
+                            'ink-soft': '#666666',
+                            hairline: '#ECECEC',
                         },
                         fontFamily: {
                             sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -69,9 +57,14 @@
                                 from: { opacity: 0, transform: 'translateY(8px)' },
                                 to: { opacity: 1, transform: 'translateY(0)' },
                             },
+                            'fade-in': {
+                                from: { opacity: 0 },
+                                to: { opacity: 1 },
+                            },
                         },
                         animation: {
-                            'fade-up': 'fade-up 0.5s cubic-bezier(0.22,1,0.36,1) both',
+                            'fade-up': 'fade-up 0.6s cubic-bezier(0.22,1,0.36,1) both',
+                            'fade-in': 'fade-in 0.8s ease both',
                         },
                     }
                 }
@@ -81,21 +74,68 @@
     <style>
         * { -webkit-tap-highlight-color: transparent; }
         @media (prefers-reduced-motion: reduce) {
-            .animate-fade-up { animation: none; }
+            .animate-fade-up, .animate-fade-in { animation: none; }
         }
+        #site-nav.scrolled { box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
     </style>
 
     {% block extra_head %}{% endblock %}
 </head>
-<body class="h-full font-sans antialiased bg-gray-50 text-gray-900">
+<body class="h-full font-sans antialiased bg-white text-gray-900 lg:bg-surface">
+    {% include 'components/marketplace_ui.html' with loader_text='Loading store...' %}
 
-    <!-- ===================== TOP NAV (shared by storefront, product detail, preview) ===================== -->
-    <header id="site-nav" class="sticky top-0 z-50 bg-brand text-brand-foreground shadow-none transition-shadow duration-300">
-        <nav class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-4 md:h-16 md:px-8">
+    <!-- =====================================================================
+         SITE HEADER
+         Desktop (lg+): extremely minimal — logo/store name on the left,
+         Cart + Profile only on the right. No search, no wishlist, no
+         categories dropdown, no WhatsApp/Messages icons, per spec.
+         Mobile/tablet (below lg): original compact brand-colored header,
+         unchanged.
+    ===================================================================== -->
+    <header id="site-nav" class="sticky top-0 z-50 bg-brand text-brand-foreground transition-shadow duration-200">
+
+        <!-- ============ DESKTOP HEADER (lg and up) — 80px, minimal ============ -->
+        <div class="mx-auto hidden h-16 max-w-[1600px] items-center justify-between px-6 lg:flex">
+            <a href="/" class="flex items-center gap-3" aria-label="Marketplace home">
+                <span class="text-lg font-semibold tracking-tight text-white">Kasu<span class="text-white/75">Marketplace</span></span>
+                {% if store %}
+                <span class="h-4 w-px bg-white/30"></span>
+                <span class="text-sm font-medium text-white/80">{{ store.store_name }}</span>
+                {% endif %}
+            </a>
+
+            <div class="flex items-center gap-6">
+                <a href="/cart/" class="relative flex items-center text-white transition-opacity hover:opacity-60" aria-label="Cart">
+                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                    </svg>
+                    <span id="cart-badge-desktop" class="absolute -right-2 -top-2 hidden min-w-[16px] place-items-center rounded-full bg-brand px-1 text-[10px] font-bold leading-[16px] text-white">0</span>
+                </a>
+
+                <div class="relative" data-dropdown>
+                    <button type="button" data-dropdown-toggle aria-label="Profile" class="flex items-center text-white transition-opacity hover:opacity-60">
+                        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
+                        </svg>
+                    </button>
+                    <div data-dropdown-panel class="absolute right-0 top-full z-50 mt-3 hidden w-48 rounded-xl border border-hairline bg-white p-1.5 shadow-lg">
+                        {% if is_owner %}
+                        <a href="{% url 'vendors:store_settings' %}" class="block rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface">Edit Store</a>
+                        <a href="{% url 'vendors:dashboard' %}" class="block rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface">Vendor Dashboard</a>
+                        <div class="my-1 border-t border-hairline"></div>
+                        {% endif %}
+                        <a href="#" class="block rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface">My Orders</a>
+                        <a href="#" class="block rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface">Sign In</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ MOBILE / TABLET HEADER (below lg, unchanged) ============ -->
+        <nav class="flex h-14 items-center justify-between gap-2 bg-brand px-4 text-brand-foreground lg:hidden">
             {% block nav_left %}
-            <a href="/" class="flex items-center gap-2 text-lg font-semibold tracking-tight md:text-xl" aria-label="Marketplace home">
+            <a href="/" class="flex items-center gap-2 text-lg font-semibold tracking-tight" aria-label="Marketplace home">
                 <span class="grid size-8 place-items-center rounded-lg bg-white/15 text-base font-bold">K</span>
-                <span class="hidden sm:inline">Kasu<span class="font-light opacity-80">Marketplace</span></span>
             </a>
             {% endblock %}
 
@@ -117,7 +157,6 @@
                     <span id="cart-badge" class="absolute -right-0.5 -top-0.5 hidden min-w-[18px] place-items-center rounded-full bg-white px-1 text-[11px] font-bold leading-[18px] text-brand">0</span>
                 </a>
                 {% endif %}
-                <a href="/" class="hidden text-sm font-medium text-white/90 hover:text-white sm:inline">← Marketplace</a>
                 {% endblock %}
             </div>
         </nav>
@@ -127,10 +166,130 @@
 
     {% block content %}{% endblock %}
 
+    <!-- =====================================================================
+         SITE FOOTER
+         Desktop (lg+): dark #111111, 4 columns, no payment section.
+         Mobile/tablet (below lg): original brand-colored footer, unchanged.
+    ===================================================================== -->
     {% block footer %}
-    <footer class="mt-16 border-t border-white/10 bg-brand text-brand-foreground font-sans">
-        <div class="mx-auto max-w-7xl px-4 py-14 md:px-8">
-            <div class="grid gap-10 lg:grid-cols-[1.75fr_repeat(3,minmax(0,13rem))]">
+
+    <!-- ============ DESKTOP FOOTER (lg and up) ============ -->
+    <footer class="mt-16 bg-brand pt-12 text-white lg:mt-20 lg:pt-20">
+        <div class="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-10">
+            <div class="grid gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12 lg:pb-16">
+
+                <!-- Column 1: store identity -->
+                <div class="col-span-1">
+                    <div class="flex items-center gap-3">
+                        {% if store.logo %}
+                        <div class="size-11 shrink-0 overflow-hidden rounded-full bg-white/10">
+                            <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="size-full object-cover">
+                        </div>
+                        {% endif %}
+                        <div>
+                            <p class="text-base font-semibold tracking-tight text-white">{{ store.store_name }}</p>
+                            {% if store.main_category %}
+                            <p class="text-xs text-white/50">{{ store.main_category.name }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if store.description %}
+                    <p class="mt-4 text-sm leading-relaxed text-white/60">{{ store.description|truncatewords:22 }}</p>
+                    {% endif %}
+
+                    <div class="mt-6 flex items-center gap-2.5">
+                        {% if store.facebook %}
+                        <a href="{{ store.facebook }}" target="_blank" rel="noopener noreferrer" aria-label="Facebook"
+                           class="grid size-8 place-items-center rounded-full border border-white/15 text-white/70 transition hover:border-white/40 hover:text-white">
+                            <svg class="size-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12.073C22 6.446 17.523 2 12 2S2 6.446 2 12.073c0 4.992 3.657 9.128 8.438 9.95v-7.05H7.898v-2.9h2.54V9.845c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.242 0-1.63.772-1.63 1.562v1.874h2.773l-.443 2.9h-2.33v7.05C18.343 21.2 22 17.065 22 12.073z"/></svg>
+                        </a>
+                        {% endif %}
+                        {% if store.instagram %}
+                        <a href="{{ store.instagram }}" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
+                           class="grid size-8 place-items-center rounded-full border border-white/15 text-white/70 transition hover:border-white/40 hover:text-white">
+                            <svg class="size-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M7.75 2h8.5A5.75 5.75 0 0122 7.75v8.5A5.75 5.75 0 0116.25 22h-8.5A5.75 5.75 0 012 16.25v-8.5A5.75 5.75 0 017.75 2zm0 1.5A4.25 4.25 0 003.5 7.75v8.5A4.25 4.25 0 007.75 20.5h8.5A4.25 4.25 0 0020.5 16.25v-8.5A4.25 4.25 0 0016.25 3.5h-8.5zm4.25 3a4.25 4.25 0 110 8.5 4.25 4.25 0 010-8.5zm0 1.5a2.75 2.75 0 100 5.5 2.75 2.75 0 000-5.5zm4.5-.75a.75.75 0 110 1.5.75.75 0 010-1.5z"/></svg>
+                        </a>
+                        {% endif %}
+                        <!-- TikTok: no store.tiktok field exists yet on your Store model — link disabled until one is added -->
+                        <span aria-label="TikTok (not connected)" title="Add a tiktok field to Store to enable this"
+                              class="grid size-8 place-items-center rounded-full border border-white/10 text-white/25">
+                            <svg class="size-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0115.54 3h-3.09v12.4a2.592 2.592 0 01-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 004.3 1.38V7.3s-1.88.09-3.24-1.48z"/></svg>
+                        </span>
+                        {% if store.twitter %}
+                        <a href="{{ store.twitter }}" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"
+                           class="grid size-8 place-items-center rounded-full border border-white/15 text-white/70 transition hover:border-white/40 hover:text-white">
+                            <svg class="size-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        </a>
+                        {% endif %}
+                        {% if store.whatsapp %}
+                        <a href="https://wa.me/{{ store.whatsapp|cut:'+' }}" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"
+                           class="grid size-8 place-items-center rounded-full border border-white/15 text-white/70 transition hover:border-white/40 hover:text-white">
+                            <svg class="size-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Column 2: Store -->
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.15em] text-white/40">Store</p>
+                    <ul class="mt-4 space-y-2.5 text-sm text-white/65">
+                        <li><a href="{% if store %}{% url 'vendors:store_public' store.slug %}{% else %}#{% endif %}" class="hover:text-white">About Store</a></li>
+                        <li>
+                            <button type="button" data-policy-toggle="shipping" class="text-left hover:text-white">Shipping Policy</button>
+                            {% if store.shipping_policy %}
+                            <p data-policy-panel="shipping" class="mt-1 hidden text-xs text-white/50">{{ store.shipping_policy|truncatewords:20 }}</p>
+                            {% endif %}
+                        </li>
+                        <li>
+                            <button type="button" data-policy-toggle="returns" class="text-left hover:text-white">Refund Policy</button>
+                            {% if store.return_policy %}
+                            <p data-policy-panel="returns" class="mt-1 hidden text-xs text-white/50">{{ store.return_policy|truncatewords:20 }}</p>
+                            {% endif %}
+                        </li>
+                        <li>
+                            {% if store.business_email %}
+                            <a href="mailto:{{ store.business_email }}" class="hover:text-white">Contact Store</a>
+                            {% else %}
+                            <span class="text-white/30">Contact Store</span>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Column 3: Marketplace -->
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.15em] text-white/40">Marketplace</p>
+                    <ul class="mt-4 space-y-2.5 text-sm text-white/65">
+                        <li><a href="#" class="hover:text-white">Become a Vendor</a></li>
+                        <li><a href="#" class="hover:text-white">Buyer Protection</a></li>
+                        <li><a href="#" class="hover:text-white">Support</a></li>
+                        <li><a href="#" class="hover:text-white">Help Center</a></li>
+                    </ul>
+                </div>
+
+                <!-- Column 4: Legal -->
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.15em] text-white/40">Legal</p>
+                    <ul class="mt-4 space-y-2.5 text-sm text-white/65">
+                        <li><a href="#" class="hover:text-white">Privacy</a></li>
+                        <li><a href="#" class="hover:text-white">Terms</a></li>
+                        <li><a href="#" class="hover:text-white">Cookies</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2 border-t border-white/10 py-6 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">
+                <p>&copy; {% now "Y" %} {{ store.store_name|default:"KasuMarketplace" }}</p>
+                <p>Powered by KasuMarketplace</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ============ MOBILE / TABLET FOOTER (below lg, unchanged) ============ -->
+    <footer class="hidden">
+        <div class="mx-auto max-w-7xl px-4 py-14">
+            <div class="grid gap-10">
                 <div class="space-y-6">
                     <div class="flex items-center gap-4">
                         {% if store.logo %}
@@ -152,7 +311,7 @@
                         {% if store.business_email or store.address %}
                         <div class="space-y-3">
                             {% if store.business_email %}
-                            <a href="mailto:{{ store.business_email }}" class="flex items-center gap-3 px-0 py-0 text-sm text-white/90 transition hover:text-white">
+                            <a href="mailto:{{ store.business_email }}" class="flex items-center gap-3 text-sm text-white/90 transition hover:text-white">
                                 <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/90">
                                     <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 6.75h15a2.25 2.25 0 012.25 2.25v6a2.25 2.25 0 01-2.25 2.25h-15A2.25 2.25 0 012.25 15V9A2.25 2.25 0 014.5 6.75zm0 0l7.5 4.5 7.5-4.5"/>
@@ -163,7 +322,7 @@
                             {% endif %}
 
                             {% if store.address %}
-                            <div class="flex items-center gap-3 px-0 py-0 text-sm text-white/90">
+                            <div class="flex items-center gap-3 text-sm text-white/90">
                                 <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/90">
                                     <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11.25a3 3 0 100-6 3 3 0 000 6zm0 0c2.21 0 4 1.79 4 4 0 2.5-2.6 5.52-4 6.75-1.4-1.23-4-4.25-4-6.75 0-2.21 1.79-4 4-4z"/>
@@ -233,9 +392,9 @@
                 </div>
             </div>
 
-            <div class="mt-10 border-t border-white/10 pt-6 text-sm text-slate-500 sm:flex sm:items-center sm:justify-between">
+            <div class="mt-10 border-t border-white/10 pt-6 text-sm text-slate-500">
                 <p>&copy; {% now "Y" %} {{ store.store_name }}. All rights reserved.</p>
-                <p class="mt-3 sm:mt-0">Designed for fast local shopping on KasuMarketplace.</p>
+                <p class="mt-3">Designed for fast local shopping on KasuMarketplace.</p>
             </div>
         </div>
     </footer>
@@ -244,13 +403,70 @@
     {% block extra_body %}{% endblock %}
 
     <script>
-        // Compact footer policy toggles (Shipping / Return expand inline)
+        // Subtle header shadow on scroll (desktop header spec: "very subtle
+        // shadow when scrolling").
+        (function () {
+            const nav = document.getElementById('site-nav');
+            if (!nav) return;
+            function onScroll() {
+                nav.classList.toggle('scrolled', window.scrollY > 4);
+            }
+            document.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+        })();
+
+        // Compact footer policy toggles (Shipping / Refund expand inline)
         document.querySelectorAll('[data-policy-toggle]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var panel = document.querySelector('[data-policy-panel="' + btn.dataset.policyToggle + '"]');
                 if (panel) panel.classList.toggle('hidden');
             });
         });
+
+        // Generic dropdown toggle — used by the Profile menu.
+        (function () {
+            document.querySelectorAll('[data-dropdown]').forEach(function (dropdown) {
+                var toggle = dropdown.querySelector('[data-dropdown-toggle]');
+                var panel = dropdown.querySelector('[data-dropdown-panel]');
+                if (!toggle || !panel) return;
+                toggle.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var isOpen = !panel.classList.contains('hidden');
+                    document.querySelectorAll('[data-dropdown-panel]').forEach(function (p) { p.classList.add('hidden'); });
+                    panel.classList.toggle('hidden', isOpen);
+                });
+            });
+            document.addEventListener('click', function () {
+                document.querySelectorAll('[data-dropdown-panel]').forEach(function (p) { p.classList.add('hidden'); });
+            });
+        })();
+
+        // Tilt cards for storefront items and product imagery.
+        function initTiltCards() {
+            const cards = document.querySelectorAll('.tilt-card');
+            const strength = 10;
+
+            cards.forEach(card => {
+                const resetTransform = () => {
+                    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+                };
+
+                const updateTilt = (event) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = (event.clientX - rect.left) / rect.width - 0.5;
+                    const y = (event.clientY - rect.top) / rect.height - 0.5;
+                    const rotateY = x * strength;
+                    const rotateX = -y * strength;
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                };
+
+                card.addEventListener('mousemove', updateTilt);
+                card.addEventListener('mouseleave', resetTransform);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initTiltCards);
     </script>
+    <script src="{% static 'marketplace/js/global-ui.js' %}"></script>
 </body>
 </html>

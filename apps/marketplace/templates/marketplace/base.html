@@ -40,13 +40,15 @@
 <meta name="theme-color" content="#0f6b3d">
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide icons -->
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            primary:   '#0f6b3d',
-            'primary-dark': '#036a3d',
+            primary:   '#0b3f26',
+            'primary-dark': '#072c1a',
             accent:    '#FF6B00',
             surface:   '#F5F7FA',
             card:      '#FFFFFF',
@@ -59,10 +61,10 @@
               200: '#bbf7d0',
               300: '#86efac',
               400: '#4ade80',
-              500: '#0f6b3d',
-              600: '#0f6b3d',
-              700: '#0f6b3d',
-              800: '#0a4d2a',
+              500: '#0b3f26',
+              600: '#0b3f26',
+              700: '#0b3f26',
+              800: '#072c1a',
               900: '#062f1a',
             },
             teal: {
@@ -71,10 +73,10 @@
               200: '#bbf7d0',
               300: '#86efac',
               400: '#4ade80',
-              500: '#0f6b3d',
-              600: '#0f6b3d',
-              700: '#0f6b3d',
-              800: '#0a4d2a',
+              500: '#0b3f26',
+              600: '#0b3f26',
+              700: '#0b3f26',
+              800: '#072c1a',
               900: '#062f1a',
             },
             green: {
@@ -83,16 +85,16 @@
               200: '#bbf7d0',
               300: '#86efac',
               400: '#4ade80',
-              500: '#0f6b3d',
-              600: '#0f6b3d',
-              700: '#0f6b3d',
-              800: '#0a4d2a',
+              500: '#0b3f26',
+              600: '#0b3f26',
+              700: '#0b3f26',
+              800: '#072c1a',
               900: '#062f1a',
             },
           },
           fontFamily: {
-            sans: ['"DM Sans"', 'sans-serif'],
-            display: ['"Clash Display"', '"DM Sans"', 'sans-serif'],
+            sans: ['"Manrope"', '"DM Sans"', 'sans-serif'],
+            display: ['"Manrope"', '"DM Sans"', 'sans-serif'],
           },
           borderRadius: {
             'xl2': '1.25rem',
@@ -111,13 +113,17 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'marketplace/css/hero-float.css' %}">
+  <link rel="stylesheet" href="{% static 'marketplace/css/hero-premium.css' %}">
+  <link rel="stylesheet" href="{% static 'marketplace/css/hero-word-cycle.css' %}">
+  <link rel="stylesheet" href="{% static 'marketplace/css/global-ui.css' %}">
 
   <!-- Heroicons (SVG inline — no CDN needed) -->
 
   <style>
     * { -webkit-tap-highlight-color: transparent; }
-    body { font-family: 'DM Sans', sans-serif; background: #F5F7FA; }
+    body { font-family: 'Manrope', 'DM Sans', sans-serif; background: #F5F7FA; }
 
     /* Smooth scrolling */
     html { scroll-behavior: smooth; }
@@ -152,17 +158,6 @@
       animation: shimmer 1.5s infinite;
     }
 
-    /* Toast */
-    #toast {
-      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-      transform: translateY(100px);
-      opacity: 0;
-    }
-    #toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
     /* Page fade-in */
     .page-enter {
       animation: fadeIn 0.2s ease;
@@ -171,6 +166,12 @@
       from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    .category-image { display: block; flex: none; }
+    .category-image--grid { width: 3rem; height: 3rem; }
+    .category-image--sidebar { width: 2rem; height: 2rem; }
+    .category-image--drawer { width: 2.25rem; height: 2.25rem; }
+
   </style>
   <script type="application/ld+json">
   {
@@ -309,18 +310,7 @@
   <!-- ===================== CATEGORY DRAWER ===================== -->
   {% include 'marketplace/partials/category_drawer.html' %}
 
-  <!-- ===================== MESSAGES / TOAST ===================== -->
-  {% if messages %}
-  <div id="django-messages" class="hidden">
-    {% for message in messages %}
-    <span data-level="{{ message.tags }}" data-text="{{ message }}"></span>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  <!-- Toast UI -->
-  <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-medium shadow-xl max-w-xs text-center pointer-events-none">
-  </div>
+  {% include 'components/marketplace_ui.html' with loader_text='Loading marketplace...' %}
 
   <!-- ===================== AUTHENTICATION MODAL (MOBILE) ===================== -->
   <div id="auth-modal" class="fixed inset-0 z-50 hidden">
@@ -376,39 +366,6 @@
       return v ? v[2] : null;
     }
     const CSRF = getCookie('csrftoken');
-
-    // ---- Toast ----
-    function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.className = `fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-medium shadow-xl max-w-xs text-center pointer-events-none show`;
-      if (type === 'error') {
-        toast.classList.add('bg-red-500');
-        toast.classList.remove('bg-dark');
-      } else if (type === 'warning') {
-        toast.classList.add('bg-accent');
-        toast.classList.remove('bg-dark');
-      } else {
-        toast.classList.add('bg-dark');
-        toast.classList.remove('bg-red-500', 'bg-accent');
-      }
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
-    }
-
-    // ---- Auto-show Django messages ----
-    document.addEventListener('DOMContentLoaded', () => {
-      const msgs = document.getElementById('django-messages');
-      if (msgs) {
-        msgs.querySelectorAll('span').forEach(el => {
-          const level = el.dataset.level;
-          const text = el.dataset.text;
-          const type = level.includes('error') ? 'error' : level.includes('warning') ? 'warning' : 'success';
-          setTimeout(() => showToast(text, type), 300);
-        });
-      }
-    });
 
     // ---- Category Drawer ----
     function toggleDrawer() {
@@ -480,7 +437,35 @@
         }, 300);
       }
     }
+
+    // ---- Tilt cards ----
+    function initTiltCards() {
+      const cards = document.querySelectorAll('.tilt-card');
+      const strength = 15;
+
+      cards.forEach(card => {
+        const resetTransform = () => {
+          card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+        };
+
+        const updateTilt = (event) => {
+          const rect = card.getBoundingClientRect();
+          const x = (event.clientX - rect.left) / rect.width - 0.5;
+          const y = (event.clientY - rect.top) / rect.height - 0.5;
+          const rotateY = x * strength;
+          const rotateX = -y * strength;
+          card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        };
+
+        card.addEventListener('mousemove', updateTilt);
+        card.addEventListener('mouseleave', resetTransform);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', initTiltCards);
   </script>
+  <script src="{% static 'marketplace/js/global-ui.js' %}" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   {% block extra_js %}{% endblock %}
 </body>

@@ -475,7 +475,12 @@ class MainCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True, help_text="What this category includes")
-    icon = models.CharField(max_length=50, blank=True, help_text="Icon name (e.g., 'shopping-bag', 'laptop')")
+    icon = models.CharField(
+        max_length=50,
+        blank=True,
+        default='package',
+        help_text="Lucide icon name (for example: 'laptop', 'shirt', or 'package')",
+    )
     is_active = models.BooleanField(default=True)
     sort_order = models.PositiveIntegerField(default=0)
     
@@ -669,6 +674,15 @@ class Store(models.Model):
     is_published = models.BooleanField(default=False, help_text="Make store visible to public")
     allow_reviews = models.BooleanField(default=True)
     
+    is_sponsored = models.BooleanField(
+        default=False,
+        help_text="Manually promoted store — takes priority over auto-ranked top sellers"
+    )
+    sponsored_until = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Optional expiry — sponsorship auto-drops after this date if set"
+    )
+
     # Stats (updated via signals)
     total_products = models.PositiveIntegerField(default=0)
     total_orders = models.PositiveIntegerField(default=0)
@@ -1079,6 +1093,14 @@ class Product(models.Model):
     def main_category(self):
         """Get main category through subcategory"""
         return self.subcategory.main_category
+    
+    @property
+    def primary_image(self):
+        """Return the product's primary image, falling back to the first uploaded image."""
+        image = self.images.filter(is_primary=True).first()
+        if not image:
+            image = self.images.first()
+        return image
 
 
 class ProductImage(models.Model):

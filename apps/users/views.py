@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.db import DatabaseError
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -321,7 +322,10 @@ class OTPVerificationView(View):
                 if result['success']:
                     # Mark user as verified
                     user.is_verified = True
-                    user.save(update_fields=['is_verified'])
+                    try:
+                        user.save(update_fields=['is_verified'])
+                    except DatabaseError:
+                        user.save()
                     
                     # Clear OTP
                     OTPService.delete_otp(user)

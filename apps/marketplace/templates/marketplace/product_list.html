@@ -1,4 +1,6 @@
 {% extends 'marketplace/base.html' %}
+{% load static %}
+{% load humanize %}
 
 {% block title %}KasuMarketplace — Shop Everything Campus{% endblock %}
 
@@ -15,13 +17,12 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
     <div id="banner-track" class="flex h-full transition-transform duration-500 ease-in-out">
 
       <!-- Slide 1 -->
-      <div class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-primary to-emerald-700 flex items-center px-6">
+      <div class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0b3f26] to-[#072c1a] flex items-center px-6">
         <div class="z-10">
           <p class="text-white/80 text-xs font-medium mb-1">New Arrivals</p>
           <h2 class="text-white font-display font-bold text-xl leading-tight mb-3">Shop the Latest<br/>Tech & Fashion</h2>
           <a href="{% url 'marketplace:product_list' %}" class="inline-block bg-white text-primary text-xs font-bold px-4 py-2 rounded-xl">Shop Now</a>
         </div>
-        <!-- Decorative circle -->
         <div class="absolute right-4 top-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-white/10"></div>
         <div class="absolute right-10 top-4 w-16 h-16 rounded-full bg-white/10"></div>
       </div>
@@ -46,14 +47,51 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
         <div class="absolute right-4 top-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-white/10"></div>
       </div>
 
+      <!-- Slide 4 — Weekly Top Seller (dynamic, omitted entirely if no sales this week) -->
+      {% if top_seller_store %}
+      <a href="{% url 'marketplace:store_detail' top_seller_store.slug %}"
+         class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0b3f26] to-[#072c1a] flex items-center gap-4 px-6">
+        {% if top_seller_store.logo %}
+        <img src="{{ top_seller_store.logo.url }}" alt="{{ top_seller_store.store_name }}"
+             class="w-16 h-16 rounded-full object-cover border-2 border-white/40 shrink-0">
+        {% endif %}
+        <div class="z-10 min-w-0">
+          <p class="text-white/80 text-xs font-medium mb-1">🔥 Top Seller This Week</p>
+          <h2 class="text-white font-display font-bold text-lg leading-tight truncate">{{ top_seller_store.store_name }}</h2>
+          <span class="inline-block bg-white text-primary text-xs font-bold px-4 py-2 rounded-xl mt-2">Visit Store</span>
+        </div>
+      </a>
+      {% endif %}
+
+      <!-- Slide(s) 5+ — one per sponsored store. If none are active, a single contact-CTA slide takes its place. -->
+      {% for store in sponsored_stores %}
+      <a href="{% url 'marketplace:store_detail' store.slug %}"
+         class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-accent to-orange-600 flex items-center gap-4 px-6">
+        {% if store.logo %}
+        <img src="{{ store.logo.url }}" alt="{{ store.store_name }}"
+             class="w-16 h-16 rounded-full object-cover border-2 border-white/40 shrink-0">
+        {% endif %}
+        <div class="z-10 min-w-0">
+          <p class="text-white/80 text-xs font-medium mb-1">⭐ Sponsored Store</p>
+          <h2 class="text-white font-display font-bold text-lg leading-tight truncate">{{ store.store_name }}</h2>
+          <span class="inline-block bg-white text-accent text-xs font-bold px-4 py-2 rounded-xl mt-2">Visit Store</span>
+        </div>
+      </a>
+      {% empty %}
+      <a href="mailto:{{ store_promotion_contact_email }}?subject=Get%20My%20Store%20Sponsored"
+         class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center px-6">
+        <div class="z-10">
+          <p class="text-white/80 text-xs font-medium mb-1">📣 Want to be featured?</p>
+          <h2 class="text-white font-display font-bold text-xl leading-tight mb-3">Get Your Store<br/>Sponsored Here</h2>
+          <span class="inline-block bg-white text-emerald-600 text-xs font-bold px-4 py-2 rounded-xl">Contact Us</span>
+        </div>
+      </a>
+      {% endfor %}
+
     </div>
 
-    <!-- Dots -->
-    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-      <button onclick="goSlide(0)" class="banner-dot w-5 h-1.5 rounded-full bg-white transition-all"></button>
-      <button onclick="goSlide(1)" class="banner-dot w-1.5 h-1.5 rounded-full bg-white/50 transition-all"></button>
-      <button onclick="goSlide(2)" class="banner-dot w-1.5 h-1.5 rounded-full bg-white/50 transition-all"></button>
-    </div>
+    <!-- Dots — populated dynamically by JS below, since slide count now varies (4 to 10 slides depending on live data) -->
+    <div id="banner-dots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5"></div>
   </div>
 
   <!-- CATEGORIES GRID -->
@@ -63,14 +101,8 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
       {% for category in categories %}
       <a href="{% url 'marketplace:product_list' %}?category={{ category.slug }}"
          class="flex flex-col items-center gap-2 bg-card rounded-2xl p-3 shadow-card active:scale-95 transition-transform flex-shrink-0 w-24">
-        <div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-          {% if category.icon %}
-            <span class="text-3xl">{{ category.icon|safe }}</span>
-          {% else %}
-            <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 10V7"/>
-            </svg>
-          {% endif %}
+        <div class="w-14 h-14 rounded-xl bg-white flex items-center justify-center">
+          {% include 'marketplace/partials/category_icon.html' with variant='grid' %}
         </div>
         <span class="text-xs font-medium text-dark text-center leading-tight line-clamp-2">
           {{ category.name|truncatechars:12 }}
@@ -99,7 +131,6 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
 
   <!-- ALL PRODUCTS -->
   <div class="px-4 mt-6">
-    <!-- Section header + active filters -->
     <div class="flex items-center justify-between mb-3">
       <h2 class="font-display font-bold text-base text-dark">
         {% if query %}Results for "{{ query }}"
@@ -109,7 +140,6 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
       <span class="text-xs text-muted">{{ annotated_products|length }} items</span>
     </div>
 
-    <!-- Active filter pills -->
     {% if query or selected_category %}
     <div class="flex flex-wrap gap-2 mb-3">
       {% if query %}
@@ -131,7 +161,6 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
     </div>
     {% endif %}
 
-    <!-- Product grid -->
     {% if annotated_products %}
     <div class="grid grid-cols-2 gap-3">
       {% for item in annotated_products %}
@@ -139,7 +168,6 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
       {% endfor %}
     </div>
     {% else %}
-    <!-- Empty state -->
     <div class="flex flex-col items-center justify-center py-16 text-center">
       <div class="w-16 h-16 rounded-2xl bg-surface flex items-center justify-center mb-4">
         <svg class="w-8 h-8 text-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,106 +187,285 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
 <!-- ==================== DESKTOP LAYOUT ==================== -->
 <div class="hidden md:block">
 
-  <!-- DESKTOP HERO -->
-  <div class="bg-gradient-to-br from-primary via-emerald-600 to-emerald-800 text-white">
-    <div class="max-w-7xl mx-auto px-6 py-20 flex items-center gap-16">
-      <div class="flex-1">
-        <span class="inline-block bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full mb-4">🎓 Built for Campus Life</span>
-        <h2 class="font-display font-bold text-5xl leading-tight mb-5">
-          Buy & Sell on KasuMarketplace – The Official KASU Student Marketplace
-        </h2>
-        <p class="text-white/80 text-lg mb-8 max-w-md">
-          Shop from verified student vendors. Fast, safe, and always nearby.
-        </p>
-        <div class="flex gap-3">
-          <a href="#products" class="px-6 py-3 bg-white text-primary font-bold rounded-xl hover:bg-surface transition">Shop Now</a>
-          <button onclick="toggleDrawer()" class="px-6 py-3 bg-white/20 text-white font-semibold rounded-xl hover:bg-white/30 transition">Browse Categories</button>
-          <a href="{% url 'marketplace:about' %}" class="px-6 py-3 bg-white/20 text-white font-semibold rounded-xl hover:bg-white/30 transition">About Us</a>
+  <!-- DESKTOP HERO GRID — 3D hero + 2 auto-sliding side banners -->
+  <div class="max-w-7xl mx-auto px-6 pt-3">
+    <div class="grid grid-cols-3 gap-3" style="height:360px;">
+
+      <!-- MAIN HERO — spans 2 columns -->
+      <section id="hero-3d" class="relative overflow-hidden text-white rounded-2xl col-span-2 h-full bg-[#072c1a]">
+        <div id="hero-gradient" class="absolute inset-0 bg-[#072c1a]"></div>
+        <div class="hero-premium-grid" aria-hidden="true"></div>
+        <div class="hero-orbit" aria-hidden="true"></div>
+        <div class="hero-deal-card hero-deal-card--top" aria-hidden="true">
+          <small>Campus pick</small>
+          <strong>New finds daily</strong>
+        </div>
+        <div class="hero-deal-card hero-deal-card--bottom" aria-hidden="true">
+          <small>Trusted stores</small>
+          <strong>Shop nearby</strong>
+        </div>
+        <div class="relative z-20 px-8 lg:px-10 h-full flex items-center justify-between gap-8 w-full">
+          <div class="hero-shopify-copy max-w-3xl flex flex-col justify-center py-8">
+            <h2 class="hero-shopify-title text-4xl lg:text-5xl mb-5 max-w-2xl">
+              Campus commerce for
+              <span class="hero-changing-line" aria-label="students, smart sellers, great deals, campus life">
+                <span class="hero-changing-track" aria-hidden="true">
+                  <span>students.</span>
+                  <span>smart sellers.</span>
+                  <span>great deals.</span>
+                  <span>campus life.</span>
+                </span>
+              </span>
+            </h2>
+            <p class="text-white/85 text-base lg:text-lg mb-7 max-w-xl leading-relaxed">
+              Shop from verified student vendors. Fast, safe, and always nearby.
+            </p>
+            <div class="flex flex-wrap gap-2.5">
+              <a href="#products" class="px-4 py-2 bg-white text-primary text-sm font-bold rounded-lg shadow-sm hover:bg-surface transition">Shop Now</a>
+              <a href="{% url 'marketplace:about' %}" class="px-4 py-2 bg-white/25 border border-white/20 text-white text-sm font-semibold rounded-lg hover:bg-white/35 transition">About Us</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SIDE BANNERS — stacked, 1 column -->
+      <div class="flex flex-col gap-4 h-full">
+
+        <!-- Vendor promo carousel -->
+        <div class="relative overflow-hidden rounded-2xl flex-1 bg-[#072c1a]">
+          <div id="vendor-promo-track" class="flex h-full transition-transform duration-500 ease-in-out">
+            {% for promo in vendor_promotions %}
+            <a href="{{ promo.link_url }}" class="min-w-full h-full relative flex items-center gap-3 px-5"
+               style="background: {% if promo.image %}url('{{ promo.image.url }}') center/cover{% else %}linear-gradient(135deg, #0f6b3d, #036a3d){% endif %};">
+              <div class="absolute inset-0 bg-black/35"></div>
+              <div class="relative z-10 text-white">
+                <p class="text-[10px] font-bold tracking-wide text-white/70 uppercase mb-0.5">Vendor Spotlight</p>
+                <p class="font-display font-bold text-lg leading-tight">{{ promo.title }}</p>
+                {% if promo.subtitle %}<p class="text-xs text-white/80 mt-1 mb-2">{{ promo.subtitle }}</p>{% endif %}
+                <span class="inline-flex items-center gap-1 bg-white text-primary text-xs font-bold px-3 py-1.5 rounded-xl mt-2">
+                  Learn More <span aria-hidden="true">→</span>
+                </span>
+              </div>
+            </a>
+            {% empty %}
+            <a href="{% url 'users:vendor_signup' %}" class="min-w-full h-full relative flex items-center px-5 bg-gradient-to-br from-[#0b3f26] to-[#072c1a]">
+              <div class="text-white">
+                <p class="text-[10px] font-bold tracking-wide text-white/70 uppercase mb-0.5">Vendor Spotlight</p>
+                <p class="font-display font-bold text-lg leading-tight">Start Selling on KasuMarketplace</p>
+                <p class="text-xs text-white/80 mt-1 mb-2">Reach every student on campus</p>
+                <span class="inline-flex items-center gap-1 bg-white text-primary text-xs font-bold px-3 py-1.5 rounded-xl mt-2">
+                  Get Started <span aria-hidden="true">→</span>
+                </span>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+          {% if vendor_promotions|length > 1 %}
+          <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+            {% for promo in vendor_promotions %}
+            <span class="vendor-promo-dot w-1.5 h-1.5 rounded-full bg-white opacity-40 transition-opacity"></span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Spotlight stores carousel -->
+        <div class="relative overflow-hidden rounded-2xl flex-1 bg-card border border-border">
+          <div id="spotlight-store-track" class="flex h-full transition-transform duration-500 ease-in-out">
+            {% for store in spotlight_stores %}
+            <a href="{% url 'marketplace:store_detail' store.slug %}" class="min-w-full h-full relative flex items-center gap-3 px-5 {% if store.is_sponsored %}bg-gradient-to-br from-accent to-orange-600{% else %}bg-gradient-to-br from-primary to-emerald-700{% endif %}">
+              <span class="absolute top-3 left-3 inline-flex items-center gap-1 bg-white/15 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
+                {% if store.is_sponsored %}⭐ Sponsored Store{% else %}🔥 Top Seller This Week{% endif %}
+              </span>
+              {% if store.logo %}
+              <img src="{{ store.logo.url }}" alt="{{ store.store_name }}" class="w-12 h-12 rounded-full object-cover border-2 border-white/40 shrink-0">
+              {% else %}
+              <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                {{ store.store_name|slice:":2"|upper }}
+              </div>
+              {% endif %}
+              <div class="min-w-0">
+                <p class="text-[10px] font-bold tracking-wide text-white/70 uppercase mb-0.5">
+                  {% if store.is_sponsored %}Featured Partner{% else %}Leading The Pack{% endif %}
+                </p>
+                <p class="font-display font-bold text-white text-sm leading-tight truncate">{{ store.store_name }}</p>
+                <span class="inline-flex items-center gap-1 bg-white text-dark text-xs font-bold px-3 py-1 rounded-xl mt-1.5">
+                  Visit Store <span aria-hidden="true">→</span>
+                </span>
+              </div>
+            </a>
+            {% empty %}
+            <a href="mailto:{{ store_promotion_contact_email }}?subject=Get%20My%20Store%20Sponsored"
+               class="min-w-full h-full relative flex items-center px-5 bg-gradient-to-br from-[#0b3f26] to-[#072c1a]">
+              <div class="text-white">
+                <p class="font-display font-bold text-lg leading-tight">Get Your Store<br/>Sponsored Here</p>
+                <p class="text-xs text-white/80 mt-1 mb-2">Reach thousands of KASU students</p>
+                <span class="inline-flex items-center gap-1 bg-white text-primary text-xs font-bold px-3 py-1.5 rounded-xl">
+                  Contact Us <span aria-hidden="true">→</span>
+                </span>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+          {% if spotlight_stores|length > 1 %}
+          <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+            {% for store in spotlight_stores %}
+            <span class="spotlight-store-dot w-1.5 h-1.5 rounded-full bg-primary opacity-40 transition-opacity"></span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+      <!-- end side banners -->
+    </div>
+  </div>
+  <!-- end hero grid -->
+
+  <!-- PRODUCTS SECTION -->
+  <section id="products" class="max-w-7xl mx-auto px-6 py-16">
+    <div class="grid grid-cols-12 gap-8">
+      <div class="col-span-3">
+        <div class="sticky top-24 space-y-6">
+          <div class="bg-card rounded-3xl p-6 shadow-card">
+            <h2 class="font-display font-bold text-xl text-dark mb-4">Categories</h2>
+            <div class="grid gap-3">
+              {% for category in categories %}
+              <a href="{% url 'marketplace:product_list' %}?category={{ category.slug }}"
+                 class="flex items-center gap-2 rounded-2xl border border-surface bg-white px-4 py-3 text-sm font-medium text-dark hover:border-primary hover:bg-primary/5 transition-all">
+                {% include 'marketplace/partials/category_icon.html' with variant='sidebar' %}
+                {{ category.name }}
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+
+          {% if featured_products %}
+          <div class="bg-card rounded-3xl p-6 shadow-card">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-display font-bold text-xl text-dark">Flash Deals</h2>
+              <a href="{% url 'marketplace:product_list' %}" class="text-sm text-primary font-semibold">See All</a>
+            </div>
+            <div class="space-y-4">
+              {% for item in featured_products|slice:":3" %}
+              <a href="{% url 'product_detail_public' store_slug=item.store.slug product_slug=item.slug %}" class="block rounded-2xl border border-surface bg-white p-4 hover:border-primary transition-all">
+                <div class="flex items-center gap-3">
+                  {% with primary_img=item.images.all|first %}
+                  <div class="w-16 h-16 rounded-2xl overflow-hidden bg-surface flex items-center justify-center">
+                    {% if primary_img %}
+                      <img src="{{ primary_img.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover" />
+                    {% else %}
+                      <span class="text-muted">No image</span>
+                    {% endif %}
+                  </div>
+                  {% endwith %}
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-dark line-clamp-2">{{ item.title }}</p>
+                    <p class="text-xs text-muted">₦{{ item.price|floatformat:0 }}</p>
+                  </div>
+                </div>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
         </div>
       </div>
-      <!-- Decorative shapes -->
-      <div class="flex-1 relative h-64 hidden lg:block">
-        <div class="absolute inset-0 flex items-center justify-center">
-          <div class="w-48 h-48 rounded-3xl bg-white/10 rotate-12"></div>
-          <div class="absolute w-32 h-32 rounded-2xl bg-white/15 -rotate-6 translate-x-8 -translate-y-4"></div>
-          <div class="absolute text-6xl">🛍️</div>
+
+      <div class="col-span-9 space-y-10">
+        <div class="flex items-center justify-between gap-6">
+          <div>
+            <h1 class="font-display text-4xl font-bold text-dark mb-3">Browse Products</h1>
+            <p class="text-muted max-w-2xl">Search and filter products from verified KASU student vendors.</p>
+          </div>
+          <div class="text-sm text-muted">{{ annotated_products|length }} items</div>
+        </div>
+
+        {% if query or selected_category %}
+        <div class="flex flex-wrap gap-2">
+          {% if query %}
+          <a href="{% url 'marketplace:product_list' %}" class="inline-flex items-center gap-2 rounded-full bg-primary/10 text-primary px-4 py-2 text-sm font-medium">
+            "{{ query }}"
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </a>
+          {% endif %}
+          {% if selected_category %}
+          <a href="{% url 'marketplace:product_list' %}" class="inline-flex items-center gap-2 rounded-full bg-primary/10 text-primary px-4 py-2 text-sm font-medium">
+            {{ selected_category|title }}
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="bg-card rounded-3xl p-6 shadow-card">
+          {% if annotated_products %}
+          <div class="grid grid-cols-4 gap-6">
+            {% for item in annotated_products %}
+            {% include 'marketplace/partials/product_card.html' with item=item %}
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="flex flex-col items-center justify-center py-16 text-center">
+            <div class="w-20 h-20 rounded-3xl bg-surface flex items-center justify-center mb-4">
+              <svg class="w-10 h-10 text-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+              </svg>
+            </div>
+            <p class="font-semibold text-dark mb-1">No products found</p>
+            <p class="text-sm text-muted mb-4">Try a different search or category</p>
+            <a href="{% url 'marketplace:product_list' %}" class="inline-flex items-center justify-center px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl">Browse All</a>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- CATEGORY ROW -->
-  <div class="max-w-7xl mx-auto px-6 py-8">
-    <h2 class="font-display font-bold text-xl text-dark mb-5">Shop by Category</h2>
-    <div class="flex gap-3 overflow-x-auto scroll-hidden pb-1">
-      <a href="{% url 'marketplace:product_list' %}"
-         class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold shrink-0">
-        All
-      </a>
-      {% for category in categories %}
-      <a href="{% url 'marketplace:product_list' %}?category={{ category.slug }}"
-         class="flex items-center gap-2 px-4 py-2.5 {% if selected_category == category.slug %}bg-primary text-white{% else %}bg-card text-dark hover:bg-primary/10{% endif %} rounded-xl text-sm font-semibold shrink-0 shadow-card transition">
-        {% if category.icon %}<span class="inline-block">{{ category.icon|safe }}</span>{% endif %}
-        {{ category.name }}
-      </a>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- FEATURED / FLASH DEALS -->
-  {% if featured_products %}
-  <div class="max-w-7xl mx-auto px-6 pb-8">
-    <div class="flex items-center justify-between mb-5">
-      <h2 class="font-display font-bold text-xl text-dark">⚡ Flash Deals</h2>
-      <a href="{% url 'marketplace:product_list' %}" class="text-sm text-primary font-semibold hover:underline">See All</a>
-    </div>
-    <div class="grid grid-cols-5 gap-4">
-      {% for item in featured_products %}
-        {% include 'marketplace/partials/product_card.html' with item=item %}
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ALL PRODUCTS -->
-  <div id="products" class="max-w-7xl mx-auto px-6 pb-16">
-    <div class="flex items-center justify-between mb-5">
-      <h2 class="font-display font-bold text-xl text-dark">
-        {% if query %}Results for "{{ query }}"
-        {% elif selected_category %}{{ selected_category|title }}
-        {% else %}All Products{% endif %}
-      </h2>
-      <span class="text-sm text-muted">{{ annotated_products|length }} products</span>
-    </div>
-
-    {% if annotated_products %}
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-      {% for item in annotated_products %}
-        {% include 'marketplace/partials/product_card.html' with item=item %}
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="flex flex-col items-center justify-center py-24 text-center">
-      <p class="font-semibold text-dark text-xl mb-2">No products found</p>
-      <p class="text-muted mb-6">Try a different search or browse all categories</p>
-      <a href="{% url 'marketplace:product_list' %}" class="px-6 py-3 bg-primary text-white font-semibold rounded-xl">Browse All Products</a>
-    </div>
-    {% endif %}
-  </div>
+  <!-- Desktop-only footer section -->
+  {% include 'marketplace/partials/desktop_footer.html' %}
 
 </div><!-- end desktop -->
+
 {% endblock %}
 
 
 {% block extra_js %}
+<script src="{% static 'marketplace/js/hero-side-banners.js' %}"></script>
 <script>
-  // ---- Banner carousel ----
+  // ---- Mobile banner carousel ----
+  // Slide count is dynamic (3 fixed slides + optional top-seller slide +
+  // 0-6 sponsor slides or 1 fallback CTA slide), so we read it from the
+  // DOM instead of hardcoding it, and build dots to match.
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   let currentSlide = 0;
-  const totalSlides = 3;
   const track = document.getElementById('banner-track');
+  const dotsContainer = document.getElementById('banner-dots');
+  const totalSlides = track ? track.children.length : 0;
+
+  if (dotsContainer && totalSlides > 0) {
+    for (let i = 0; i < totalSlides; i++) {
+      const dot = document.createElement('button');
+      dot.className = i === 0
+        ? 'banner-dot w-5 h-1.5 rounded-full bg-white transition-all'
+        : 'banner-dot w-1.5 h-1.5 rounded-full bg-white/50 transition-all';
+      dot.addEventListener('click', () => goSlide(i));
+      dotsContainer.appendChild(dot);
+    }
+  }
+
   const dots = document.querySelectorAll('.banner-dot');
+  let bannerAutoAdvance;
+  let bannerResumeTimer;
 
   function goSlide(index) {
+    if (!totalSlides) return;
+    index = (index + totalSlides) % totalSlides;
     currentSlide = index;
     if (track) track.style.transform = `translateX(-${index * 100}%)`;
     dots.forEach((d, i) => {
@@ -272,29 +479,82 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
     });
   }
 
-  // Auto-advance
-  setInterval(() => {
-    goSlide((currentSlide + 1) % totalSlides);
-  }, 4000);
+  function startBannerAutoAdvance() {
+    if (prefersReducedMotion || !totalSlides || bannerAutoAdvance) return;
+    bannerAutoAdvance = setInterval(() => {
+      goSlide((currentSlide + 1) % totalSlides);
+    }, 4000);
+  }
 
-  // ---- Auto-scroll categories ----
+  function pauseBannerAutoAdvance() {
+    clearInterval(bannerAutoAdvance);
+    bannerAutoAdvance = null;
+    clearTimeout(bannerResumeTimer);
+    if (!prefersReducedMotion) {
+      bannerResumeTimer = setTimeout(startBannerAutoAdvance, 7000);
+    }
+  }
+
+  startBannerAutoAdvance();
+
+  if (track) {
+    let bannerTouchStartX = 0;
+    track.addEventListener('touchstart', (event) => {
+      bannerTouchStartX = event.changedTouches[0].clientX;
+      pauseBannerAutoAdvance();
+    }, { passive: true });
+    track.addEventListener('touchend', (event) => {
+      const distance = event.changedTouches[0].clientX - bannerTouchStartX;
+      if (Math.abs(distance) > 40) {
+        goSlide(currentSlide + (distance < 0 ? 1 : -1));
+      }
+    }, { passive: true });
+  }
+
+  dots.forEach((dot) => dot.addEventListener('click', pauseBannerAutoAdvance));
+
+  // ---- Auto-scroll categories (mobile) ----
   const categoriesContainer = document.getElementById('categories-container');
-  if (categoriesContainer) {
+  if (categoriesContainer && !prefersReducedMotion) {
     let scrollAmount = 0;
-    const scrollStep = 2; // pixels to scroll per frame
-    const scrollSpeed = 50; // milliseconds between scrolls
+    const scrollStep = 2;
+    const scrollSpeed = 50;
+    let categoryAutoScroll;
+    let categoryResumeTimer;
 
     function autoScroll() {
       if (scrollAmount >= categoriesContainer.scrollWidth - categoriesContainer.clientWidth) {
-        scrollAmount = 0; // Reset to start
+        scrollAmount = 0;
       } else {
         scrollAmount += scrollStep;
       }
       categoriesContainer.scrollLeft = scrollAmount;
     }
 
-    // Start auto-scrolling
-    setInterval(autoScroll, scrollSpeed);
+    function startCategoryAutoScroll() {
+      if (!categoryAutoScroll) {
+        categoryAutoScroll = setInterval(autoScroll, scrollSpeed);
+      }
+    }
+
+    function pauseCategoryAutoScroll() {
+      clearInterval(categoryAutoScroll);
+      categoryAutoScroll = null;
+      clearTimeout(categoryResumeTimer);
+      categoryResumeTimer = setTimeout(() => {
+        scrollAmount = categoriesContainer.scrollLeft;
+        startCategoryAutoScroll();
+      }, 7000);
+    }
+
+    ['touchstart', 'pointerdown', 'wheel'].forEach((eventName) => {
+      categoriesContainer.addEventListener(eventName, pauseCategoryAutoScroll, { passive: true });
+    });
+
+    startCategoryAutoScroll();
   }
+  // When reduced motion is requested, the categories rail simply stays put —
+  // it's still a normal horizontally-scrollable element the user can swipe
+  // manually, it just won't move on its own.
 </script>
 {% endblock %}

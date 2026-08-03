@@ -31,16 +31,19 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "true").lower() in {"true", "1", "yes"}
 
-ALLOWED_HOSTS = os.getenv(
-    "ALLOWED_HOSTS",
+default_allowed_hosts = (
     "kasumarketplace.com.ng,"
     "www.kasumarketplace.com.ng,"
     "kasumarketplace.onrender.com,"
     "localhost,"
     "127.0.0.1,"
     ".onrender.com,"
-    ".trycloudflare.com",
-).split(",")
+    ".trycloudflare.com"
+)
+configured_allowed_hosts = os.getenv("ALLOWED_HOSTS", default_allowed_hosts)
+ALLOWED_HOSTS = [host.strip() for host in configured_allowed_hosts.split(",") if host.strip()]
+if "testserver" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("testserver")
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.trycloudflare.com',
@@ -105,6 +108,7 @@ INSTALLED_APPS = [
     'rest_auth',
     'cloudinary',
     'cloudinary_storage',
+    'django.contrib.humanize',
 
     # local apps
     'apps.users.apps.UsersConfig',

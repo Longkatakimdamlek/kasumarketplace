@@ -11,6 +11,7 @@ from django.utils import timezone
 from decimal import Decimal
 import uuid
 import random
+from cloudinary.models import CloudinaryField
 
 User = get_user_model()
 
@@ -599,3 +600,19 @@ class Dispute(models.Model):
 
     def __str__(self):
         return f"Dispute — SubOrder #{self.sub_order.pk} — {self.status}"
+    
+class Promotion(models.Model):
+    """Admin-managed promotional banner slides (e.g. 'Become a Vendor' call-outs)."""
+    title = models.CharField(max_length=200)
+    subtitle = models.CharField(max_length=300, blank=True)
+    image = CloudinaryField('image', blank=True, null=True)
+    link_url = models.CharField(max_length=300, help_text="Where this slide links to, e.g. /vendor-signup/")
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['sort_order', '-created_at']
+
+    def __str__(self):
+        return self.title
