@@ -16,6 +16,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
 
+from apps.users.services.zepto_api import send_via_zepto_api
 from apps.users.models import OTPVerification, CustomUser
 
 
@@ -159,23 +160,13 @@ class OTPService:
             # Create plain text version
             plain_message = strip_tags(html_message)
             
-            # Send email
-            from_email = getattr(
-                settings,
-                'DEFAULT_FROM_EMAIL',
-                'noreply@kasumarketplace.com'
-            )
-            
-            send_mail(
+            success, message = send_via_zepto_api(
+                to_email=user.email,
                 subject=subject,
-                message=plain_message,
-                from_email=from_email,
-                recipient_list=[user.email],
-                html_message=html_message,
-                fail_silently=False,
+                html_body=html_message,
+                plain_body=plain_message,
             )
-            
-            return True, "OTP email sent successfully"
+            return success, message
         
         except Exception as e:
             error_msg = f"Error sending OTP email: {str(e)}"

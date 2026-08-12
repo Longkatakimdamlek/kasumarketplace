@@ -308,6 +308,7 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 # ===========================
 # EMAIL CONFIGURATION (ZeptoMail SMTP)
 # ===========================
+ZEPTO_API_TOKEN = os.getenv("ZEPTO_API_TOKEN", "")
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.zeptomail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))

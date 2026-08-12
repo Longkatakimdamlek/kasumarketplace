@@ -45,6 +45,7 @@ from .forms import (
 )
 from .models import CustomUser
 from .services import OTPService
+from apps.users.services.zepto_api import send_via_zepto_api
 from apps.vendors.services.notifications import send_vendor_welcome_email
 
 
@@ -551,13 +552,14 @@ class PasswordResetRequestView(DjangoPasswordResetView):
             html_message = render_to_string(self.email_template_name, context)
             plain_message = strip_tags(html_message)
 
-            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
-            try:
-                msg = EmailMultiAlternatives(subject, plain_message, from_email, [user.email])
-                msg.attach_alternative(html_message, "text/html")
-                msg.send(fail_silently=False)
-            except Exception as e:
-                logger.error(f"Password reset email failed for {user.email}: {e}")
+            success, message = send_via_zepto_api(
+                to_email=user.email,
+                subject=subject,
+                html_body=html_message,
+                plain_body=plain_message,
+            )
+            if not success:
+                logger.error(f"Password reset email failed for {user.email}: {message}")
 
         messages.success(
             self.request,
@@ -646,18 +648,15 @@ class CustomPasswordResetView(DjangoPasswordResetView):
             html_message = render_to_string(self.email_template_name, context)
             plain_message = strip_tags(html_message)
 
-            try:
-                msg = EmailMultiAlternatives(
-                    subject=subject,
-                    body=plain_message,
-                    from_email=from_email,
-                    to=[user.email],
-                    reply_to=[reply_to] if reply_to else None,
-                )
-                msg.attach_alternative(html_message, 'text/html')
-                msg.send(fail_silently=False)
-            except Exception as e:
-                logger.error(f"Password reset email failed for {user.email}: {e}")
+            success, message = send_via_zepto_api(
+                to_email=user.email,
+                subject=subject,
+                html_body=html_message,
+                plain_body=plain_message,
+                reply_to=reply_to,
+            )
+            if not success:
+                logger.error(f"Password reset email failed for {user.email}: {message}")
 
         messages.success(
             self.request,
