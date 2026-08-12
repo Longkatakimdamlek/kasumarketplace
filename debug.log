@@ -18076,3 +18076,29 @@ django.db.utils.OperationalError: attempt to write a readonly database
 [WARNING] 2026-08-12 04:55:29,856 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
 [WARNING] 2026-08-12 04:55:30,103 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
 [INFO] 2026-08-12 04:55:37,867 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 304 0
+[INFO] 2026-08-12 08:48:30,629 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-12 08:48:32,334 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-12 08:49:56,295 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/ HTTP/1.1" 200 88382
+[INFO] 2026-08-12 08:49:58,058 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 304 0
+[INFO] 2026-08-12 08:50:11,316 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 304 0
+[INFO] 2026-08-12 08:50:41,450 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/ HTTP/1.1" 200 88382
+[INFO] 2026-08-12 08:50:50,651 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-12 08:50:54,125 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-12 08:50:57,426 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-12 08:52:51,730 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/ HTTP/1.1" 200 88382
+[INFO] 2026-08-12 08:52:51,917 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-12 08:52:52,099 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/ HTTP/1.1" 200 88382
+[INFO] 2026-08-12 08:52:52,514 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/ HTTP/1.1" 200 88382
+[INFO] 2026-08-12 08:52:54,544 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-12 08:52:54,656 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-12 08:52:57,178 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-12 08:53:00,280 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-12 08:53:00,322 django.server log_message:213 - "GET /static/images/favicon/favicon_32x32.png HTTP/1.1" 200 2152
+[INFO] 2026-08-12 09:08:49,058 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/ HTTP/1.1" 200 87174
+[INFO] 2026-08-12 09:08:49,312 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-12 09:08:49,409 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/ HTTP/1.1" 200 87174
+[INFO] 2026-08-12 09:08:50,015 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/ HTTP/1.1" 200 87174
+[INFO] 2026-08-12 09:08:56,185 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-12 09:08:58,205 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-12 09:09:02,760 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-12 09:09:28,831 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/ HTTP/1.1" 200 87174

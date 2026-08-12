@@ -2,21 +2,3 @@
 <div id="marketplace-toast-region" class="marketplace-toast-region" aria-live="polite" aria-relevant="additions" aria-atomic="false"></div>
 {% if messages %}<div class="django-toast-source" hidden aria-hidden="true">{% for message in messages %}<span data-level="{{ message.tags }}" data-text="{{ message }}"></span>{% endfor %}</div>{% endif %}
 
-{# Include with skeleton_type: product, detail, table, store, category, notification, wishlist, or search. #}
-<div class="marketplace-skeleton" aria-busy="true" aria-label="Loading content">
-  <svg viewBox="0 0 360 220" role="img" aria-hidden="true">
-    <defs><linearGradient id="marketplace-skeleton-gradient" x1="0" x2="1"><stop offset="0" stop-color="transparent"/><stop offset=".5" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="transparent"/></linearGradient></defs>
-    {% if skeleton_type == 'detail' %}
-      <rect class="marketplace-skeleton__base" x="0" y="0" width="190" height="190" rx="14"/><rect class="marketplace-skeleton__base" x="205" y="10" width="125" height="15" rx="7"/><rect class="marketplace-skeleton__base" x="205" y="40" width="100" height="18" rx="7"/><rect class="marketplace-skeleton__base" x="205" y="75" width="70" height="18" rx="7"/><rect class="marketplace-skeleton__base" x="205" y="110" width="145" height="10" rx="5"/><rect class="marketplace-skeleton__base" x="205" y="130" width="125" height="10" rx="5"/><rect class="marketplace-skeleton__base" x="205" y="160" width="68" height="28" rx="8"/><rect class="marketplace-skeleton__base" x="282" y="160" width="68" height="28" rx="8"/>
-    {% elif skeleton_type == 'table' %}
-      {% for row in '1234' %}<rect class="marketplace-skeleton__base" x="0" y="{% widthratio forloop.counter0 42 42 %}" width="360" height="30" rx="6"/><rect class="marketplace-skeleton__base" x="12" y="{% widthratio forloop.counter0 42 50 %}" width="75" height="10" rx="5"/><rect class="marketplace-skeleton__base" x="140" y="{% widthratio forloop.counter0 42 50 %}" width="65" height="10" rx="5"/><rect class="marketplace-skeleton__base" x="270" y="{% widthratio forloop.counter0 42 50 %}" width="55" height="10" rx="5"/>{% endfor %}
-    {% elif skeleton_type == 'category' %}
-      <circle class="marketplace-skeleton__base" cx="52" cy="58" r="38"/><rect class="marketplace-skeleton__base" x="8" y="112" width="88" height="12" rx="6"/><circle class="marketplace-skeleton__base" cx="180" cy="58" r="38"/><rect class="marketplace-skeleton__base" x="136" y="112" width="88" height="12" rx="6"/><circle class="marketplace-skeleton__base" cx="308" cy="58" r="38"/><rect class="marketplace-skeleton__base" x="264" y="112" width="88" height="12" rx="6"/>
-    {% elif skeleton_type == 'notification' %}
-      {% for row in '123' %}<circle class="marketplace-skeleton__base" cx="24" cy="{% widthratio forloop.counter0 58 28 %}" r="16"/><rect class="marketplace-skeleton__base" x="52" y="{% widthratio forloop.counter0 58 17 %}" width="210" height="12" rx="6"/><rect class="marketplace-skeleton__base" x="52" y="{% widthratio forloop.counter0 58 35 %}" width="140" height="9" rx="4"/>{% endfor %}
-    {% else %}
-      <rect class="marketplace-skeleton__base" x="0" y="0" width="160" height="110" rx="12"/><rect class="marketplace-skeleton__base" x="0" y="125" width="142" height="12" rx="6"/><rect class="marketplace-skeleton__base" x="0" y="147" width="74" height="14" rx="6"/><rect class="marketplace-skeleton__base" x="0" y="177" width="100" height="30" rx="8"/><rect class="marketplace-skeleton__base" x="190" y="0" width="160" height="110" rx="12"/><rect class="marketplace-skeleton__base" x="190" y="125" width="142" height="12" rx="6"/><rect class="marketplace-skeleton__base" x="190" y="147" width="74" height="14" rx="6"/><rect class="marketplace-skeleton__base" x="190" y="177" width="100" height="30" rx="8"/>
-    {% endif %}
-    <rect class="marketplace-skeleton__shimmer" x="-360" y="0" width="360" height="220"/>
-  </svg>
-</div>
