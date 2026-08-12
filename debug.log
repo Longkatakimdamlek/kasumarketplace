@@ -18189,3 +18189,66 @@ django.db.utils.OperationalError: attempt to write a readonly database
 [INFO] 2026-08-12 07:16:25,008 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
 [DEBUG] 2026-08-12 07:16:49,118 urllib3.connectionpool _new_conn:1049 - Starting new HTTPS connection (1): api.zeptomail.com:443
 [DEBUG] 2026-08-12 07:16:51,044 urllib3.connectionpool _make_request:544 - https://api.zeptomail.com:443 "POST /v1.1/email HTTP/1.1" 201 205
+[INFO] 2026-08-12 11:47:25,829 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-12 11:50:31,621 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-12 11:50:46,968 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-12 11:50:47,043 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-12 11:51:01,244 django.server log_message:213 - "GET /verify-otp/ HTTP/1.1" 200 10648
+[INFO] 2026-08-12 11:51:02,215 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 304 0
+[INFO] 2026-08-12 11:51:08,097 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 304 0
+[INFO] 2026-08-12 11:51:08,673 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-12 11:51:20,159 django.server log_message:213 - "GET /signup/vendor/ HTTP/1.1" 200 12479
+[INFO] 2026-08-12 11:51:35,374 django.server log_message:213 - "GET / HTTP/1.1" 200 96931
+[INFO] 2026-08-12 11:51:40,523 django.server log_message:213 - "GET /admin/login/?next=/admin/ HTTP/1.1" 200 4178
+[INFO] 2026-08-12 11:51:58,863 apps.marketplace.signals merge_cart_on_login:77 - Cart merged for user admin@kasumarketplace.com.ng
+[INFO] 2026-08-12 11:51:58,992 django.server log_message:213 - "POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+[INFO] 2026-08-12 11:51:59,351 django.server log_message:213 - "GET /admin/ HTTP/1.1" 200 28800
+[INFO] 2026-08-12 11:52:13,366 django.server log_message:213 - "GET /admin/users/customuser/ HTTP/1.1" 200 27310
+[INFO] 2026-08-12 11:52:13,925 django.server log_message:213 - "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[INFO] 2026-08-12 11:52:14,955 django.server log_message:213 - "GET /static/admin/img/icon-no.svg HTTP/1.1" 200 560
+[INFO] 2026-08-12 11:52:25,572 django.server log_message:213 - "POST /admin/users/customuser/ HTTP/1.1" 200 22113
+[INFO] 2026-08-12 11:52:31,638 django.server log_message:213 - "POST /admin/users/customuser/ HTTP/1.1" 302 0
+[INFO] 2026-08-12 11:52:31,756 django.server log_message:213 - "GET /admin/users/customuser/ HTTP/1.1" 200 26878
+[INFO] 2026-08-12 11:52:31,830 django.server log_message:213 - "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[INFO] 2026-08-12 11:52:36,122 django.server log_message:213 - "POST /admin/logout/ HTTP/1.1" 302 0
+[INFO] 2026-08-12 11:52:36,978 django.server log_message:213 - "GET / HTTP/1.1" 200 96931
+[INFO] 2026-08-12 11:53:04,593 django.server log_message:213 - "GET /signup/vendor/ HTTP/1.1" 200 12479
+[INFO] 2026-08-12 11:53:06,314 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-12 11:53:46,595 apps.vendors.signals create_vendor_wallet:57 - Wallet created for vendor: remedylongkat@gmail.com
+[INFO] 2026-08-12 11:53:46,595 apps.vendors.signals create_vendor_profile_for_vendor_users:36 - VendorProfile created for vendor: remedylongkat@gmail.com
+[ERROR] 2026-08-12 11:53:46,597 apps.vendors.services.notifications send_vendor_welcome_email:552 - Failed to send vendor welcome email to remedylongkat@gmail.com: emails/vendor_welcome.html
+[DEBUG] 2026-08-12 11:53:48,990 urllib3.connectionpool _new_conn:1049 - Starting new HTTPS connection (1): api.zeptomail.com:443
+[DEBUG] 2026-08-12 11:53:51,255 urllib3.connectionpool _make_request:544 - https://api.zeptomail.com:443 "POST /v1.1/email HTTP/1.1" 201 205
+[INFO] 2026-08-12 11:53:51,373 django.server log_message:213 - "POST /signup/vendor/ HTTP/1.1" 302 0
+[INFO] 2026-08-12 11:53:51,396 django.server log_message:213 - "GET /verify-otp/ HTTP/1.1" 200 11439
+[INFO] 2026-08-12 11:53:53,194 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-12 11:54:51,127 django.server log_message:213 - "GET /resend-otp/ HTTP/1.1" 200 9700
+[INFO] 2026-08-12 11:54:52,879 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[DEBUG] 2026-08-12 11:54:57,735 urllib3.connectionpool _new_conn:1049 - Starting new HTTPS connection (1): api.zeptomail.com:443
+[DEBUG] 2026-08-12 11:54:59,453 urllib3.connectionpool _make_request:544 - https://api.zeptomail.com:443 "POST /v1.1/email HTTP/1.1" 201 205
+[INFO] 2026-08-12 11:54:59,530 django.server log_message:213 - "POST /resend-otp/ HTTP/1.1" 302 0
+[INFO] 2026-08-12 11:54:59,557 django.server log_message:213 - "GET /verify-otp/ HTTP/1.1" 200 11407
+[INFO] 2026-08-12 11:55:00,719 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-12 11:55:12,394 django.server log_message:213 - "GET /resend-otp/ HTTP/1.1" 200 9700
+[INFO] 2026-08-12 11:55:13,677 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[DEBUG] 2026-08-12 11:55:18,593 urllib3.connectionpool _new_conn:1049 - Starting new HTTPS connection (1): api.zeptomail.com:443
+[DEBUG] 2026-08-12 11:55:20,383 urllib3.connectionpool _make_request:544 - https://api.zeptomail.com:443 "POST /v1.1/email HTTP/1.1" 201 205
+[INFO] 2026-08-12 11:55:20,543 django.server log_message:213 - "POST /resend-otp/ HTTP/1.1" 302 0
+[INFO] 2026-08-12 11:55:20,564 django.server log_message:213 - "GET /verify-otp/ HTTP/1.1" 200 11407
+[INFO] 2026-08-12 11:55:21,751 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-12 11:55:40,015 django.server log_message:213 - "GET /resend-otp/ HTTP/1.1" 200 9700
+[INFO] 2026-08-12 11:55:41,528 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-12 11:55:44,389 django.server log_message:213 - "POST /resend-otp/ HTTP/1.1" 302 0
+[INFO] 2026-08-12 11:55:44,413 django.server log_message:213 - "GET /verify-otp/ HTTP/1.1" 200 11408
+[INFO] 2026-08-12 11:55:45,722 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-12 11:55:52,456 django.server log_message:213 - "GET /resend-otp/ HTTP/1.1" 200 9700
+[INFO] 2026-08-12 11:55:53,585 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-12 11:55:55,880 django.server log_message:213 - "POST /resend-otp/ HTTP/1.1" 302 0
+[INFO] 2026-08-12 11:55:55,906 django.server log_message:213 - "GET /verify-otp/ HTTP/1.1" 200 11408
+[INFO] 2026-08-12 11:55:57,090 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-12 11:56:28,405 django.server log_message:213 - "POST /verify-otp/ HTTP/1.1" 302 0
+[INFO] 2026-08-12 11:56:29,557 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 39869
+[INFO] 2026-08-12 11:56:29,714 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-12 11:56:32,092 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-12 12:03:20,551 django.server log_message:213 - "POST /accounts/logout/ HTTP/1.1" 302 0
+[INFO] 2026-08-12 12:03:21,404 django.server log_message:213 - "GET / HTTP/1.1" 200 97063

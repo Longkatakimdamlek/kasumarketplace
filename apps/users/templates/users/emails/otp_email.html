@@ -16,6 +16,7 @@
         .otp-container { background-color: #f6f6f7; border: 2px dashed #e1e3e5; border-radius: 12px; padding: 32px; text-align: center; margin: 32px 0; }
         .otp-label { font-size: 14px; color: #6d7175; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
         .otp-code { font-size: 42px; font-weight: 700; color: #008060; letter-spacing: 8px; font-family: 'Courier New', monospace; margin: 0; }
+        .otp-copy-hint { font-size: 12px; color: #6d7175; margin-top: 4px; margin-bottom: 0; }
         .otp-expiry { font-size: 13px; color: #bf0711; margin-top: 16px; font-weight: 500; }
         .info-box { background-color: #e3f5ff; border-left: 4px solid #0084ff; padding: 16px 20px; margin: 24px 0; border-radius: 8px; }
         .info-box p { margin: 0; font-size: 14px; color: #202223; line-height: 1.5; }
@@ -49,7 +50,8 @@
                             <p class="email-text">Thank you for signing up with KasuMarketplace! To complete your registration and secure your account, please use the verification code below:</p>
                             <div class="otp-container">
                                 <div class="otp-label">Your Verification Code</div>
-                                <p class="otp-code">{{ otp }}</p>
+                                <p class="otp-code" style="user-select: all; -webkit-user-select: all;">{{ otp }}</p>
+                                <p class="otp-copy-hint">Tap and hold the code above to copy it</p>
                                 <div class="otp-expiry">⏱ This code will expire in {{ expiry_time }} minutes</div>
                             </div>
                             <div class="info-box">

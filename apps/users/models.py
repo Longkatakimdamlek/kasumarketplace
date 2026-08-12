@@ -86,6 +86,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         null=True,
         help_text=_('Temporary OTP code for verification')
     )
+    otp_generation_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of OTP generation requests in the current window"
+    )
+    otp_window_started_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the current OTP generation rate-limit window started"
+    )
     date_joined = models.DateTimeField(
         _('date joined'),
         default=timezone.now
@@ -323,23 +332,11 @@ class OTPVerification(models.Model):
         # Delete existing OTP
         cls.objects.filter(user=user).delete()
 
-    # Create new OTP with expiration
-        expiry_time = timezone.now() + timezone.timedelta(
-            minutes=cls.OTP_EXPIRY_MINUTES
-        )
-    
-        otp = cls.objects.create(
-            user=user,
-            otp_hash=make_password(otp_code),
-            expires_at=expiry_time
-        )
-        return otp
-        
         # Create new OTP with expiration
         expiry_time = timezone.now() + timezone.timedelta(
             minutes=cls.OTP_EXPIRY_MINUTES
         )
-        
+    
         otp = cls.objects.create(
             user=user,
             otp_hash=make_password(otp_code),
@@ -408,40 +405,26 @@ class OTPVerification(models.Model):
     def check_generation_rate_limit(cls, user):
         """
         Check if user has exceeded OTP generation rate limit.
-        
-        Args:
-            user (CustomUser): User requesting OTP
-        
-        Returns:
-            tuple: (is_rate_limited: bool, error_message: str or None, time_until_retry: int or None)
+        Uses persistent counters on CustomUser so the count survives
+        even though OTPVerification rows get deleted on each generation.
         """
-        # Look back GENERATION_WINDOW_MINUTES to count recent OTP creations
-        window_start = timezone.now() - timezone.timedelta(
-            minutes=cls.GENERATION_WINDOW_MINUTES
-        )
-        
-        recent_count = cls.objects.filter(
-            user=user,
-            created_at__gte=window_start
-        ).count()
-        
-        if recent_count >= cls.MAX_GENERATION_ATTEMPTS:
-            # Calculate time until oldest OTP in window expires from tracking perspective
-            oldest_otp = cls.objects.filter(
-                user=user,
-                created_at__gte=window_start
-            ).order_by('created_at').first()
-            
-            if oldest_otp:
-                window_expires = oldest_otp.created_at + timezone.timedelta(
-                    minutes=cls.GENERATION_WINDOW_MINUTES
-                )
-                time_until_retry = int((window_expires - timezone.now()).total_seconds())
-                time_until_retry = max(0, time_until_retry)
-                
-                error_msg = f'Too many OTP requests. Please try again in {time_until_retry} seconds.'
-                return True, error_msg, time_until_retry
-        
+        now = timezone.now()
+        window = timezone.timedelta(minutes=cls.GENERATION_WINDOW_MINUTES)
+
+        if not user.otp_window_started_at or (now - user.otp_window_started_at) > window:
+            user.otp_generation_count = 0
+            user.otp_window_started_at = now
+
+        if user.otp_generation_count >= cls.MAX_GENERATION_ATTEMPTS:
+            window_expires = user.otp_window_started_at + window
+            time_until_retry = max(0, int((window_expires - now).total_seconds()))
+            error_msg = f'Too many OTP requests. Please try again in {time_until_retry} seconds.'
+            user.save(update_fields=['otp_generation_count', 'otp_window_started_at'])
+            return True, error_msg, time_until_retry
+
+        user.otp_generation_count += 1
+        user.save(update_fields=['otp_generation_count', 'otp_window_started_at'])
+
         return False, None, None
     
     def is_valid(self):
