@@ -1,0 +1,78 @@
+{% comment %}
+Compact product card for the 2/3/5-col grid.
+Usage: {% include 'vendors/products/_product_card.html' with product=product %}
+{% endcomment %}
+<div class="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99]">
+
+    <div class="relative aspect-square w-full overflow-hidden bg-gray-100">
+        {% if product.images.first %}
+        <img src="{{ product.images.first.image.url }}"
+             alt="{{ product.title }}"
+             class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105">
+        {% else %}
+        <div class="flex h-full w-full items-center justify-center">
+            <svg class="size-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+        </div>
+        {% endif %}
+
+        {# Status pill — soft tones, no emoji, text-only signal paired with color #}
+        <span class="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold sm:text-xs
+            {% if product.status == 'published' %}
+                {% if product.track_inventory %}
+                    {% if product.stock_quantity > product.low_stock_threshold %}bg-primary/10 text-primary
+                    {% elif product.stock_quantity > 0 %}bg-amber-100 text-amber-700
+                    {% else %}bg-red-100 text-red-700{% endif %}
+                {% else %}bg-blue-100 text-blue-700{% endif %}
+            {% else %}bg-gray-100 text-gray-500{% endif %}">
+            {% if product.status == 'published' %}
+                {% if product.track_inventory %}
+                    {% if product.stock_quantity > product.low_stock_threshold %}In Stock
+                    {% elif product.stock_quantity > 0 %}Low Stock
+                    {% else %}Out of Stock{% endif %}
+                {% else %}Unlimited{% endif %}
+            {% else %}Draft{% endif %}
+        </span>
+    </div>
+
+    <div class="flex flex-1 flex-col gap-1.5 p-2 sm:p-3">
+        <div>
+            <h3 class="truncate text-[13px] font-bold text-gray-900 sm:text-sm">{{ product.title }}</h3>
+            <p class="text-sm font-bold text-primary sm:text-base">₦{{ product.price|floatformat:2 }}</p>
+        </div>
+
+        <div class="flex items-center gap-2.5 text-[10px] text-gray-500 sm:text-[11px]">
+            <span class="flex items-center gap-1">
+                <svg class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                {{ product.views_count|default:0 }}
+            </span>
+            <span class="flex items-center gap-1">
+                <svg class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5.586a1 1 0 01.707.293l6.414 6.414a1 1 0 010 1.414l-7.586 7.586a1 1 0 01-1.414 0L4.293 12.293A1 1 0 014 11.586V6a3 3 0 013-3z"/>
+                </svg>
+                {{ product.sales_count|default:0 }}
+            </span>
+            <span class="flex items-center gap-1">
+                <svg class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                {{ product.images.count }}
+            </span>
+        </div>
+
+        <div class="mt-auto flex gap-1.5 pt-1">
+            <a href="{% url 'vendors:product_edit' product.slug %}"
+               class="flex-1 rounded-lg bg-primary px-2 py-1.5 text-center text-[11px] font-semibold text-white transition-colors hover:bg-primary/90 sm:text-xs">
+                Edit
+            </a>
+            <a href="{% url 'vendors:product_detail' product.slug %}"
+               class="flex-1 rounded-lg bg-gray-100 px-2 py-1.5 text-center text-[11px] font-semibold text-gray-700 transition-colors hover:bg-gray-200 sm:text-xs">
+                View
+            </a>
+        </div>
+    </div>
+</div>
