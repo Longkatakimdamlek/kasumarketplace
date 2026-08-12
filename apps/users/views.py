@@ -5,6 +5,7 @@ Location: apps/users/views.py
 
 from urllib.parse import urlparse
 import logging
+logger = logging.getLogger(__name__)
 
 from django.conf import settings
 from django.contrib import messages
@@ -551,9 +552,12 @@ class PasswordResetRequestView(DjangoPasswordResetView):
             plain_message = strip_tags(html_message)
 
             from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
-            msg = EmailMultiAlternatives(subject, plain_message, from_email, [user.email])
-            msg.attach_alternative(html_message, "text/html")
-            msg.send(fail_silently=False)
+            try:
+                msg = EmailMultiAlternatives(subject, plain_message, from_email, [user.email])
+                msg.attach_alternative(html_message, "text/html")
+                msg.send(fail_silently=False)
+            except Exception as e:
+                logger.error(f"Password reset email failed for {user.email}: {e}")
 
         messages.success(
             self.request,
@@ -642,15 +646,18 @@ class CustomPasswordResetView(DjangoPasswordResetView):
             html_message = render_to_string(self.email_template_name, context)
             plain_message = strip_tags(html_message)
 
-            msg = EmailMultiAlternatives(
-                subject=subject,
-                body=plain_message,
-                from_email=from_email,
-                to=[user.email],
-                reply_to=[reply_to] if reply_to else None,
-            )
-            msg.attach_alternative(html_message, 'text/html')
-            msg.send(fail_silently=False)
+            try:
+                msg = EmailMultiAlternatives(
+                    subject=subject,
+                    body=plain_message,
+                    from_email=from_email,
+                    to=[user.email],
+                    reply_to=[reply_to] if reply_to else None,
+                )
+                msg.attach_alternative(html_message, 'text/html')
+                msg.send(fail_silently=False)
+            except Exception as e:
+                logger.error(f"Password reset email failed for {user.email}: {e}")
 
         messages.success(
             self.request,

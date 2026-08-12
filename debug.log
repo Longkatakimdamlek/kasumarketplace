@@ -17835,3 +17835,244 @@ django.db.utils.OperationalError: attempt to write a readonly database
 [INFO] 2026-08-03 14:29:43,676 django.server log_message:213 - "GET / HTTP/1.1" 200 107914
 [INFO] 2026-08-03 14:29:49,337 django.server log_message:213 - "GET / HTTP/1.1" 200 107914
 [INFO] 2026-08-03 14:30:00,973 django.server log_message:213 - "GET / HTTP/1.1" 200 107914
+[INFO] 2026-08-09 07:15:44,761 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-09 07:15:45,328 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-09 07:19:56,065 django.server log_message:213 - "GET / HTTP/1.1" 200 107914
+[INFO] 2026-08-09 07:19:56,067 django.server handle_error:81 - - Broken pipe from ('127.0.0.1', 62041)
+[INFO] 2026-08-09 07:19:56,229 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-09 07:19:56,252 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 6695
+[INFO] 2026-08-09 07:19:56,324 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-09 07:19:56,326 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-09 07:19:56,651 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-09 07:20:32,484 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-09 07:20:32,508 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 4769
+[INFO] 2026-08-09 07:20:41,820 django.server log_message:213 - "POST /location/update/ HTTP/1.1" 200 49
+[INFO] 2026-08-09 07:20:45,146 django.server log_message:213 - "GET / HTTP/1.1" 200 107880
+[INFO] 2026-08-09 07:20:45,365 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-09 07:20:45,365 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-09 07:20:45,365 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-09 07:20:45,368 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 6695
+[INFO] 2026-08-09 07:20:45,469 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-09 12:17:04,487 django.server log_message:213 - "GET / HTTP/1.1" 200 107880
+[INFO] 2026-08-09 12:17:04,566 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-09 12:17:04,570 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-09 12:17:04,856 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-09 12:17:05,007 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 6695
+[INFO] 2026-08-09 12:17:05,449 django.server log_message:213 - "GET / HTTP/1.1" 200 107880
+[INFO] 2026-08-09 12:17:05,451 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-09 12:17:05,810 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-09 12:17:05,811 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-09 12:17:05,811 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-09 12:17:05,825 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 6695
+[INFO] 2026-08-09 12:17:05,874 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-09 12:17:15,225 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-09 12:17:16,242 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 4769
+[INFO] 2026-08-09 12:17:18,332 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-09 12:17:18,333 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-09 12:17:18,349 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-09 12:17:18,349 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-09 12:17:18,350 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-09 12:17:18,361 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-09 12:17:18,571 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-09 12:17:19,257 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-09 12:17:19,273 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-09 12:17:21,565 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[INFO] 2026-08-09 12:18:38,894 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-09 12:18:38,908 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-09 12:18:38,913 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-09 12:18:38,926 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-09 12:18:38,931 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-09 12:18:38,947 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-09 12:18:38,947 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-09 12:18:39,241 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-09 12:18:39,242 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-09 12:18:39,259 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-09 12:18:39,259 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-09 12:18:39,259 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-09 12:18:39,282 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 6695
+[INFO] 2026-08-09 12:18:40,665 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[WARNING] 2026-08-09 12:19:27,159 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:19:27,161 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:21:28,924 django.server log_message:213 - "GET /cart/ HTTP/1.1" 200 26609
+[WARNING] 2026-08-09 12:21:29,775 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:21:29,775 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:21:41,533 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-09 12:21:41,673 django.server log_message:213 - "GET /static/images/favicon/favicon_32x32.png HTTP/1.1" 200 2152
+[INFO] 2026-08-09 12:21:57,763 django.server log_message:213 - "GET / HTTP/1.1" 200 107880
+[WARNING] 2026-08-09 12:21:57,998 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:21:57,998 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:22:06,089 django.server log_message:213 - "GET /cart/ HTTP/1.1" 200 26609
+[WARNING] 2026-08-09 12:22:06,347 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:22:06,348 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:22:17,431 django.server log_message:213 - "GET / HTTP/1.1" 200 107880
+[WARNING] 2026-08-09 12:22:17,717 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:22:17,719 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:22:36,692 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/products/t-shrit-for-men/ HTTP/1.1" 200 47800
+[WARNING] 2026-08-09 12:22:37,026 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:22:37,028 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:22:54,401 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/ HTTP/1.1" 200 89208
+[WARNING] 2026-08-09 12:22:54,765 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:22:54,766 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:24:25,822 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/products/raberio-handback/ HTTP/1.1" 200 47508
+[WARNING] 2026-08-09 12:24:26,283 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:24:26,286 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:24:39,778 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 200 90
+[INFO] 2026-08-09 12:24:50,011 django.server log_message:213 - "GET /cart/ HTTP/1.1" 200 30392
+[WARNING] 2026-08-09 12:24:50,276 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:24:50,281 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:24:58,165 django.server log_message:213 - "GET /checkout/ HTTP/1.1" 302 0
+[INFO] 2026-08-09 12:25:36,260 django.server log_message:213 - "GET /accounts/login/?next=/checkout/ HTTP/1.1" 200 14195
+[WARNING] 2026-08-09 12:25:36,529 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:25:36,531 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:25:36,567 django.server log_message:213 - "GET /static/images/kasu_logo1.png HTTP/1.1" 200 26848
+[INFO] 2026-08-09 12:25:40,660 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 200 270
+[INFO] 2026-08-09 12:26:13,206 django.server log_message:213 - "POST /accounts/login/?next=/checkout/ HTTP/1.1" 302 0
+[INFO] 2026-08-09 12:26:13,334 django.server log_message:213 - "GET /checkout/ HTTP/1.1" 302 0
+[INFO] 2026-08-09 12:26:13,461 django.server log_message:213 - "GET / HTTP/1.1" 302 0
+[INFO] 2026-08-09 12:26:28,448 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 53464
+[WARNING] 2026-08-09 12:26:29,015 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:26:29,015 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:26:29,269 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-09 12:26:31,780 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-09 12:27:19,035 django.server log_message:213 - "GET /vendors/notifications/ HTTP/1.1" 200 50238
+[WARNING] 2026-08-09 12:27:19,399 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:27:19,399 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:27:57,176 django.server log_message:213 - "GET /vendors/profile/ HTTP/1.1" 200 55036
+[WARNING] 2026-08-09 12:27:57,360 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-09 12:27:57,363 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-09 12:28:40,034 django.server log_message:213 - "GET /vendors/store/brotherly-and-fashon-house/ HTTP/1.1" 200 89477
+[INFO] 2026-08-09 12:29:16,921 django.server log_message:213 - "GET /vendors/store/settings/ HTTP/1.1" 200 55108
+[INFO] 2026-08-09 12:29:42,498 django.server log_message:213 - "POST /vendors/store/settings/ HTTP/1.1" 302 0
+[INFO] 2026-08-09 12:29:42,595 django.server log_message:213 - "GET /vendors/store/settings/ HTTP/1.1" 200 55260
+[INFO] 2026-08-09 12:29:46,669 django.server log_message:213 - "GET /vendors/store/brotherly-and-fashon-house/ HTTP/1.1" 200 89477
+[INFO] 2026-08-09 12:33:36,110 django.server log_message:213 - "GET / HTTP/1.1" 302 0
+[INFO] 2026-08-09 12:33:36,193 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 53311
+[INFO] 2026-08-09 12:34:23,232 django.server log_message:213 - "POST /accounts/logout/ HTTP/1.1" 302 0
+[INFO] 2026-08-09 12:34:23,618 django.server log_message:213 - "GET / HTTP/1.1" 200 99172
+[INFO] 2026-08-09 12:34:31,360 django.server log_message:213 - "POST /location/update/ HTTP/1.1" 200 49
+[INFO] 2026-08-12 03:02:55,166 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-12 03:02:55,771 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-12 03:04:01,886 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 302 0
+[INFO] 2026-08-12 03:04:21,452 django.server log_message:213 - "GET /login/?next=/vendors/ HTTP/1.1" 200 14103
+[INFO] 2026-08-12 03:04:24,625 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 5669
+[INFO] 2026-08-12 03:04:36,855 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 5798
+[INFO] 2026-08-12 03:04:42,839 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:05:16,996 django.server log_message:213 - "GET /static/images/favicon/favicon.svg HTTP/1.1" 200 516
+[INFO] 2026-08-12 03:06:05,376 django.server log_message:213 - "GET / HTTP/1.1" 200 107639
+[INFO] 2026-08-12 03:06:06,494 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:06,560 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:06,674 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:06,955 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:07,412 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:12,970 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:13,173 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:17,686 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:17,688 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:17,688 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:17,690 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:17,690 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:17,692 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:19,418 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:19,418 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:20,081 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:22,790 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 304 0
+[INFO] 2026-08-12 03:06:32,153 django.server log_message:213 - "POST /location/update/ HTTP/1.1" 200 49
+[INFO] 2026-08-12 03:09:16,642 django.server log_message:213 - "GET / HTTP/1.1" 200 107673
+[INFO] 2026-08-12 03:09:17,668 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 5669
+[INFO] 2026-08-12 03:09:17,674 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-12 03:09:17,819 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-12 03:09:18,420 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-12 03:09:18,616 django.server log_message:213 - "GET / HTTP/1.1" 200 107673
+[INFO] 2026-08-12 03:09:18,859 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-12 03:09:20,635 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-12 03:09:20,636 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-12 03:09:20,636 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 5669
+[INFO] 2026-08-12 03:09:20,638 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-12 03:09:20,640 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-12 03:09:31,349 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 5798
+[INFO] 2026-08-12 03:09:34,807 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-12 03:09:34,808 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-12 03:09:34,812 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-12 03:09:34,835 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-12 03:09:35,016 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-12 03:09:35,061 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-12 03:09:35,079 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-12 03:09:35,106 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-12 03:09:35,108 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-12 03:09:35,532 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[INFO] 2026-08-12 03:09:39,580 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-12 03:09:40,828 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-12 03:10:23,842 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 304 0
+[WARNING] 2026-08-12 03:10:31,696 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-12 03:10:31,698 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-12 03:39:18,089 django.server log_message:213 - "GET / HTTP/1.1" 200 107013
+[INFO] 2026-08-12 03:39:18,975 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-12 03:39:18,976 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-12 03:39:19,007 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-12 03:39:19,008 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[WARNING] 2026-08-12 03:39:19,319 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-12 03:39:19,321 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-12 03:39:19,325 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-12 03:39:27,504 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-12 03:39:31,386 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-12 03:39:33,316 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-12 03:39:33,328 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-12 03:39:33,329 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-12 03:39:33,339 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-12 03:39:33,343 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-12 03:39:33,504 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-12 03:39:33,538 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-12 03:39:33,539 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-12 03:39:33,547 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[INFO] 2026-08-12 03:39:33,560 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-12 03:39:38,646 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-12 03:40:14,317 django.server log_message:213 - "GET / HTTP/1.1" 200 107013
+[INFO] 2026-08-12 03:40:15,030 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-12 03:40:15,031 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-12 03:40:15,031 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-12 03:40:15,032 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[WARNING] 2026-08-12 03:40:15,049 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-12 03:40:15,054 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[WARNING] 2026-08-12 03:40:15,417 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-12 03:40:22,525 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-12 03:40:23,584 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-12 03:40:27,044 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-12 03:40:27,046 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-12 03:40:27,046 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-12 03:40:27,047 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-12 03:40:27,048 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-12 03:40:27,058 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-12 03:40:27,694 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-12 03:40:27,716 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-12 03:40:27,716 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-12 03:40:27,717 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[INFO] 2026-08-12 03:40:29,868 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-12 04:36:32,181 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-12 04:36:32,756 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-12 04:47:02,244 django.server log_message:213 - "GET / HTTP/1.1" 200 107013
+[INFO] 2026-08-12 04:47:04,985 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-12 04:47:04,987 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-12 04:47:05,065 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-12 04:47:05,098 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-12 04:47:05,164 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-12 04:47:19,418 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-12 04:47:21,859 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-12 04:47:22,882 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-12 04:47:22,899 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-12 04:47:22,906 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-12 04:47:22,912 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-12 04:47:22,963 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-12 04:47:23,052 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-12 04:47:23,141 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-12 04:47:23,272 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-12 04:47:23,287 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-12 04:47:23,300 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[INFO] 2026-08-12 04:47:29,639 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-12 04:49:38,798 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/products/t-shrit-for-men/ HTTP/1.1" 200 46913
+[WARNING] 2026-08-12 04:50:47,429 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-12 04:50:47,450 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-12 04:55:29,104 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/ HTTP/1.1" 200 88382
+[INFO] 2026-08-12 04:55:29,839 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 304 0
+[WARNING] 2026-08-12 04:55:29,856 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-12 04:55:30,103 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-12 04:55:37,867 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 304 0
