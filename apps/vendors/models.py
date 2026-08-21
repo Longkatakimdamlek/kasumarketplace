@@ -5,6 +5,7 @@ Complete database schema for vendor verification, store management, products, or
 
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from cloudinary.models import CloudinaryField
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.utils.text import slugify
@@ -925,6 +926,15 @@ class Product(models.Model):
     )
     is_featured = models.BooleanField(default=False)
     
+    # Video (optional, one per product)
+    video = CloudinaryField(
+        'video',
+        resource_type='video',
+        null=True,
+        blank=True,
+        help_text="Optional product video (max ~60s recommended)"
+    )
+
     # Stats
     views_count = models.PositiveIntegerField(default=0)
     sales_count = models.PositiveIntegerField(default=0)
@@ -1101,6 +1111,14 @@ class Product(models.Model):
         if not image:
             image = self.images.first()
         return image
+
+    @property
+    def video_thumbnail_url(self):
+        """Cloudinary auto-generated poster frame for the product video."""
+        if not self.video:
+            return None
+        public_id = self.video.public_id
+        return f"https://res.cloudinary.com/{settings.CLOUDINARY_STORAGE['CLOUD_NAME']}/video/upload/f_jpg,so_0/{public_id}.jpg"
 
 
 class ProductImage(models.Model):

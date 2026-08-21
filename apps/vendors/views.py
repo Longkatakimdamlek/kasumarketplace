@@ -831,6 +831,7 @@ def product_create(request):
         subcategory_id = request.POST.get('subcategory')
         form = ProductForm(
             request.POST,
+            request.FILES,
             vendor=vendor,
             subcategory_id=subcategory_id,
             is_editing=False

@@ -52,6 +52,19 @@
                 {% if product.images.all %}
                 <img id="main-img" src="{{ product.images.all.0.image.url }}" alt="{{ product.title }}"
                      class="size-full object-cover">
+                {% if product.video %}
+                <div id="video-slide" class="hidden absolute inset-0">
+                    <video id="product-video" src="{{ product.video.url }}" controls class="hidden size-full object-cover"></video>
+                    <div id="video-poster" class="relative size-full cursor-pointer" onclick="playProductVideo()">
+                        <img src="{{ product.video_thumbnail_url }}" class="size-full object-cover" alt="Video preview">
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+                            <div class="flex size-14 items-center justify-center rounded-full bg-white/90">
+                                <svg class="size-6 text-gray-900 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 {% else %}
                 <div class="flex size-full items-center justify-center bg-gray-50">
                     <svg class="size-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,7 +80,7 @@
                 {% endif %}
             </div>
 
-            {% if product.images.count > 1 %}
+            {% if product.images.count > 1 or product.video %}
             <div class="flex gap-2 overflow-x-auto px-4 py-3 md:px-0" style="scrollbar-width: none;">
                 {% for img in product.images.all %}
                 <button type="button" onclick="setImg('{{ img.image.url }}', this)"
@@ -76,6 +89,15 @@
                     <img src="{{ img.image.url }}" alt="{{ product.title }} view {{ forloop.counter }}" class="size-full object-cover">
                 </button>
                 {% endfor %}
+                {% if product.video %}
+                <button type="button" onclick="setVideoSlide(this)"
+                        class="thumb-btn size-16 shrink-0 overflow-hidden rounded-xl border-2 border-transparent hover:border-brand/50 relative transition">
+                    <img src="{{ product.video_thumbnail_url }}" alt="Video" class="size-full object-cover">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <svg class="size-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                </button>
+                {% endif %}
             </div>
             {% endif %}
         </div>
@@ -320,6 +342,9 @@
     // Thumbnail swap — now correctly toggles the active border (fixed a dead
     // '.thumb-btn' selector bug in the original markup that never matched).
     function setImg(url, btn) {
+        document.getElementById('main-img').classList.remove('hidden');
+        const videoSlide = document.getElementById('video-slide');
+        if (videoSlide) videoSlide.classList.add('hidden');
         document.getElementById('main-img').src = url;
         document.querySelectorAll('.thumb-btn').forEach(b => b.classList.remove('border-brand'));
         document.querySelectorAll('.thumb-btn').forEach(b => b.classList.add('border-transparent'));
@@ -327,6 +352,24 @@
             btn.classList.remove('border-transparent');
             btn.classList.add('border-brand');
         }
+    }
+
+    function setVideoSlide(btn) {
+        document.getElementById('main-img').classList.add('hidden');
+        document.getElementById('video-slide').classList.remove('hidden');
+        document.querySelectorAll('.thumb-btn').forEach(b => b.classList.remove('border-brand'));
+        document.querySelectorAll('.thumb-btn').forEach(b => b.classList.add('border-transparent'));
+        if (btn) {
+            btn.classList.remove('border-transparent');
+            btn.classList.add('border-brand');
+        }
+    }
+
+    function playProductVideo() {
+        document.getElementById('video-poster').classList.add('hidden');
+        const vid = document.getElementById('product-video');
+        vid.classList.remove('hidden');
+        vid.play();
     }
 
     // Add to cart

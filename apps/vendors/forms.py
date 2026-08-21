@@ -1025,7 +1025,7 @@ class ProductForm(forms.ModelForm):
             'title', 'subcategory', 'description',
             'price', 'compare_at_price',
             'stock_quantity', 'low_stock_threshold', 'track_inventory',
-            'sku', 'status'
+            'sku', 'status', 'video'
         ]
         widgets = {
             'title': forms.TextInput(attrs={
@@ -1074,6 +1074,10 @@ class ProductForm(forms.ModelForm):
             'track_inventory': forms.CheckboxInput(attrs={
                 'class': 'w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary'
             }),
+            'video': forms.FileInput(attrs={
+                'class': 'hidden',
+                'accept': 'video/mp4,video/quicktime'
+            }),
         }
 
 
@@ -1082,6 +1086,7 @@ class ProductForm(forms.ModelForm):
         self.subcategory_id = kwargs.pop('subcategory_id', None)
         self.is_editing = kwargs.pop('is_editing', False)
         super().__init__(*args, **kwargs)
+        self.fields['video'].required = False
 
         # Set is_editing based on instance
         if self.instance and self.instance.pk:
@@ -1185,6 +1190,21 @@ class ProductForm(forms.ModelForm):
                     self.initial[field_name] = str(initial_value).lower() == 'true'
                 else:
                     self.initial[field_name] = initial_value
+
+    def clean_video(self):
+        video = self.cleaned_data.get('video')
+        if video and hasattr(video, 'size'):
+            if video.size > 50 * 1024 * 1024:
+                raise ValidationError('Video must be under 50MB.')
+            filename = video.name.lower() if hasattr(video, 'name') else ''
+            valid_extensions = ('.mp4', '.mov')
+            has_valid_ext = filename.endswith(valid_extensions)
+            has_valid_content_type = True
+            if hasattr(video, 'content_type'):
+                has_valid_content_type = video.content_type in ['video/mp4', 'video/quicktime']
+            if not (has_valid_ext or has_valid_content_type):
+                raise ValidationError('Only MP4 and MOV videos are allowed.')
+        return video
 
     def clean(self):
         cleaned_data = super().clean()
@@ -1362,10 +1382,10 @@ class ProductImageBaseFormSet(BaseInlineFormSet):
                 f'Please add {3 - image_count} more image(s).'
             )
 
-        if image_count > 5:
+        if image_count > 4:
             raise ValidationError(
-                f'Maximum 5 images allowed. You have {image_count} image(s). '
-                f'Please remove {image_count - 5} image(s).'
+                f'Maximum 4 images allowed. You have {image_count} image(s). '
+                f'Please remove {image_count - 4} image(s).'
             )
 
         primary_count = 0
@@ -1435,11 +1455,11 @@ ProductImageFormSet = inlineformset_factory(
     ProductImage,
     form=ProductImageForm,
     formset=ProductImageBaseFormSet,
-    extra=5,
+    extra=4,
     can_delete=True,
     min_num=0,
     validate_min=False,
-    max_num=5,
+    max_num=4,
     validate_max=True,
 )
 

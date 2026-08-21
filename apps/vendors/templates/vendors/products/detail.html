@@ -22,7 +22,8 @@
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
 
             {# Main image #}
-            <div class="aspect-square bg-gray-100 overflow-hidden">
+            <div class="aspect-square bg-gray-100 overflow-hidden relative"
+                 x-data="{ videoPlaying: false }">
                 {% if product.images.all %}
                     {% for image in product.images.all %}
                     <img x-show="currentImage === {{ forloop.counter0 }}"
@@ -30,6 +31,19 @@
                          alt="{{ product.title }}"
                          class="w-full h-full object-cover">
                     {% endfor %}
+                {% if product.video %}
+                <div x-show="currentImage === {{ product.images.count }}" class="w-full h-full">
+                    <video x-show="videoPlaying" src="{{ product.video.url }}" controls autoplay class="w-full h-full object-cover"></video>
+                    <div x-show="!videoPlaying" class="relative w-full h-full cursor-pointer" @click="videoPlaying = true">
+                        <img src="{{ product.video_thumbnail_url }}" class="w-full h-full object-cover" alt="Video preview">
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+                            <div class="flex size-14 items-center justify-center rounded-full bg-white/90">
+                                <svg class="size-6 text-gray-900 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 {% else %}
                 <div class="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
                     <svg class="size-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,7 +55,7 @@
             </div>
 
             {# Thumbnail strip #}
-            {% if product.images.all %}
+            {% if product.images.all or product.video %}
             <div class="flex gap-2 p-3 overflow-x-auto">
                 {% for image in product.images.all %}
                 <button @click="currentImage = {{ forloop.counter0 }}"
@@ -51,6 +65,16 @@
                     <img src="{{ image.image.url }}" alt="" class="object-cover w-full h-full">
                 </button>
                 {% endfor %}
+                {% if product.video %}
+                <button @click="currentImage = {{ product.images.count }}"
+                        class="shrink-0 size-14 rounded-lg overflow-hidden border-2 relative transition-colors"
+                        :class="currentImage === {{ product.images.count }} ? 'border-primary' : 'border-transparent hover:border-gray-300'">
+                    <img src="{{ product.video_thumbnail_url }}" alt="Video" class="object-cover w-full h-full">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <svg class="size-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                </button>
+                {% endif %}
             </div>
             {% endif %}
         </div>

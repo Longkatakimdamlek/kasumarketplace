@@ -31,15 +31,120 @@
     trackInventory: true,
 
     init() {
-        if (this.subcategory) {
+        if (this.loadDraft()) {
+            this.restoreDraft();
+            this.draftRestored = true;
+            clearTimeout(this._draftMsgTimeout);
+            this._draftMsgTimeout = setTimeout(() => { this.draftRestored = false; }, 3000);
+        } else if (this.subcategory) {
             this.loadAttributes(this.subcategory);
         }
         this.updateImageCount();
+
+        this.$watch('subcategory', () => this.saveDraft());
+        this.$nextTick(() => {
+            const watchedIds = ['{{ form.title.id_for_label }}', '{{ form.description.id_for_label }}', '{{ form.price.id_for_label }}', '{{ form.compare_at_price.id_for_label }}', '{{ form.stock_quantity.id_for_label }}'];
+            watchedIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', () => this.debouncedSaveDraft());
+            });
+        });
     },
 
     updateImageCount() {
         const inputs = document.querySelectorAll('input[type=file][name*=image]');
         this.imageCount = Array.from(inputs).filter(input => input.files && input.files.length > 0).length;
+    },
+
+    imageError: '',
+
+    handleSubmit(event) {
+        if (this.imageCount < 3) {
+            event.preventDefault();
+            this.imageError = `Please upload at least 3 photos. You currently have ${this.imageCount}.`;
+            document.getElementById('image-formset').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+        if (this.imageCount > 4) {
+            event.preventDefault();
+            this.imageError = `Maximum 4 photos allowed. Please remove ${this.imageCount - 4}.`;
+            document.getElementById('image-formset').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+        this.imageError = '';
+        this.submitting = true;
+        this.clearDraft();
+    },
+
+    distributeFiles(fileList) {
+        const files = Array.from(fileList).slice(0, 4);
+        const slots = Array.from(document.querySelectorAll('#image-formset input[type=file]'));
+
+        files.forEach((file, i) => {
+            const input = slots[i];
+            if (!input) return;
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    },
+
+    draftKey: 'kasu_product_draft_{{ vendor.id }}',
+    draftStatus: '',
+    draftRestored: false,
+
+    debouncedSaveDraft() {
+        clearTimeout(this._draftTimeout);
+        this._draftTimeout = setTimeout(() => this.saveDraft(), 800);
+    },
+
+    saveDraft() {
+        const data = {
+            subcategory: this.subcategory,
+            title: document.getElementById('{{ form.title.id_for_label }}')?.value || '',
+            description: document.getElementById('{{ form.description.id_for_label }}')?.value || '',
+            price: document.getElementById('{{ form.price.id_for_label }}')?.value || '',
+            compare_at_price: document.getElementById('{{ form.compare_at_price.id_for_label }}')?.value || '',
+            stock_quantity: document.getElementById('{{ form.stock_quantity.id_for_label }}')?.value || '',
+            attributes: this.attributes.map(a => ({ id: a.id, value: a.value })),
+            savedAt: new Date().toISOString()
+        };
+        try {
+            localStorage.setItem(this.draftKey, JSON.stringify(data));
+            this.draftStatus = 'Draft saved ✓';
+            clearTimeout(this._draftMsgTimeout);
+            this._draftMsgTimeout = setTimeout(() => { this.draftStatus = ''; }, 2000);
+        } catch (e) { console.error('Draft save failed', e); }
+    },
+
+    loadDraft() {
+        const raw = localStorage.getItem(this.draftKey);
+        if (!raw) return null;
+        try { return JSON.parse(raw); } catch (e) { return null; }
+    },
+
+    restoreDraft() {
+        const d = this.loadDraft();
+        if (!d) return;
+        this.subcategory = d.subcategory || '';
+        if (document.getElementById('{{ form.title.id_for_label }}')) document.getElementById('{{ form.title.id_for_label }}').value = d.title || '';
+        if (document.getElementById('{{ form.description.id_for_label }}')) document.getElementById('{{ form.description.id_for_label }}').value = d.description || '';
+        if (document.getElementById('{{ form.price.id_for_label }}')) document.getElementById('{{ form.price.id_for_label }}').value = d.price || '';
+        if (document.getElementById('{{ form.compare_at_price.id_for_label }}')) document.getElementById('{{ form.compare_at_price.id_for_label }}').value = d.compare_at_price || '';
+        if (document.getElementById('{{ form.stock_quantity.id_for_label }}')) document.getElementById('{{ form.stock_quantity.id_for_label }}').value = d.stock_quantity || '';
+        this.loadAttributes(this.subcategory).then(() => {
+            if (d.attributes) {
+                d.attributes.forEach(saved => {
+                    const attr = this.attributes.find(a => a.id === saved.id);
+                    if (attr) attr.value = saved.value;
+                });
+            }
+        });
+    },
+
+    clearDraft() {
+        localStorage.removeItem(this.draftKey);
     },
 
     async loadAttributes(subcategoryId) {
@@ -65,8 +170,16 @@
         }
     }
 }"
-              @submit="submitting = true">
+              @submit="handleSubmit($event)">
             {% csrf_token %}
+
+            {# Draft auto-restored toast #}
+            <div x-show="draftRestored" x-cloak x-transition class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p class="text-sm text-blue-800">✓ Your unsaved draft was restored.</p>
+            </div>
+
+            {# Save indicator #}
+            <div x-show="draftStatus" x-cloak x-text="draftStatus" class="mb-4 text-xs font-medium text-green-600"></div>
 
             {# Generic backend-error banner — only shown if the view passes general_error #}
             {% if general_error %}
@@ -147,6 +260,7 @@
                             <template x-if="attr.field_type === 'text'">
                                 <input type="text"
                                        x-model="attr.value"
+                                       @input="debouncedSaveDraft()"
                                        :name="'attr_' + attr.id"
                                        :id="'attr_' + attr.id"
                                        :placeholder="attr.placeholder || 'Enter ' + attr.name.toLowerCase()"
@@ -157,6 +271,7 @@
                             <template x-if="attr.field_type === 'number'">
                                 <input type="number"
                                        x-model="attr.value"
+                                       @input="debouncedSaveDraft()"
                                        :name="'attr_' + attr.id"
                                        :id="'attr_' + attr.id"
                                        :placeholder="attr.placeholder"
@@ -166,6 +281,7 @@
 
                             <template x-if="attr.field_type === 'dropdown'">
                                 <select x-model="attr.value"
+                                        @change="debouncedSaveDraft()"
                                         :name="'attr_' + attr.id"
                                         :id="'attr_' + attr.id"
                                         :required="attr.is_required"
@@ -179,6 +295,7 @@
 
                             <template x-if="attr.field_type === 'textarea'">
                                 <textarea x-model="attr.value"
+                                          @input="debouncedSaveDraft()"
                                           :name="'attr_' + attr.id"
                                           :id="'attr_' + attr.id"
                                           :placeholder="attr.placeholder"
@@ -191,6 +308,7 @@
                                 <label class="flex items-center">
                                     <input type="checkbox"
                                            x-model="attr.value"
+                                           @change="debouncedSaveDraft()"
                                            :name="'attr_' + attr.id"
                                            :id="'attr_' + attr.id"
                                            value="true"
@@ -217,19 +335,23 @@
             <!-- Photos -->
             <div class="mb-8">
                 <h2 class="text-base font-bold text-gray-900 mb-3">
-                    Photos <span class="text-sm font-normal text-gray-500">(3-5 required)</span>
+                    Photos <span class="text-sm font-normal text-gray-500">(3-4 required)</span>
                 </h2>
 
+                <div x-show="imageError" x-cloak class="mb-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p class="text-sm text-red-700" x-text="imageError"></p>
+                </div>
+
                 <div class="mb-4 p-3 border rounded-lg"
-                     :class="imageCount >= 3 && imageCount <= 5 ? 'bg-green-50 border-green-300' : 'bg-amber-50 border-amber-300'">
+                     :class="imageCount >= 3 && imageCount <= 4 ? 'bg-green-50 border-green-300' : 'bg-amber-50 border-amber-300'">
                     <div class="flex items-center justify-between">
-                        <p class="text-sm font-medium"
-                           :class="imageCount >= 3 && imageCount <= 5 ? 'text-green-800' : 'text-amber-800'">
+                        <span class="text-sm font-medium"
+                           :class="imageCount >= 3 && imageCount <= 4 ? 'text-green-800' : 'text-amber-800'">
                             <span x-show="imageCount < 3">Need <span x-text="3 - imageCount"></span> more</span>
-                            <span x-show="imageCount >= 3 && imageCount <= 5">Looks good</span>
-                            <span x-show="imageCount > 5">Remove <span x-text="imageCount - 5"></span></span>
+                            <span x-show="imageCount >= 3 && imageCount <= 4">Looks good</span>
+                            <span x-show="imageCount > 4">Remove <span x-text="imageCount - 4"></span></span>
                         </p>
-                        <span class="text-sm font-bold" :class="imageCount >= 3 && imageCount <= 5 ? 'text-green-600' : 'text-amber-600'" x-text="imageCount + ' / 3-5'"></span>
+                        <span class="text-sm font-bold" :class="imageCount >= 3 && imageCount <= 4 ? 'text-green-600' : 'text-amber-600'" x-text="imageCount + ' / 3-4'"></span>
                     </div>
                 </div>
 
@@ -242,6 +364,15 @@
                 {% endif %}
 
                 {{ formset.management_form }}
+
+                <input type="file" id="multi-photo-input" accept="image/*" multiple class="hidden"
+                       @change="distributeFiles($event.target.files); $event.target.value = ''">
+
+                <button type="button"
+                        @click="document.getElementById('multi-photo-input').click()"
+                        class="mb-3 w-full py-2.5 border-2 border-dashed border-primary/40 rounded-lg text-sm font-semibold text-primary hover:bg-primary/5 transition-colors">
+                    Select up to 4 Photos at Once
+                </button>
 
                 <div class="grid grid-cols-5 gap-1.5 sm:gap-3" id="image-formset" @image-selected.window="updateImageCount()">
                     {% if formset.forms %}
@@ -318,6 +449,71 @@
                             <p class="text-amber-800 text-sm">Image upload forms not available. Please refresh the page.</p>
                         </div>
                     {% endif %}
+
+                    {# Video slot (5th slot) #}
+                    <div class="relative cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-1 text-center transition-colors hover:border-primary sm:p-3"
+                         x-data="{ hasFile: false, previewUrl: null, fileInput: null }"
+                         x-init="fileInput = $el.querySelector('input[type=file]')"
+                         @click="if (!hasFile) fileInput.click()">
+
+                        <div class="aspect-square flex flex-col items-center justify-center">
+                            <template x-if="previewUrl">
+                                <video :src="previewUrl" class="w-full h-full object-cover rounded" muted></video>
+                            </template>
+                            <template x-if="!previewUrl">
+                                <div class="flex flex-col items-center">
+                                    <svg class="size-4 text-gray-400 sm:size-8 sm:mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                    </svg>
+                                    <span class="hidden text-primary text-[11px] font-semibold sm:block">Video</span>
+                                </div>
+                            </template>
+                        </div>
+
+                        <input type="file"
+                               name="{{ form.video.html_name }}"
+                               id="{{ form.video.id_for_label }}"
+                               accept="video/mp4,video/quicktime"
+                               @change="
+                                   if ($event.target.files && $event.target.files.length > 0) {
+                                       const file = $event.target.files[0];
+                                       if (file.size > 50 * 1024 * 1024) {
+                                           alert('Video must be under 50MB');
+                                           $event.target.value = '';
+                                           hasFile = false; previewUrl = null;
+                                           return;
+                                       }
+                                       const tempUrl = URL.createObjectURL(file);
+                                       const probe = document.createElement('video');
+                                       probe.preload = 'metadata';
+                                       probe.onloadedmetadata = () => {
+                                           if (probe.duration > 60) {
+                                               alert('Video must be 60 seconds or shorter. Yours is ' + Math.round(probe.duration) + 's.');
+                                               $event.target.value = '';
+                                               hasFile = false; previewUrl = null;
+                                               URL.revokeObjectURL(tempUrl);
+                                               return;
+                                           }
+                                           hasFile = true;
+                                           previewUrl = tempUrl;
+                                       };
+                                       probe.src = tempUrl;
+                                   } else {
+                                       hasFile = false; previewUrl = null;
+                                   }
+                               "
+                               class="hidden">
+
+                        <button type="button"
+                                x-show="hasFile"
+                                aria-label="Remove video"
+                                @click.stop="fileInput.value = ''; hasFile = false; previewUrl = null;"
+                                class="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-red-500 text-white sm:size-5">
+                            <svg class="size-2.5 sm:size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 

@@ -18252,3 +18252,343 @@ django.db.utils.OperationalError: attempt to write a readonly database
 [INFO] 2026-08-12 11:56:32,092 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
 [INFO] 2026-08-12 12:03:20,551 django.server log_message:213 - "POST /accounts/logout/ HTTP/1.1" 302 0
 [INFO] 2026-08-12 12:03:21,404 django.server log_message:213 - "GET / HTTP/1.1" 200 97063
+[INFO] 2026-08-21 12:30:18,893 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-21 12:30:19,425 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 12:31:11,113 django.server log_message:213 - "GET / HTTP/1.1" 200 96931
+[INFO] 2026-08-21 12:31:12,749 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-21 12:31:12,888 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-21 12:31:12,907 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 12:31:13,084 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-21 12:31:13,088 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 12:31:22,531 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-21 12:31:22,888 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 12:31:24,301 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-21 12:31:24,302 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-21 12:31:24,303 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-21 12:31:24,344 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-21 12:31:24,353 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-21 12:31:24,574 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-21 12:31:24,577 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[INFO] 2026-08-21 12:31:24,577 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-21 12:31:24,613 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-21 12:31:24,823 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-21 12:31:28,086 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 12:31:28,475 django.server log_message:213 - "GET /static/images/favicon/favicon_32x32.png HTTP/1.1" 200 2152
+[INFO] 2026-08-21 12:31:47,946 django.server log_message:213 - "POST /location/update/ HTTP/1.1" 200 49
+[INFO] 2026-08-21 12:31:55,717 django.server log_message:213 - "GET /login/?next=/ HTTP/1.1" 200 12049
+[INFO] 2026-08-21 12:31:56,004 django.server log_message:213 - "GET /static/images/kasu_logo1.png HTTP/1.1" 200 26848
+[INFO] 2026-08-21 12:32:01,883 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 200 270
+[INFO] 2026-08-21 12:32:06,031 django.server log_message:213 - "GET /static/images/favicon/favicon.svg HTTP/1.1" 200 516
+[INFO] 2026-08-21 12:32:42,995 django.server log_message:213 - "POST /login/?next=/ HTTP/1.1" 302 0
+[INFO] 2026-08-21 12:32:43,228 django.server log_message:213 - "GET / HTTP/1.1" 302 0
+[INFO] 2026-08-21 12:32:46,232 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 51235
+[INFO] 2026-08-21 12:32:46,816 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 12:32:53,840 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 12:33:02,740 django.server log_message:213 - "GET /vendors/orders/ HTTP/1.1" 200 40971
+[INFO] 2026-08-21 12:33:28,967 django.server log_message:213 - "GET /vendors/orders/ HTTP/1.1" 200 40971
+[INFO] 2026-08-21 12:33:39,285 django.server log_message:213 - "GET /vendors/products/ HTTP/1.1" 200 55018
+[INFO] 2026-08-21 12:33:50,403 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[INFO] 2026-08-21 12:34:34,597 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[INFO] 2026-08-21 12:34:35,371 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 12:34:37,118 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 12:34:37,122 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 12:34:41,752 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 12:34:41,754 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 12:34:46,013 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 13:35:31,025 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 13:37:02,438 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 13:37:02,439 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:37:56,565 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 50980
+[WARNING] 2026-08-21 13:37:57,062 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 13:37:57,143 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:38:10,053 django.server log_message:213 - "GET /vendors/products/ HTTP/1.1" 200 55018
+[WARNING] 2026-08-21 13:38:10,362 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 13:38:10,365 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:38:22,151 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 13:38:22,471 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 13:38:22,496 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:39:27,488 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=1 HTTP/1.1" 200 941
+[INFO] 2026-08-21 13:39:57,800 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 13:39:58,514 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 13:39:58,561 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[WARNING] 2026-08-21 13:39:58,661 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:39:58,805 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 13:39:58,881 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 13:40:04,691 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 13:40:04,702 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 13:40:07,384 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 13:40:13,641 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=1 HTTP/1.1" 200 941
+[INFO] 2026-08-21 13:42:37,989 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 13:42:38,469 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 13:42:38,620 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:42:38,820 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[INFO] 2026-08-21 13:42:38,822 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 13:42:38,948 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 13:42:39,175 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[WARNING] 2026-08-21 13:42:45,593 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 13:42:45,595 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 13:42:45,597 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 13:42:45,598 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[WARNING] 2026-08-21 13:42:45,599 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:42:49,925 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 13:42:49,926 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 13:42:53,854 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 13:43:44,577 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=1 HTTP/1.1" 200 941
+[INFO] 2026-08-21 13:46:13,135 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 13:46:13,605 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 13:46:13,648 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 13:46:13,672 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 13:46:13,680 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[WARNING] 2026-08-21 13:46:13,770 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:46:13,972 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 13:46:20,584 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 13:46:20,587 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[WARNING] 2026-08-21 13:46:20,587 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:46:20,703 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 13:46:20,722 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 13:46:26,354 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 13:46:26,355 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 13:46:28,243 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 13:47:01,982 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 13:47:02,350 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 13:47:02,358 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 13:47:02,359 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 13:47:02,361 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[WARNING] 2026-08-21 13:47:02,363 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:47:08,383 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 13:47:08,385 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 13:47:10,168 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 13:47:52,026 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 13:47:52,636 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 13:47:52,639 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 13:47:52,639 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 13:47:52,728 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[WARNING] 2026-08-21 13:47:52,774 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:47:59,660 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 13:47:59,660 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 13:48:01,458 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 13:49:35,513 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 13:49:50,633 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 13:49:50,804 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 13:49:50,821 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:49:50,948 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 13:49:51,240 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 13:49:51,247 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 13:49:55,507 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 13:49:55,508 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 13:49:58,934 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 13:55:42,408 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 13:56:21,008 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 13:56:21,507 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 13:56:21,536 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:56:35,083 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 13:57:16,996 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 13:57:17,386 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 13:57:17,457 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[WARNING] 2026-08-21 13:57:17,491 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 13:57:17,749 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 13:57:17,761 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 13:57:24,435 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 13:57:24,474 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 13:57:26,022 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 13:57:29,429 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 14:03:25,898 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76525
+[WARNING] 2026-08-21 14:03:26,216 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 14:03:26,223 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[WARNING] 2026-08-21 14:03:26,262 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:03:26,467 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 14:03:26,519 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 14:03:32,207 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 14:03:32,208 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 14:03:34,215 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 14:16:48,603 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76144
+[INFO] 2026-08-21 14:16:49,682 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[WARNING] 2026-08-21 14:16:49,858 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 14:16:49,875 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:16:50,043 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 14:16:50,175 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 14:16:56,825 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 14:16:56,831 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 14:17:00,652 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 14:17:01,492 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 14:19:33,119 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76144
+[WARNING] 2026-08-21 14:19:33,449 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 14:19:33,482 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:19:33,492 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 14:19:34,224 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 14:19:34,375 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 14:19:40,773 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 14:19:41,298 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 14:19:41,490 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 14:19:42,313 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 14:22:02,746 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76144
+[WARNING] 2026-08-21 14:22:02,965 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 14:22:02,977 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[WARNING] 2026-08-21 14:22:03,007 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:22:03,045 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 14:22:03,065 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 14:22:03,158 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76144
+[WARNING] 2026-08-21 14:22:09,708 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 14:22:09,733 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:22:14,717 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 14:22:17,150 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 14:23:33,724 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76144
+[INFO] 2026-08-21 14:23:34,020 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[WARNING] 2026-08-21 14:23:34,058 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 14:23:34,061 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:23:34,059 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 14:23:34,066 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 14:23:39,488 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 14:23:40,372 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 14:23:41,698 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 14:23:42,710 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 14:24:31,854 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76144
+[WARNING] 2026-08-21 14:24:32,181 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 14:24:32,184 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 14:24:32,184 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 14:24:32,186 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[WARNING] 2026-08-21 14:24:32,191 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:24:38,564 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 14:24:38,565 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 14:24:39,765 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 14:24:40,558 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 14:25:45,270 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76144
+[WARNING] 2026-08-21 14:25:45,599 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 14:25:45,608 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 14:25:45,609 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 14:25:45,610 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[WARNING] 2026-08-21 14:25:45,615 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:25:52,512 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 14:25:52,518 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 14:25:54,076 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 14:25:54,630 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 14:47:59,376 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76516
+[WARNING] 2026-08-21 14:47:59,659 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 14:47:59,662 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[WARNING] 2026-08-21 14:47:59,663 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:47:59,850 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76516
+[INFO] 2026-08-21 14:47:59,881 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 14:47:59,891 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[WARNING] 2026-08-21 14:48:04,223 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 14:48:04,224 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:48:04,227 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 14:48:04,344 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 14:48:04,352 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 14:48:08,469 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 14:48:08,470 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 14:48:09,283 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 14:48:09,961 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 14:48:49,576 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76516
+[WARNING] 2026-08-21 14:48:49,835 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 14:48:49,840 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 14:48:49,840 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[WARNING] 2026-08-21 14:48:49,865 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:48:49,890 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 14:48:54,733 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 14:48:54,737 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 14:48:55,445 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 14:48:56,101 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 14:49:07,012 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76516
+[WARNING] 2026-08-21 14:49:07,262 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 14:49:07,264 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 14:49:07,264 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 14:49:07,267 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[WARNING] 2026-08-21 14:49:07,277 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:49:07,408 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76516
+[WARNING] 2026-08-21 14:49:11,842 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 14:49:11,846 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 14:49:11,847 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 14:49:11,848 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 14:49:11,849 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 14:49:16,129 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 14:49:16,132 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 14:49:16,867 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 14:49:17,386 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 15:16:09,736 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 77584
+[WARNING] 2026-08-21 15:16:10,989 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 15:16:11,333 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 15:16:11,350 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 15:16:11,625 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 77584
+[INFO] 2026-08-21 15:16:11,818 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 15:16:11,822 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 15:16:26,717 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 15:16:26,719 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[WARNING] 2026-08-21 15:16:26,741 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[INFO] 2026-08-21 15:16:26,749 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[WARNING] 2026-08-21 15:16:26,785 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 15:16:36,223 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 15:16:36,238 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 15:16:43,185 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 15:16:45,207 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 16:17:10,376 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\models.py changed, reloading.
+[INFO] 2026-08-21 16:17:26,675 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-21 16:17:26,745 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:17:47,815 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\models.py changed, reloading.
+[INFO] 2026-08-21 16:17:53,807 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-21 16:17:53,880 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:18:02,494 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\models.py changed, reloading.
+[INFO] 2026-08-21 16:18:08,450 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-21 16:18:08,542 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:18:36,483 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\forms.py changed, reloading.
+[INFO] 2026-08-21 16:18:41,745 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-21 16:18:41,843 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:18:55,298 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\forms.py changed, reloading.
+[INFO] 2026-08-21 16:19:00,812 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-21 16:19:00,885 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:19:10,518 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\forms.py changed, reloading.
+[INFO] 2026-08-21 16:19:15,994 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-21 16:19:16,218 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:19:24,346 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\forms.py changed, reloading.
+[INFO] 2026-08-21 16:19:28,999 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-21 16:19:29,081 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:19:40,295 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\forms.py changed, reloading.
+[INFO] 2026-08-21 16:19:44,789 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-21 16:19:44,892 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:19:57,351 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\forms.py changed, reloading.
+[INFO] 2026-08-21 16:20:02,444 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-21 16:20:02,519 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:20:27,073 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\views.py changed, reloading.
+[INFO] 2026-08-21 16:20:31,403 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-21 16:20:31,474 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:27:58,213 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:28:26,764 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-21 16:42:45,511 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 76627
+[WARNING] 2026-08-21 16:42:46,818 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-21 16:42:46,819 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 11977
+[INFO] 2026-08-21 16:42:47,626 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 16:42:47,689 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 16:42:47,691 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 16:43:03,062 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 16:43:03,212 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 16:43:07,422 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[INFO] 2026-08-21 16:43:09,769 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 16:48:25,980 django.server log_message:213 - "POST /vendors/products/create/ HTTP/1.1" 200 77138
+[INFO] 2026-08-21 16:48:30,033 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=4 HTTP/1.1" 200 834
+[DEBUG] 2026-08-21 16:56:37,288 urllib3.connectionpool _new_conn:1049 - Starting new HTTPS connection (1): api.cloudinary.com:443
+[DEBUG] 2026-08-21 16:56:46,431 urllib3.connectionpool _make_request:544 - https://api.cloudinary.com:443 "POST /v1_1/dbqmpndyp/video/upload HTTP/1.1" 200 None
+[DEBUG] 2026-08-21 16:56:48,185 urllib3.connectionpool _make_request:544 - https://api.cloudinary.com:443 "POST /v1_1/dbqmpndyp/image/upload HTTP/1.1" 200 None
+[DEBUG] 2026-08-21 16:56:49,966 urllib3.connectionpool _make_request:544 - https://api.cloudinary.com:443 "POST /v1_1/dbqmpndyp/image/upload HTTP/1.1" 200 None
+[DEBUG] 2026-08-21 16:56:50,836 urllib3.connectionpool _make_request:544 - https://api.cloudinary.com:443 "POST /v1_1/dbqmpndyp/image/upload HTTP/1.1" 200 None
+[INFO] 2026-08-21 16:56:51,320 django.server log_message:213 - "POST /vendors/products/create/ HTTP/1.1" 302 0
+[INFO] 2026-08-21 16:56:51,839 django.server log_message:213 - "GET /vendors/products/lo/ HTTP/1.1" 200 46046
+[INFO] 2026-08-21 16:57:21,684 django.server log_message:213 - "GET /vendors/store/brotherly-and-fashon-house/ HTTP/1.1" 200 90587
+[INFO] 2026-08-21 16:57:59,166 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/products/lo/ HTTP/1.1" 200 43206
+[INFO] 2026-08-21 16:58:08,389 django.server log_message:213 - "GET /static/images/favicon/favicon_180x180.png HTTP/1.1" 200 120382
+[INFO] 2026-08-21 16:58:52,164 django.server log_message:213 - "GET / HTTP/1.1" 302 0
+[INFO] 2026-08-21 16:58:53,658 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 51298
+[INFO] 2026-08-21 16:59:01,137 django.server log_message:213 - "GET /vendors/store/brotherly-and-fashon-house/ HTTP/1.1" 200 90587
+[INFO] 2026-08-21 17:27:44,595 django.server log_message:213 - "GET /vendors/products/ HTTP/1.1" 200 58451
+[INFO] 2026-08-21 17:27:55,455 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 77741
+[INFO] 2026-08-21 17:28:02,852 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=1 HTTP/1.1" 200 941
+[INFO] 2026-08-21 17:28:57,667 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 77741
+[INFO] 2026-08-21 17:29:00,692 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=1 HTTP/1.1" 200 941
+[DEBUG] 2026-08-21 17:31:51,903 urllib3.connectionpool _get_conn:289 - Resetting dropped connection: api.cloudinary.com
+[DEBUG] 2026-08-21 17:31:57,190 urllib3.connectionpool _make_request:544 - https://api.cloudinary.com:443 "POST /v1_1/dbqmpndyp/video/upload HTTP/1.1" 200 None
+[DEBUG] 2026-08-21 17:31:58,553 urllib3.connectionpool _make_request:544 - https://api.cloudinary.com:443 "POST /v1_1/dbqmpndyp/image/upload HTTP/1.1" 200 None
+[DEBUG] 2026-08-21 17:31:59,377 urllib3.connectionpool _make_request:544 - https://api.cloudinary.com:443 "POST /v1_1/dbqmpndyp/image/upload HTTP/1.1" 200 None
+[DEBUG] 2026-08-21 17:32:00,376 urllib3.connectionpool _make_request:544 - https://api.cloudinary.com:443 "POST /v1_1/dbqmpndyp/image/upload HTTP/1.1" 200 None
+[INFO] 2026-08-21 17:32:00,996 django.server log_message:213 - "POST /vendors/products/create/ HTTP/1.1" 302 0
+[INFO] 2026-08-21 17:32:01,331 django.server log_message:213 - "GET /vendors/products/vcnbvcb/ HTTP/1.1" 200 46391
+[INFO] 2026-08-21 17:32:04,843 django.server log_message:213 - "GET /static/images/favicon/favicon_512x512.png HTTP/1.1" 200 396691
+[INFO] 2026-08-21 17:32:41,406 django.server log_message:213 - "GET /vendors/store/brotherly-and-fashon-house/ HTTP/1.1" 200 93753
+[INFO] 2026-08-21 17:32:53,031 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/products/vcnbvcb/ HTTP/1.1" 200 43536

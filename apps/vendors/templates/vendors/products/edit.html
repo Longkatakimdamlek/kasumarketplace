@@ -58,9 +58,26 @@
     updateNewImageCount() {
         const inputs = document.querySelectorAll('input[type=file][name*=image]');
         this.newImageCount = Array.from(inputs).filter(i => i.files && i.files.length > 0).length;
+    },
+
+    imageError: '',
+
+    handleSubmit(event) {
+        if (this.totalImageCount < 3) {
+            event.preventDefault();
+            this.imageError = `Please have at least 3 photos. You currently have ${this.totalImageCount}.`;
+            return;
+        }
+        if (this.totalImageCount > 4) {
+            event.preventDefault();
+            this.imageError = `Maximum 4 photos allowed. Please remove ${this.totalImageCount - 4}.`;
+            return;
+        }
+        this.imageError = '';
+        this.submitting = true;
     }
 }"
-              @submit="submitting = true">
+              @submit="handleSubmit($event)">
             {% csrf_token %}
 
             <!-- Header -->
@@ -200,18 +217,22 @@
             <!-- Photos: existing + new, combined in one grid -->
             <div class="mb-8">
                 <h2 class="text-base font-bold text-gray-900 mb-3">
-                    Photos <span class="text-sm font-normal text-gray-500">(3-5 required)</span>
+                    Photos <span class="text-sm font-normal text-gray-500">(3-4 required)</span>
                 </h2>
 
+                <div x-show="imageError" x-cloak class="mb-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p class="text-sm text-red-700" x-text="imageError"></p>
+                </div>
+
                 <div class="mb-4 p-3 border rounded-lg"
-                     :class="totalImageCount >= 3 && totalImageCount <= 5 ? 'bg-green-50 border-green-300' : 'bg-amber-50 border-amber-300'">
+                     :class="totalImageCount >= 3 && totalImageCount <= 4 ? 'bg-green-50 border-green-300' : 'bg-amber-50 border-amber-300'">
                     <div class="flex items-center justify-between">
-                        <p class="text-sm font-medium" :class="totalImageCount >= 3 && totalImageCount <= 5 ? 'text-green-800' : 'text-amber-800'">
+                        <p class="text-sm font-medium" :class="totalImageCount >= 3 && totalImageCount <= 4 ? 'text-green-800' : 'text-amber-800'">
                             <span x-show="totalImageCount < 3">Need <span x-text="3 - totalImageCount"></span> more</span>
-                            <span x-show="totalImageCount >= 3 && totalImageCount <= 5">Looks good</span>
-                            <span x-show="totalImageCount > 5">Remove <span x-text="totalImageCount - 5"></span></span>
+                            <span x-show="totalImageCount >= 3 && totalImageCount <= 4">Looks good</span>
+                            <span x-show="totalImageCount > 4">Remove <span x-text="totalImageCount - 4"></span></span>
                         </p>
-                        <span class="text-sm font-bold" :class="totalImageCount >= 3 && totalImageCount <= 5 ? 'text-green-600' : 'text-amber-600'" x-text="totalImageCount + ' / 3-5'"></span>
+                        <span class="text-sm font-bold" :class="totalImageCount >= 3 && totalImageCount <= 4 ? 'text-green-600' : 'text-amber-600'" x-text="totalImageCount + ' / 3-4'"></span>
                     </div>
                 </div>
 
@@ -312,6 +333,74 @@
                         </div>
                         {% endfor %}
                     {% endif %}
+
+                    {# Video slot #}
+                    <div class="relative cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-1 text-center transition-colors hover:border-primary sm:p-3"
+                         x-data="{ hasFile: false, previewUrl: {% if product.video %}'{{ product.video.url }}'{% else %}null{% endif %}, fileInput: null, clearVideo: false }"
+                         x-init="fileInput = $el.querySelector('input[type=file]')"
+                         @click="if (!hasFile && !previewUrl) fileInput.click()">
+
+                        <div class="aspect-square flex flex-col items-center justify-center">
+                            <template x-if="previewUrl">
+                                <video :src="previewUrl" class="w-full h-full object-cover rounded" muted controls></video>
+                            </template>
+                            <template x-if="!previewUrl">
+                                <div class="flex flex-col items-center">
+                                    <svg class="size-4 text-gray-400 sm:size-8 sm:mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                    </svg>
+                                    <span class="hidden text-primary text-[11px] font-semibold sm:block">Video</span>
+                                </div>
+                            </template>
+                        </div>
+
+                        <input type="file"
+                               name="{{ form.video.html_name }}"
+                               id="{{ form.video.id_for_label }}"
+                               accept="video/mp4,video/quicktime"
+                               @change="
+                                   if ($event.target.files && $event.target.files.length > 0) {
+                                       const file = $event.target.files[0];
+                                       if (file.size > 50 * 1024 * 1024) {
+                                           alert('Video must be under 50MB');
+                                           $event.target.value = '';
+                                           return;
+                                       }
+                                       const tempUrl = URL.createObjectURL(file);
+                                       const probe = document.createElement('video');
+                                       probe.preload = 'metadata';
+                                       probe.onloadedmetadata = () => {
+                                           if (probe.duration > 60) {
+                                               alert('Video must be 60 seconds or shorter. Yours is ' + Math.round(probe.duration) + 's.');
+                                               $event.target.value = '';
+                                               URL.revokeObjectURL(tempUrl);
+                                               return;
+                                           }
+                                           previewUrl = tempUrl;
+                                           clearVideo = false;
+                                       };
+                                       probe.src = tempUrl;
+                                   }
+                               "
+                               class="hidden">
+
+                        {# Marks current video for removal if replaced/removed without a new file #}
+                        <input type="checkbox" name="video-clear" :checked="clearVideo" class="hidden">
+
+                        <button type="button"
+                                x-show="previewUrl"
+                                aria-label="Remove video"
+                                @click.stop="
+                                    fileInput.value = '';
+                                    previewUrl = null;
+                                    clearVideo = true;
+                                "
+                                class="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-red-500 text-white sm:size-5">
+                            <svg class="size-2.5 sm:size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 
