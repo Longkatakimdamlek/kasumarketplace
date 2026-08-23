@@ -36,6 +36,7 @@ from apps.marketplace.models import (
     MainOrder, SubOrder,
     PaymentTransaction,
     Promotion,
+    Wishlist,
 )
 from apps.marketplace.services.cart_service import (
     get_or_create_cart,
@@ -144,6 +145,12 @@ def product_list(request):
         store__is_published=True,
     ).select_related('store', 'subcategory__main_category').prefetch_related('images')
 
+    wishlisted_ids = set()
+    if request.user.is_authenticated:
+        wishlisted_ids = set(
+            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+        )
+
     # Search
     query = request.GET.get('q', '').strip()
     if query:
@@ -240,11 +247,313 @@ def product_list(request):
         'vendor_promotions': vendor_promotions,
         'spotlight_stores': spotlight_stores,
         'top_seller_store': top_seller_store,
+        'wishlisted_ids': wishlisted_ids,
         'store_promotion_contact_email': 'support@kasumarketplace.com.ng',
         'paystack_public_key': settings.PAYSTACK_PUBLIC_KEY,
     }
 
     return render(request, 'marketplace/product_list.html', context)
+
+
+@vendor_forbidden
+def new_arrivals(request):
+    """Show the newest published products first."""
+    products = Product.objects.filter(
+        status='published',
+        store__is_published=True,
+    ).select_related(
+        'store', 'subcategory__main_category'
+    ).prefetch_related('images').order_by('-created_at')[:60]
+
+    buyer_lat, buyer_lon = get_buyer_location(request)
+
+    wishlisted_ids = set()
+    if request.user.is_authenticated:
+        wishlisted_ids = set(
+            Wishlist.objects.filter(user=request.user).values_list(
+                'product_id', flat=True
+            )
+        )
+
+    annotated = []
+    for product in products:
+        product.distance = get_distance_to_store(
+            buyer_lat, buyer_lon, product.store
+        )
+        annotated.append(product)
+
+    context = {
+        'annotated_products': annotated,
+        'wishlisted_ids': wishlisted_ids,
+        'page_title': 'New Arrivals',
+        'page_subtitle': f'{len(annotated)} newly listed products',
+    }
+    return render(request, 'marketplace/new_arrivals.html', context)
+
+
+@vendor_forbidden
+def deals(request):
+    """
+    Products currently discounted — compare_at_price set and greater than price.
+    Sorted by discount percentage, biggest savings first.
+    """
+    from django.db.models import F, ExpressionWrapper, DecimalField
+
+    products = Product.objects.filter(
+        status='published',
+        store__is_published=True,
+        compare_at_price__isnull=False,
+        compare_at_price__gt=F('price'),
+    ).select_related('store', 'subcategory__main_category').prefetch_related('images')
+
+    products = products.annotate(
+        discount_amount=ExpressionWrapper(
+            F('compare_at_price') - F('price'),
+            output_field=DecimalField(max_digits=12, decimal_places=2)
+        )
+    ).order_by('-discount_amount')[:60]
+
+    buyer_lat, buyer_lon = get_buyer_location(request)
+
+    wishlisted_ids = set()
+    if request.user.is_authenticated:
+        from apps.marketplace.models import Wishlist
+        wishlisted_ids = set(
+            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+        )
+
+    annotated = []
+    for product in products:
+        product.distance = get_distance_to_store(buyer_lat, buyer_lon, product.store)
+        annotated.append(product)
+
+    context = {
+        'annotated_products': annotated,
+        'wishlisted_ids': wishlisted_ids,
+        'page_title': 'Flash Deals',
+        'page_subtitle': f'{len(annotated)} products discounted right now',
+    }
+    return render(request, 'marketplace/deals.html', context)
+
+
+@vendor_forbidden
+def store_directory(request):
+    """Browse all published stores, optionally filtered by category."""
+    stores = Store.objects.filter(
+        is_published=True,
+    ).select_related('main_category').order_by('-average_rating')
+
+    category_slug = request.GET.get('category', '')
+    if category_slug:
+        stores = stores.filter(main_category__slug=category_slug)
+
+    context = {
+        'stores': stores,
+        'selected_category': category_slug,
+    }
+    return render(request, 'marketplace/store_directory.html', context)
+
+
+@vendor_forbidden
+def category_landing(request, slug):
+    """
+    Dedicated landing page for a product category.
+    Shows subcategory filters, top store, and all products in the category.
+    """
+    from django.shortcuts import get_object_or_404
+
+    category = get_object_or_404(
+        MainCategory,
+        slug=slug,
+        is_active=True,
+    )
+
+    subcategories = category.subcategories.filter(is_active=True)
+
+    products = Product.objects.filter(
+        status='published',
+        store__is_published=True,
+        subcategory__main_category=category,
+    ).select_related('store', 'subcategory__main_category').prefetch_related('images')
+
+    subcategory_slug = request.GET.get('subcategory', '')
+    if subcategory_slug:
+        products = products.filter(subcategory__slug=subcategory_slug)
+
+    buyer_lat, buyer_lon = get_buyer_location(request)
+
+    wishlisted_ids = set()
+    if request.user.is_authenticated:
+        wishlisted_ids = set(
+            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+        )
+
+    annotated = []
+    for product in products:
+        product.distance = get_distance_to_store(buyer_lat, buyer_lon, product.store)
+        annotated.append(product)
+
+    top_store = Store.objects.filter(
+        main_category=category,
+        is_published=True,
+    ).order_by('-average_rating').first()
+
+    context = {
+        'category': category,
+        'subcategories': subcategories,
+        'selected_subcategory': subcategory_slug,
+        'annotated_products': annotated,
+        'wishlisted_ids': wishlisted_ids,
+        'top_store': top_store,
+    }
+    return render(request, 'marketplace/category_landing.html', context)
+
+
+@vendor_forbidden
+def trending(request):
+    """Weekly best-selling products ranked by cached trending_score."""
+    products = Product.objects.filter(
+        status='published',
+        store__is_published=True,
+        trending_score__gt=0,
+    ).select_related('store', 'subcategory__main_category').prefetch_related('images').order_by('-trending_score')[:60]
+
+    buyer_lat, buyer_lon = get_buyer_location(request)
+
+    wishlisted_ids = set()
+    if request.user.is_authenticated:
+        wishlisted_ids = set(
+            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+        )
+
+    annotated = []
+    for product in products:
+        product.distance = get_distance_to_store(buyer_lat, buyer_lon, product.store)
+        annotated.append(product)
+
+    context = {
+        'annotated_products': annotated,
+        'wishlisted_ids': wishlisted_ids,
+        'page_title': 'Trending This Week at KASU',
+        'page_subtitle': f'{len(annotated)} product{{% if annotated|length != 1 %}}s{{% endif %}} flying off the shelves',
+    }
+    return render(request, 'marketplace/trending.html', context)
+
+
+@vendor_forbidden
+def contact_us(request):
+    """Contact form with subject-based email routing."""
+    from apps.marketplace.forms import ContactForm
+    from apps.marketplace.services.email_service import _send, ADMIN_EMAIL
+
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            subject_label = dict(ContactForm.SUBJECT_CHOICES)[data['subject']]
+            body = (
+                f"Role: {data['role']}\n"
+                f"Name: {data['name']}\n"
+                f"Email: {data['email']}\n"
+                f"Subject: {subject_label}\n\n"
+                f"Message:\n{data['message']}"
+            )
+
+            recipient_map = {
+                'order_issue': 'support@kasumarketplace.com.ng',
+                'vendor_application': ADMIN_EMAIL or 'support@kasumarketplace.com.ng',
+                'report_problem': ADMIN_EMAIL or 'support@kasumarketplace.com.ng',
+                'general': 'info@kasumarketplace.com.ng',
+            }
+            to_email = recipient_map[data['subject']]
+
+            _send(
+                subject=f"[Contact] {subject_label} — {data['name']}",
+                message=body,
+                recipient_list=[to_email],
+            )
+
+            messages.success(request, 'Your message has been sent. We\'ll get back to you shortly.')
+            return redirect('marketplace:contact')
+    else:
+        form = ContactForm()
+
+    context = {'form': form}
+    return render(request, 'marketplace/contact.html', context)
+
+
+@buyer_required
+def wishlist_view(request):
+    """Buyer's saved products, using the same card partial as listing pages."""
+    from apps.marketplace.services.distance_service import get_distance_to_store
+
+    buyer_lat, buyer_lon = get_buyer_location(request)
+
+    wishlist_items = Wishlist.objects.filter(
+        user=request.user
+    ).select_related('product__store').prefetch_related(
+        'product__images'
+    ).order_by('-created_at')
+
+    products = []
+    for wishlist_item in wishlist_items:
+        product = wishlist_item.product
+        product.distance = get_distance_to_store(
+            buyer_lat, buyer_lon, product.store
+        )
+        products.append(product)
+
+    context = {
+        'wishlist_products': products,
+        'wishlisted_ids': {wishlist_item.product_id for wishlist_item in wishlist_items},
+    }
+    return render(request, 'marketplace/wishlist.html', context)
+
+
+def search_results(request):
+    """Unified search results for matching stores and published products."""
+    query = request.GET.get('q', '').strip()
+
+    products = Product.objects.none()
+    stores = Store.objects.none()
+
+    if query:
+        products = Product.objects.filter(
+            Q(title__icontains=query) | Q(description__icontains=query),
+            status='published',
+            store__is_published=True,
+        ).select_related('store').prefetch_related('images')
+
+        stores = Store.objects.filter(
+            Q(store_name__icontains=query) | Q(tagline__icontains=query),
+            is_published=True,
+        ).select_related('main_category')
+
+    buyer_lat, buyer_lon = get_buyer_location(request)
+    annotated_products = []
+    for product in products:
+        product.distance = get_distance_to_store(
+            buyer_lat, buyer_lon, product.store
+        )
+        annotated_products.append(product)
+
+    wishlisted_ids = set()
+    if request.user.is_authenticated:
+        wishlisted_ids = set(
+            Wishlist.objects.filter(user=request.user).values_list(
+                'product_id', flat=True
+            )
+        )
+
+    context = {
+        'query': query,
+        'products': annotated_products,
+        'stores': stores,
+        'product_count': len(annotated_products),
+        'store_count': stores.count(),
+        'wishlisted_ids': wishlisted_ids,
+    }
+    return render(request, 'marketplace/search_results.html', context)
 
 # ==========================================
 # PRODUCT DETAIL

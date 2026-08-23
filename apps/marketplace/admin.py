@@ -10,6 +10,7 @@ from .models import (
     WalletTransaction,
     RefundRecord,
     Dispute,
+    Wishlist, Review,
 )
 
 
@@ -622,3 +623,18 @@ class DisputeAdmin(admin.ModelAdmin):
 class PromotionAdmin(admin.ModelAdmin):
     list_display = ['title', 'is_active', 'sort_order']
     list_editable = ['is_active', 'sort_order']
+
+
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    list_display = ['user', 'product', 'created_at']
+    search_fields = ['user__email', 'product__title']
+    readonly_fields = ['user', 'product', 'created_at']
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ['product', 'user', 'rating', 'created_at']
+    list_filter = ['rating', 'created_at']
+    search_fields = ['product__title', 'user__email', 'comment']
+    readonly_fields = ['user', 'product', 'rating', 'comment', 'created_at']

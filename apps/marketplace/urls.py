@@ -23,6 +23,36 @@ urlpatterns = [
         name='about'
     ),
     path(
+        'search/',
+        views.search_results,
+        name='search'
+    ),
+    path(
+        'new-arrivals/',
+        views.new_arrivals,
+        name='new_arrivals'
+    ),
+    path(
+        'deals/',
+        views.deals,
+        name='deals'
+    ),
+    path(
+        'trending/',
+        views.trending,
+        name='trending'
+    ),
+    path(
+        'stores/',
+        views.store_directory,
+        name='store_directory'
+    ),
+    path(
+        'category/<slug:slug>/',
+        views.category_landing,
+        name='category_landing'
+    ),
+    path(
         'product/<slug:slug>/',
         views.product_detail,
         name='product_detail'
@@ -40,6 +70,11 @@ urlpatterns = [
         'cart/',
         views.cart_view,
         name='cart'
+    ),
+    path(
+        'wishlist/',
+        views.wishlist_view,
+        name='wishlist'
     ),
     path(
         'cart/add/',
@@ -112,4 +147,5 @@ urlpatterns = [
         name='update_buyer_location'
     ),
     path('profile/', views.profile, name='profile'),
+    path('contact/', views.contact_us, name='contact'),
 ]

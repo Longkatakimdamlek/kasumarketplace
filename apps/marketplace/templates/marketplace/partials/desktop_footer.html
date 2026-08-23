@@ -47,8 +47,9 @@
           <h3 class="mb-4 font-bold text-white">Marketplace</h3>
           <ul class="space-y-4 text-slate-300">
             <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:product_list' %}">Shop</a></li>
+            <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:deals' %}">Deals</a></li>
+            <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:store_directory' %}">Stores</a></li>
             <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:about' %}">About</a></li>
-            <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:product_list' %}">Categories</a></li>
             <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:cart' %}">Cart</a></li>
             <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:profile' %}">Profile</a></li>
           </ul>
@@ -67,7 +68,7 @@
         <div>
           <h3 class="mb-4 font-bold text-white">Support</h3>
           <ul class="space-y-4 text-slate-300">
-            <li class="font-medium hover:text-primary"><a href="#">Help Center</a></li>
+            <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:contact' %}">Contact Us</a></li>
             <li class="font-medium hover:text-primary"><a href="#">Buyer Protection</a></li>
             <li class="font-medium hover:text-primary"><a href="#">Vendor Support</a></li>
           </ul>

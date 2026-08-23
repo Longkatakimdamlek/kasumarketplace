@@ -205,7 +205,7 @@
       </a>
 
       <!-- Search bar -->
-      <form method="GET" action="{% url 'marketplace:product_list' %}" class="flex-1 max-w-xl">
+      <form method="GET" action="{% url 'marketplace:search' %}" class="flex-1 max-w-xl">
         <div class="relative">
           <input
             type="text"
@@ -224,6 +224,10 @@
       <nav class="flex items-center gap-1">
         <a href="{% url 'marketplace:product_list' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">Home</a>
         <button onclick="toggleDrawer()" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">Categories</button>
+        <a href="{% url 'marketplace:deals' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">Deals</a>
+        <a href="{% url 'marketplace:store_directory' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">Stores</a>
+        <a href="{% url 'marketplace:new_arrivals' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">New</a>
+        <a href="{% url 'marketplace:trending' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">Trending</a>
       </nav>
 
       <!-- Cart + Profile -->
@@ -267,7 +271,7 @@
       </div>
 
       <!-- Search -->
-      <form method="GET" action="{% url 'marketplace:product_list' %}" class="flex-1">
+      <form method="GET" action="{% url 'marketplace:search' %}" class="flex-1">
         <div class="relative">
           <input
             type="text"
@@ -385,6 +389,20 @@
       }
     }
 
+    // ---- Subcategory expand/collapse in drawer ----
+    function toggleSubcategoryPanel(id, btn) {
+      const panel = document.getElementById(id);
+      const chevron = btn.querySelector('.subcat-chevron');
+      const isOpen = !panel.classList.contains('hidden');
+      if (isOpen) {
+        panel.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+      } else {
+        panel.classList.remove('hidden');
+        chevron.style.transform = 'rotate(90deg)';
+      }
+    }
+
     // ---- Update cart badge ----
     function updateCartBadge(count) {
       const badges = document.querySelectorAll('#mobile-cart-badge, #desktop-cart-badge');
@@ -459,6 +477,41 @@
 
         card.addEventListener('mousemove', updateTilt);
         card.addEventListener('mouseleave', resetTransform);
+      });
+    }
+
+    function toggleCardWishlist(btn, storeSlug, productSlug) {
+      fetch(`/shop/${storeSlug}/products/${productSlug}/wishlist/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) return;
+        const icon = btn.querySelector('.wishlist-icon');
+        if (data.wishlisted) {
+          icon.classList.add('fill-primary', 'text-primary');
+          icon.classList.remove('fill-none', 'text-muted');
+        } else {
+          icon.classList.remove('fill-primary', 'text-primary');
+          icon.classList.add('fill-none', 'text-muted');
+        }
+      });
+    }
+
+    function addToCartCard(productId, btn) {
+      fetch('/cart/add/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ product_id: productId, quantity: 1 })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          btn.classList.add('scale-125');
+          setTimeout(() => btn.classList.remove('scale-125'), 150);
+          if (data.cart_total_items) updateCartBadge(data.cart_total_items);
+        }
       });
     }
 

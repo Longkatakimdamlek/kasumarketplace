@@ -156,6 +156,7 @@ TEMPLATES = [
                 'apps.users.context_processors.site_settings',
                 'apps.users.context_processors.otp_settings',
                 'apps.marketplace.context_processors.cart_context',
+                'apps.marketplace.context_processors.categories_processor',
                 'apps.vendors.context_processors.vendor_context',
             ],
         },

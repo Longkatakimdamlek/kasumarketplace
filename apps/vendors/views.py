@@ -25,7 +25,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.http import Http404
 from django.db.models import Sum, Count, Q
-from apps.marketplace.models import SubOrder, SubOrderItem
+from apps.marketplace.models import Review, SubOrder, SubOrderItem, Wishlist
 from apps.marketplace.services.distance_service import get_distance_to_store
 from django.utils import timezone
 from django.db.models import F
@@ -1050,6 +1050,38 @@ def product_detail_public(request, store_slug, product_slug):
     buyer_lat = request.session.get('buyer_lat')
     buyer_lon = request.session.get('buyer_lon')
 
+    reviews = Review.objects.filter(
+        product=product
+    ).select_related('user').order_by('-created_at')
+    user_review = None
+    can_review = False
+    if request.user.is_authenticated and not is_owner:
+        user_review = reviews.filter(user=request.user).first()
+        if not user_review:
+            can_review = Review.user_has_purchased(request.user, product)
+
+    is_wishlisted = False
+    if request.user.is_authenticated and not is_owner:
+        is_wishlisted = Wishlist.objects.filter(
+            user=request.user, product=product
+        ).exists()
+
+    related_products = Product.objects.filter(
+        subcategory=product.subcategory,
+        status='published',
+        store__is_published=True,
+    ).exclude(pk=product.pk).select_related('store').prefetch_related('images')[:4]
+
+    if related_products.count() < 4:
+        extra_needed = 4 - related_products.count()
+        extra = Product.objects.filter(
+            store=store,
+            status='published',
+        ).exclude(pk=product.pk).exclude(
+            pk__in=[related.pk for related in related_products]
+        ).select_related('store').prefetch_related('images')[:extra_needed]
+        related_products = list(related_products) + list(extra)
+
     context = {
         'product': product,
         'store': store,
@@ -1059,9 +1091,80 @@ def product_detail_public(request, store_slug, product_slug):
         'is_preview': not store.is_published and is_owner,
         'in_stock': product.is_in_stock,
         'distance': get_distance_to_store(buyer_lat, buyer_lon, store),
+        'reviews': reviews,
+        'user_review': user_review,
+        'can_review': can_review,
+        'is_wishlisted': is_wishlisted,
+        'related_products': related_products,
     }
 
     return render(request, 'products/product_detail.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def submit_review(request, store_slug, product_slug):
+    """AJAX: buyer submits a star rating and optional comment."""
+    product = get_object_or_404(
+        Product,
+        slug=product_slug,
+        store__slug=store_slug,
+        status='published',
+    )
+
+    if Review.objects.filter(user=request.user, product=product).exists():
+        return JsonResponse(
+            {'success': False, 'message': 'You already reviewed this product.'},
+            status=400,
+        )
+
+    if not Review.user_has_purchased(request.user, product):
+        return JsonResponse(
+            {
+                'success': False,
+                'message': 'Only buyers who purchased this product can review it.',
+            },
+            status=403,
+        )
+
+    try:
+        rating = int(request.POST.get('rating', 0))
+    except (ValueError, TypeError):
+        rating = 0
+
+    if rating < 1 or rating > 5:
+        return JsonResponse(
+            {'success': False, 'message': 'Please select a star rating.'},
+            status=400,
+        )
+
+    Review.objects.create(
+        user=request.user,
+        product=product,
+        rating=rating,
+        comment=request.POST.get('comment', '').strip(),
+    )
+    return JsonResponse({'success': True, 'message': 'Review submitted. Thank you!'})
+
+
+@login_required
+@require_http_methods(["POST"])
+def toggle_wishlist(request, store_slug, product_slug):
+    """AJAX: toggle a product in or out of the buyer's wishlist."""
+    product = get_object_or_404(
+        Product,
+        slug=product_slug,
+        store__slug=store_slug,
+        status='published',
+    )
+
+    existing = Wishlist.objects.filter(user=request.user, product=product).first()
+    if existing:
+        existing.delete()
+        return JsonResponse({'success': True, 'wishlisted': False})
+
+    Wishlist.objects.create(user=request.user, product=product)
+    return JsonResponse({'success': True, 'wishlisted': True})
 
 
 # ==========================================

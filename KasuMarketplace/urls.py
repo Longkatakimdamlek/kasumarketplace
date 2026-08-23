@@ -29,6 +29,12 @@ urlpatterns = [
     path('shop/<slug:store_slug>/products/<slug:product_slug>/', 
          vendor_views.product_detail_public, 
          name='product_detail_public'),
+        path('shop/<slug:store_slug>/products/<slug:product_slug>/review/',
+            vendor_views.submit_review,
+            name='submit_review'),
+        path('shop/<slug:store_slug>/products/<slug:product_slug>/wishlist/',
+            vendor_views.toggle_wishlist,
+            name='toggle_wishlist'),
 
     # Authentication
     # override allauth login route so that /accounts/login/ uses our styled page

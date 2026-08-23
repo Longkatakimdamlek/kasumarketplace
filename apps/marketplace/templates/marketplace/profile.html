@@ -88,13 +88,24 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>
     </a>
-    <a href="{% url 'marketplace:cart' %}" class="flex items-center gap-4 px-5 py-4 hover:bg-surface transition">
+    <a href="{% url 'marketplace:cart' %}" class="flex items-center gap-4 px-5 py-4 hover:bg-surface transition border-b border-border">
       <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
         <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
         </svg>
       </div>
       <span class="flex-1 text-sm font-semibold text-dark">My Cart</span>
+      <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+    </a>
+    <a href="{% url 'marketplace:wishlist' %}" class="flex items-center gap-4 px-5 py-4 hover:bg-surface transition">
+      <div class="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+      </div>
+      <span class="flex-1 text-sm font-semibold text-dark">My Wishlist</span>
       <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
       </svg>

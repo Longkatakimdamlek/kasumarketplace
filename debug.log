@@ -18592,3 +18592,192 @@ django.db.utils.OperationalError: attempt to write a readonly database
 [INFO] 2026-08-21 17:32:04,843 django.server log_message:213 - "GET /static/images/favicon/favicon_512x512.png HTTP/1.1" 200 396691
 [INFO] 2026-08-21 17:32:41,406 django.server log_message:213 - "GET /vendors/store/brotherly-and-fashon-house/ HTTP/1.1" 200 93753
 [INFO] 2026-08-21 17:32:53,031 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/products/vcnbvcb/ HTTP/1.1" 200 43536
+[INFO] 2026-08-21 17:48:31,730 django.server log_message:213 - "GET /vendors/products/vcnbvcb/ HTTP/1.1" 200 46227
+[INFO] 2026-08-21 17:48:32,337 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-21 17:48:32,396 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-21 17:48:32,432 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-21 17:48:36,606 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-21 17:48:36,612 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-21 17:48:40,786 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-21 17:48:47,849 django.server log_message:213 - "GET /vendors/products/vcnbvcb/edit/ HTTP/1.1" 200 76663
+[INFO] 2026-08-21 17:48:49,671 django.server log_message:213 - "GET /vendors/ajax/attributes/?subcategory_id=1 HTTP/1.1" 200 941
+[INFO] 2026-08-22 05:34:21,299 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 05:36:11,867 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 05:36:48,144 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 05:37:37,960 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 05:37:52,671 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 06:13:04,027 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 06:13:18,510 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 06:40:27,292 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 06:42:03,345 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 06:42:16,143 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 06:52:46,883 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 09:23:43,608 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 11:26:21,888 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 11:51:19,156 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 11:51:50,622 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 12:01:58,702 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 12:02:35,913 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 12:49:31,550 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 15:41:19,982 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 15:42:22,924 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 16:36:38,827 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 16:44:19,865 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 16:44:54,806 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 16:50:48,752 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 16:51:32,612 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 16:57:31,367 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 16:58:02,169 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 16:58:34,450 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 16:58:55,340 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 16:59:32,368 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 17:05:34,115 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 17:06:03,168 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 17:47:41,532 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-22 17:47:42,268 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-22 17:48:18,426 django.server log_message:213 - "GET /vendors/products/lo/ HTTP/1.1" 200 45885
+[INFO] 2026-08-22 17:48:21,219 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 304 0
+[INFO] 2026-08-22 17:48:41,890 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 304 0
+[INFO] 2026-08-22 17:48:56,143 django.server log_message:213 - "POST /accounts/logout/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 17:49:02,614 django.server log_message:213 - "GET / HTTP/1.1" 200 135099
+[INFO] 2026-08-22 17:49:52,140 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 200 86
+[INFO] 2026-08-22 17:49:58,138 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 200 82
+[INFO] 2026-08-22 17:50:18,794 django.server log_message:213 - "GET /stores/ HTTP/1.1" 200 57889
+[INFO] 2026-08-22 17:50:33,122 django.server log_message:213 - "GET /stores/?category=fashion-accessories HTTP/1.1" 200 57947
+[INFO] 2026-08-22 17:50:40,211 django.server log_message:213 - "GET /stores/?category=food-beverages HTTP/1.1" 200 57715
+[INFO] 2026-08-22 17:50:51,863 django.server log_message:213 - "GET /new-arrivals/ HTTP/1.1" 200 71897
+[INFO] 2026-08-22 17:51:12,066 django.server log_message:213 - "GET /deals/ HTTP/1.1" 200 68180
+[INFO] 2026-08-22 17:51:48,084 django.server log_message:213 - "GET /stores/ HTTP/1.1" 200 57889
+[INFO] 2026-08-22 17:51:56,157 django.server log_message:213 - "GET /new-arrivals/ HTTP/1.1" 200 71897
+[INFO] 2026-08-22 17:52:02,906 django.server log_message:213 - "GET /trending/ HTTP/1.1" 200 55609
+[INFO] 2026-08-22 17:52:19,216 django.server log_message:213 - "GET / HTTP/1.1" 200 135524
+[INFO] 2026-08-22 17:53:17,663 django.server log_message:213 - "GET /login/?next=/ HTTP/1.1" 200 12049
+[INFO] 2026-08-22 17:53:23,193 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-22 17:54:12,928 django.server log_message:213 - "POST /login/?next=/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 17:54:13,052 django.server log_message:213 - "GET / HTTP/1.1" 302 0
+[INFO] 2026-08-22 17:54:13,929 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 39952
+[INFO] 2026-08-22 17:54:38,701 django.server log_message:213 - "GET /vendors/profile/ HTTP/1.1" 200 35419
+[INFO] 2026-08-22 17:54:48,866 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 39766
+[INFO] 2026-08-22 17:54:56,397 django.server log_message:213 - "POST /accounts/logout/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 17:54:57,697 django.server log_message:213 - "GET / HTTP/1.1" 200 135099
+[INFO] 2026-08-22 17:56:11,896 django.server log_message:213 - "GET /search/?q=fashion HTTP/1.1" 200 54779
+[INFO] 2026-08-22 17:56:25,691 django.server log_message:213 - "GET /search/?q=bro HTTP/1.1" 200 57457
+[INFO] 2026-08-22 17:56:38,800 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 200 89
+[INFO] 2026-08-22 17:56:43,734 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/products/t-shrit-for-men/ HTTP/1.1" 200 52165
+[INFO] 2026-08-22 17:57:22,063 django.server log_message:213 - "GET / HTTP/1.1" 200 135524
+[INFO] 2026-08-22 17:57:31,296 django.server log_message:213 - "GET /login/?next=/ HTTP/1.1" 200 12049
+[INFO] 2026-08-22 17:57:34,395 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-22 17:57:41,098 django.server log_message:213 - "GET /accounts/google/login/?next=%2F HTTP/1.1" 302 0
+[DEBUG] 2026-08-22 17:58:13,016 urllib3.connectionpool _new_conn:1049 - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+[INFO] 2026-08-22 17:58:41,483 django.server log_message:213 - "GET /accounts/google/login/callback/?state=FLJ7knZ2bMjPmQNv&iss=https%3A%2F%2Faccounts.google.com&code=4%2F0ATsMZqCH7g2oZe2cJx8FLreWAOAMx4PkhcGtyC1LmYuw55r6Vpjd0VZHs5D4JvWtVxZW1g&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile&authuser=1&prompt=none HTTP/1.1" 200 1119
+[WARNING] 2026-08-22 17:58:58,419 django.request log_response:253 - Not Found: /favicon.ico
+[WARNING] 2026-08-22 17:58:58,421 django.server log_message:213 - "GET /favicon.ico HTTP/1.1" 404 14404
+[INFO] 2026-08-22 17:59:00,424 django.server log_message:213 - "GET /accounts/google/login/callback/?state=FLJ7knZ2bMjPmQNv&iss=https%3A%2F%2Faccounts.google.com&code=4%2F0ATsMZqCH7g2oZe2cJx8FLreWAOAMx4PkhcGtyC1LmYuw55r6Vpjd0VZHs5D4JvWtVxZW1g&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile&authuser=1&prompt=none HTTP/1.1" 200 1119
+[INFO] 2026-08-22 17:59:00,645 django.server log_message:213 - "GET /accounts/google/login/callback/?state=FLJ7knZ2bMjPmQNv&iss=https%3A%2F%2Faccounts.google.com&code=4%2F0ATsMZqCH7g2oZe2cJx8FLreWAOAMx4PkhcGtyC1LmYuw55r6Vpjd0VZHs5D4JvWtVxZW1g&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile&authuser=1&prompt=none HTTP/1.1" 200 1119
+[INFO] 2026-08-22 17:59:00,838 django.server log_message:213 - "GET /accounts/google/login/callback/?state=FLJ7knZ2bMjPmQNv&iss=https%3A%2F%2Faccounts.google.com&code=4%2F0ATsMZqCH7g2oZe2cJx8FLreWAOAMx4PkhcGtyC1LmYuw55r6Vpjd0VZHs5D4JvWtVxZW1g&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile&authuser=1&prompt=none HTTP/1.1" 200 1119
+[WARNING] 2026-08-22 17:59:07,591 django.request log_response:253 - Not Found: /favicon.ico
+[WARNING] 2026-08-22 17:59:07,605 django.server log_message:213 - "GET /favicon.ico HTTP/1.1" 404 14404
+[INFO] 2026-08-22 17:59:40,897 django.server log_message:213 - "GET /login/?next=/ HTTP/1.1" 200 12049
+[INFO] 2026-08-22 17:59:49,078 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-22 18:00:11,319 django.server log_message:213 - "POST /login/?next=/ HTTP/1.1" 200 12193
+[INFO] 2026-08-22 18:00:14,511 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-22 18:00:31,453 django.server log_message:213 - "GET /admin/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 18:00:41,931 django.server log_message:213 - "GET /admin/login/?next=/admin/ HTTP/1.1" 200 4178
+[INFO] 2026-08-22 18:00:44,675 django.server log_message:213 - "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 200 2810
+[INFO] 2026-08-22 18:00:45,005 django.server log_message:213 - "GET /static/admin/css/login.css HTTP/1.1" 200 951
+[INFO] 2026-08-22 18:00:45,392 django.server log_message:213 - "GET /static/admin/css/responsive.css HTTP/1.1" 200 16565
+[INFO] 2026-08-22 18:00:46,215 django.server log_message:213 - "GET /static/admin/css/base.css HTTP/1.1" 200 22120
+[INFO] 2026-08-22 18:00:47,465 django.server log_message:213 - "GET /static/admin/css/dark_mode.css HTTP/1.1" 200 2808
+[INFO] 2026-08-22 18:00:51,288 django.server log_message:213 - "GET /static/admin/js/theme.js HTTP/1.1" 200 1653
+[INFO] 2026-08-22 18:00:52,767 django.server log_message:213 - "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 200 3063
+[INFO] 2026-08-22 18:01:13,398 apps.marketplace.signals merge_cart_on_login:77 - Cart merged for user admin@kasumarketplace.com.ng
+[INFO] 2026-08-22 18:01:14,240 django.server log_message:213 - "POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 18:01:17,579 django.server log_message:213 - "GET /admin/ HTTP/1.1" 200 30006
+[INFO] 2026-08-22 18:01:19,459 django.server log_message:213 - "GET /static/admin/css/dashboard.css HTTP/1.1" 200 441
+[INFO] 2026-08-22 18:01:21,578 django.server log_message:213 - "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 200 380
+[INFO] 2026-08-22 18:01:21,817 django.server log_message:213 - "GET /static/admin/img/icon-deletelink.svg HTTP/1.1" 200 392
+[INFO] 2026-08-22 18:01:22,174 django.server log_message:213 - "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 200 331
+[INFO] 2026-08-22 18:01:36,026 django.server log_message:213 - "GET /admin/users/customuser/ HTTP/1.1" 200 28203
+[INFO] 2026-08-22 18:01:36,889 django.server log_message:213 - "GET /static/admin/css/changelists.css HTTP/1.1" 200 6878
+[INFO] 2026-08-22 18:01:37,797 django.server log_message:213 - "GET /static/admin/js/jquery.init.js HTTP/1.1" 200 347
+[INFO] 2026-08-22 18:01:40,124 django.server log_message:213 - "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[INFO] 2026-08-22 18:01:40,276 django.server log_message:213 - "GET /static/admin/js/actions.js HTTP/1.1" 200 8076
+[INFO] 2026-08-22 18:01:40,297 django.server log_message:213 - "GET /static/admin/js/urlify.js HTTP/1.1" 200 7887
+[INFO] 2026-08-22 18:01:41,298 django.server log_message:213 - "GET /static/admin/js/core.js HTTP/1.1" 200 6208
+[INFO] 2026-08-22 18:01:45,150 django.server log_message:213 - "GET /static/admin/js/prepopulate.js HTTP/1.1" 200 1531
+[INFO] 2026-08-22 18:01:46,903 django.server log_message:213 - "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 200 9777
+[INFO] 2026-08-22 18:01:47,237 django.server log_message:213 - "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 200 285314
+[INFO] 2026-08-22 18:01:47,587 django.server log_message:213 - "GET /static/admin/img/search.svg HTTP/1.1" 200 458
+[INFO] 2026-08-22 18:01:47,723 django.server log_message:213 - "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 200 325171
+[INFO] 2026-08-22 18:01:47,797 django.server log_message:213 - "GET /static/admin/img/icon-yes.svg HTTP/1.1" 200 436
+[INFO] 2026-08-22 18:01:47,996 django.server log_message:213 - "GET /static/admin/img/tooltag-add.svg HTTP/1.1" 200 331
+[INFO] 2026-08-22 18:01:48,206 django.server log_message:213 - "GET /static/admin/img/sorting-icons.svg HTTP/1.1" 200 1097
+[INFO] 2026-08-22 18:01:48,373 django.server log_message:213 - "GET /static/admin/js/filters.js HTTP/1.1" 200 978
+[INFO] 2026-08-22 18:01:48,381 django.server log_message:213 - "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 581
+[INFO] 2026-08-22 18:02:00,742 django.server log_message:213 - "GET /admin/users/customuser/24/change/ HTTP/1.1" 200 31230
+[INFO] 2026-08-22 18:02:00,884 django.server log_message:213 - "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[INFO] 2026-08-22 18:02:01,108 django.server log_message:213 - "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 200 586
+[INFO] 2026-08-22 18:02:01,126 django.server log_message:213 - "GET /static/admin/css/forms.css HTTP/1.1" 200 8525
+[INFO] 2026-08-22 18:02:05,794 django.server log_message:213 - "GET /static/admin/css/widgets.css HTTP/1.1" 200 11973
+[INFO] 2026-08-22 18:02:06,000 django.server log_message:213 - "GET /static/admin/js/change_form.js HTTP/1.1" 200 606
+[INFO] 2026-08-22 18:02:18,631 django.server log_message:213 - "POST /admin/users/customuser/24/change/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 18:02:18,981 django.server log_message:213 - "GET /admin/users/customuser/ HTTP/1.1" 200 28421
+[INFO] 2026-08-22 18:02:19,220 django.server log_message:213 - "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[INFO] 2026-08-22 18:02:32,823 django.server log_message:213 - "POST /admin/logout/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 18:02:35,889 django.server log_message:213 - "GET / HTTP/1.1" 200 134967
+[INFO] 2026-08-22 18:02:45,426 django.server log_message:213 - "GET /login/?next=/ HTTP/1.1" 200 12049
+[INFO] 2026-08-22 18:02:48,717 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[WARNING] 2026-08-22 18:03:13,443 apps.users.views post:234 - User remedylongkat@gmail.com logged in and has vendorprofile but role 'buyer'; correcting to 'vendor'
+[INFO] 2026-08-22 18:03:14,581 django.server log_message:213 - "POST /login/?next=/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 18:03:14,690 django.server log_message:213 - "GET / HTTP/1.1" 302 0
+[INFO] 2026-08-22 18:03:15,202 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 39952
+[INFO] 2026-08-22 18:03:35,065 django.server log_message:213 - "POST /accounts/logout/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 18:03:47,718 django.server log_message:213 - "GET / HTTP/1.1" 200 135099
+[INFO] 2026-08-22 18:04:01,436 django.server log_message:213 - "GET /login/?next=/ HTTP/1.1" 200 12049
+[INFO] 2026-08-22 18:04:04,435 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-22 18:04:12,123 django.server log_message:213 - "GET /signup/buyer/ HTTP/1.1" 200 12390
+[INFO] 2026-08-22 18:04:15,259 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-22 18:04:52,639 apps.marketplace.signals create_buyer_profile:28 - BuyerProfile created for remedylongkat30.30@gmail.com
+[DEBUG] 2026-08-22 18:04:59,757 urllib3.connectionpool _new_conn:1049 - Starting new HTTPS connection (1): api.zeptomail.com:443
+[DEBUG] 2026-08-22 18:05:03,602 urllib3.connectionpool _make_request:544 - https://api.zeptomail.com:443 "POST /v1.1/email HTTP/1.1" 201 205
+[INFO] 2026-08-22 18:05:03,715 django.server log_message:213 - "POST /signup/buyer/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 18:05:04,597 django.server log_message:213 - "GET /verify-otp/ HTTP/1.1" 200 11435
+[INFO] 2026-08-22 18:05:11,015 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-22 18:05:40,744 django.server log_message:213 - "POST /verify-otp/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 18:05:40,798 django.server log_message:213 - "GET /buyer/dashboard/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 18:05:41,217 django.server log_message:213 - "GET / HTTP/1.1" 200 149486
+[INFO] 2026-08-22 18:06:00,143 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 37
+[INFO] 2026-08-22 18:06:00,484 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 38
+[INFO] 2026-08-22 18:06:00,887 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 37
+[INFO] 2026-08-22 18:06:01,337 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 38
+[INFO] 2026-08-22 18:06:01,766 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 37
+[INFO] 2026-08-22 18:06:02,429 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 38
+[INFO] 2026-08-22 18:06:03,306 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 37
+[INFO] 2026-08-22 18:06:11,222 django.server log_message:213 - "POST /cart/add/ HTTP/1.1" 200 76
+[INFO] 2026-08-22 18:06:17,626 django.server log_message:213 - "GET /cart/ HTTP/1.1" 200 59574
+[INFO] 2026-08-22 18:06:27,150 django.server log_message:213 - "GET /profile/ HTTP/1.1" 200 60175
+[INFO] 2026-08-22 18:06:37,820 django.server log_message:213 - "GET /wishlist/ HTTP/1.1" 200 56994
+[INFO] 2026-08-22 18:06:54,732 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/products/lo/ HTTP/1.1" 200 53881
+[INFO] 2026-08-22 18:07:39,617 django.server log_message:213 - "GET / HTTP/1.1" 200 149885
+[INFO] 2026-08-22 18:07:48,973 django.server log_message:213 - "GET /about/ HTTP/1.1" 200 71921
+[INFO] 2026-08-22 18:08:16,141 django.server log_message:213 - "GET / HTTP/1.1" 200 149885
+[INFO] 2026-08-22 18:08:38,151 django.server log_message:213 - "GET /contact/ HTTP/1.1" 200 61636
+[INFO] 2026-08-22 18:09:31,430 apps.marketplace.services.email_service _send:50 - Email sent: "[Contact] Report a problem — LONGKAT DAMKEL KASU" → ['support@kasumarketplace.com.ng']
+[INFO] 2026-08-22 18:09:31,435 django.server log_message:213 - "POST /contact/ HTTP/1.1" 302 0
+[INFO] 2026-08-22 18:09:31,582 django.server log_message:213 - "GET /contact/ HTTP/1.1" 200 61811
+[INFO] 2026-08-22 18:10:02,235 django.server log_message:213 - "GET / HTTP/1.1" 200 149885
+[WARNING] 2026-08-22 18:10:21,281 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-22 18:10:21,282 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 14552
+[INFO] 2026-08-22 18:12:21,293 django.server log_message:213 - "GET /profile/ HTTP/1.1" 200 60175
+[WARNING] 2026-08-22 18:12:22,145 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-22 18:12:22,204 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 14552
+[INFO] 2026-08-22 18:12:52,649 django.server log_message:213 - "GET /wishlist/ HTTP/1.1" 200 56994
+[WARNING] 2026-08-22 18:12:53,209 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-22 18:12:53,364 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 14552
+[INFO] 2026-08-22 18:13:09,752 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 38
+[INFO] 2026-08-22 18:13:12,713 django.server log_message:213 - "GET /wishlist/ HTTP/1.1" 200 55148
+[WARNING] 2026-08-22 18:13:13,392 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-22 18:13:13,471 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 14552
+[INFO] 2026-08-22 18:13:32,744 django.server log_message:213 - "GET /profile/ HTTP/1.1" 200 60175
+[WARNING] 2026-08-22 18:13:33,616 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-22 18:13:33,624 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 14552

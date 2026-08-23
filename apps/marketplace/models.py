@@ -616,3 +616,78 @@ class Promotion(models.Model):
 
     def __str__(self):
         return self.title
+
+
+# ==========================================
+# WISHLIST
+# ==========================================
+
+class Wishlist(models.Model):
+    """One row per buyer-saved product. Toggled on/off from product card or detail page."""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='wishlist_items'
+    )
+    product = models.ForeignKey(
+        'vendors.Product',
+        on_delete=models.CASCADE,
+        related_name='wishlisted_by'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Wishlist Item"
+        verbose_name_plural = "Wishlist Items"
+        unique_together = [['user', 'product']]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.email} - {self.product.title}"
+
+
+# ==========================================
+# REVIEW
+# ==========================================
+
+class Review(models.Model):
+    """
+    One review per buyer per product. Star-only submission still counts
+    as a full review record - comment is optional.
+    Verified purchase = buyer has a CONFIRMED SubOrderItem for this product.
+    """
+    RATING_CHOICES = [(i, str(i)) for i in range(1, 6)]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+    product = models.ForeignKey(
+        'vendors.Product',
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+    rating = models.PositiveSmallIntegerField(choices=RATING_CHOICES)
+    comment = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Review"
+        verbose_name_plural = "Reviews"
+        unique_together = [['user', 'product']]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.product.title} - {self.rating} by {self.user.email}"
+
+    @staticmethod
+    def user_has_purchased(user, product):
+        """Verified-purchase check used before allowing review submission."""
+        return SubOrderItem.objects.filter(
+            sub_order__main_order__buyer=user,
+            sub_order__status='CONFIRMED',
+            product=product
+        ).exists()

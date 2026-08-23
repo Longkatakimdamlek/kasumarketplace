@@ -20,27 +20,75 @@
     </button>
   </div>
 
+  <!-- Quick links -->
+  <div class="px-5 py-3 border-b border-border grid grid-cols-2 gap-2">
+    <a href="{% url 'marketplace:deals' %}" onclick="toggleDrawer()"
+       class="flex items-center gap-2 px-3 py-2 rounded-xl bg-accent/10 text-accent text-sm font-semibold">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a2.25 2.25 0 003.182 0l4.318-4.318a2.25 2.25 0 000-3.182L11.16 3.66A2.25 2.25 0 009.568 3z"/>
+      </svg>
+      Deals
+    </a>
+    <a href="{% url 'marketplace:store_directory' %}" onclick="toggleDrawer()"
+       class="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 text-primary text-sm font-semibold">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M5 21V7l8-4v18M13 21V11l6 3v7"/>
+      </svg>
+      Stores
+    </a>
+    <a href="{% url 'marketplace:new_arrivals' %}" onclick="toggleDrawer()"
+       class="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-50 text-purple-600 text-sm font-semibold">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      New
+    </a>
+    <a href="{% url 'marketplace:trending' %}" onclick="toggleDrawer()"
+       class="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-600 text-sm font-semibold">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+      </svg>
+      Trending
+    </a>
+  </div>
+
   <!-- Category list -->
   <div class="flex-1 overflow-y-auto py-3">
     {% for category in categories %}
-    <a href="{% url 'marketplace:product_list' %}?category={{ category.slug }}"
-       onclick="toggleDrawer()"
-       class="flex items-center gap-4 px-5 py-3.5 hover:bg-surface active:bg-primary/5 transition group">
+    <div class="border-b border-border/60 last:border-0">
+      <button type="button"
+              onclick="toggleSubcategoryPanel('subcat-{{ category.id }}', this)"
+              class="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-surface active:bg-primary/5 transition group text-left">
 
-      <!-- Icon placeholder circle -->
-      <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition">
-        {% include 'marketplace/partials/category_icon.html' with variant='drawer' %}
+        <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition">
+          {% include 'marketplace/partials/category_icon.html' with variant='drawer' %}
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-dark truncate">{{ category.name }}</p>
+          <p class="text-xs text-muted">{{ category.subcategories.count }} subcategories</p>
+        </div>
+
+        <svg class="subcat-chevron w-4 h-4 text-muted group-hover:text-primary transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+
+      <div id="subcat-{{ category.id }}" class="hidden pb-2 pl-[4.75rem] pr-5 space-y-0.5">
+        <a href="{% url 'marketplace:category_landing' category.slug %}"
+           onclick="toggleDrawer()"
+           class="block py-2 text-sm font-medium text-primary hover:underline">
+          View all {{ category.name }}
+        </a>
+        {% for sub in category.subcategories.all %}
+        <a href="{% url 'marketplace:category_landing' category.slug %}?subcategory={{ sub.slug }}"
+           onclick="toggleDrawer()"
+           class="block py-2 text-sm text-dark hover:text-primary transition">
+          {{ sub.name }}
+        </a>
+        {% endfor %}
       </div>
-
-      <div class="flex-1 min-w-0">
-        <p class="text-sm font-semibold text-dark truncate">{{ category.name }}</p>
-        <p class="text-xs text-muted">{{ category.subcategories.count }} subcategories</p>
-      </div>
-
-      <svg class="w-4 h-4 text-muted group-hover:text-primary transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-      </svg>
-    </a>
+    </div>
     {% endfor %}
   </div>
 

@@ -938,6 +938,9 @@ class Product(models.Model):
     # Stats
     views_count = models.PositiveIntegerField(default=0)
     sales_count = models.PositiveIntegerField(default=0)
+    trending_score = models.PositiveIntegerField(default=0, db_index=True)
+    average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0)
+    review_count = models.PositiveIntegerField(default=0)
     
     # SEO
     meta_title = models.CharField(max_length=200, blank=True)
@@ -1097,6 +1100,13 @@ class Product(models.Model):
         """Calculate discount percentage if compare_at_price exists"""
         if self.compare_at_price and self.compare_at_price > self.price:
             return int(((self.compare_at_price - self.price) / self.compare_at_price) * 100)
+        return 0
+
+    @property
+    def savings(self):
+        """Naira amount saved — used by the buyer-facing product page price block."""
+        if self.compare_at_price and self.compare_at_price > self.price:
+            return self.compare_at_price - self.price
         return 0
     
     @property

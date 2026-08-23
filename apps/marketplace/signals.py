@@ -6,7 +6,7 @@ Marketplace Signals
 - Email notifications on order status changes
 """
 
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
@@ -15,7 +15,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
-from .models import SubOrderItem
+from .models import SubOrderItem, Review
 
 
 @receiver(post_save, sender=User)
@@ -166,3 +166,22 @@ def reduce_stock_on_suborder_item(sender, instance, created, **kwargs):
 
     except Exception as e:
         logger.error(f"Error reducing stock for SubOrderItem {instance.id}: {e}", exc_info=True)
+
+
+@receiver(post_save, sender='marketplace.Review')
+@receiver(post_delete, sender='marketplace.Review')
+def recalc_ratings_on_review_change(sender, instance, **kwargs):
+    """Recalculate product and store ratings after a review changes."""
+    from django.db.models import Avg, Count
+    from apps.vendors.models import Product
+
+    product = instance.product
+    agg = product.reviews.aggregate(avg=Avg('rating'), count=Count('id'))
+    product.average_rating = round(agg['avg'] or 0, 2)
+    product.review_count = agg['count'] or 0
+    product.save(update_fields=['average_rating', 'review_count'])
+
+    store = product.store
+    store_agg = Review.objects.filter(product__store=store).aggregate(avg=Avg('rating'))
+    store.average_rating = round(store_agg['avg'] or 0, 2)
+    store.save(update_fields=['average_rating'])
