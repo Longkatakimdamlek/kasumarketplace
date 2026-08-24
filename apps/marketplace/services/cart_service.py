@@ -5,8 +5,11 @@ Session-based: no login required.
 Cart merges into user account on login (handled by signals).
 """
 
+import logging
 from apps.marketplace.models import Cart, CartItem
 from apps.vendors.models import Product
+
+logger = logging.getLogger('marketplace.cart')
 
 
 def get_or_create_cart(request) -> Cart:
@@ -19,6 +22,7 @@ def get_or_create_cart(request) -> Cart:
     # Ensure session exists
     if not request.session.session_key:
         request.session.create()
+        logger.debug("get_or_create_cart created new session key=%s", request.session.session_key)
 
     session_key = request.session.session_key
 
@@ -26,15 +30,27 @@ def get_or_create_cart(request) -> Cart:
         # Try to get user's cart first
         cart = Cart.objects.filter(user=request.user).first()
         if cart:
+            if cart.session_key != session_key:
+                logger.info(
+                    "get_or_create_cart session_key_mismatch user=%s cart_session=%s request_session=%s — updating",
+                    request.user.pk, cart.session_key, session_key,
+                )
+                cart.session_key = session_key
+                cart.save(update_fields=['session_key'])
             return cart
         # No user cart — get or create by session
         cart, created = Cart.objects.get_or_create(session_key=session_key)
-        if created or cart.user is None:
+        if created:
+            logger.info("get_or_create_cart created_cart session=%s user=%s", session_key, request.user.pk)
+        if cart.user is None:
             cart.user = request.user
             cart.save(update_fields=['user'])
+            logger.info("get_or_create_cart linked_orphan_cart session=%s user=%s", session_key, request.user.pk)
         return cart
     else:
-        cart, _ = Cart.objects.get_or_create(session_key=session_key)
+        cart, created = Cart.objects.get_or_create(session_key=session_key)
+        if created:
+            logger.info("get_or_create_cart created_anon_cart session=%s", session_key)
         return cart
 
 
@@ -100,11 +116,18 @@ def add_to_cart(request, product_id: int, quantity: int = 1) -> dict:
 
     cart = get_or_create_cart(request)
 
-    cart_item, created = CartItem.objects.get_or_create(
-        cart=cart,
-        product=product,
-        defaults={'quantity': quantity}
-    )
+    try:
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+            defaults={'quantity': quantity}
+        )
+    except Exception as exc:
+        logger.error(
+            "add_to_cart get_or_create_item failed cart=%s product=%s error=%s",
+            cart.pk, product_id, exc,
+        )
+        raise
 
     if not created:
         # Product already in cart — increase quantity
@@ -119,6 +142,9 @@ def add_to_cart(request, product_id: int, quantity: int = 1) -> dict:
 
         cart_item.quantity = new_quantity
         cart_item.save(update_fields=['quantity'])
+        logger.debug("add_to_cart incremented cart=%s product=%s new_qty=%s", cart.pk, product_id, new_quantity)
+    else:
+        logger.debug("add_to_cart new_item cart=%s product=%s qty=%s", cart.pk, product_id, quantity)
 
     return {
         'success': True,

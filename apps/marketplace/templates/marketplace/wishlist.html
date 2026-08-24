@@ -32,5 +32,17 @@
   </div>
   {% endif %}
 
+  {% if recommended_products %}
+  <!-- You Might Also Like -->
+  <div class="mt-10">
+    <h2 class="font-display font-bold text-base text-dark mb-4">You Might Also Like</h2>
+    <div class="grid grid-cols-2 gap-3">
+      {% for item in recommended_products %}
+        {% include 'marketplace/partials/product_card.html' with item=item %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

@@ -312,6 +312,19 @@
 
     </form>
 
+    <!-- Account Deletion Request -->
+    <div class="mt-6 pt-6 border-t border-gray-200">
+        <form method="POST" action="{% url 'vendors:request_account_deletion' %}"
+              onsubmit="return confirm('Are you sure you want to request account deletion? This action will send a request to our team for manual review.');">
+            {% csrf_token %}
+            <button type="submit"
+                    class="w-full py-3 border border-red-300 text-red-600 font-semibold text-sm text-center rounded-lg hover:bg-red-50 transition">
+                Request Account Deletion
+            </button>
+        </form>
+        <p class="text-xs text-gray-400 text-center mt-2">Your request will be reviewed manually by our team.</p>
+    </div>
+
 </div>
 
 <!-- Styles -->

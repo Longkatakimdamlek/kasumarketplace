@@ -18781,3 +18781,433 @@ django.db.utils.OperationalError: attempt to write a readonly database
 [INFO] 2026-08-22 18:13:32,744 django.server log_message:213 - "GET /profile/ HTTP/1.1" 200 60175
 [WARNING] 2026-08-22 18:13:33,616 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
 [WARNING] 2026-08-22 18:13:33,624 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 14552
+[INFO] 2026-08-23 13:46:15,970 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 13:53:33,269 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 13:54:03,530 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 13:54:36,656 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 14:24:58,949 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 22:10:09,607 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 22:31:23,318 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-23 22:31:23,661 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 22:31:57,426 django.server log_message:213 - "GET /vendors/products/vcnbvcb/edit/ HTTP/1.1" 302 0
+[INFO] 2026-08-23 22:32:07,859 django.server log_message:213 - "GET /profile/ HTTP/1.1" 200 62057
+[INFO] 2026-08-23 22:32:20,616 django.server log_message:213 - "GET / HTTP/1.1" 200 151162
+[INFO] 2026-08-23 22:32:22,083 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-23 22:32:22,547 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-23 22:32:22,551 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-23 22:32:23,013 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-23 22:32:23,173 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-23 22:32:42,837 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-23 22:32:50,450 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-23 22:32:53,672 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-23 22:32:53,730 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-23 22:32:53,834 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-23 22:32:54,635 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-23 22:32:54,636 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-23 22:32:54,699 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-23 22:32:54,741 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-23 22:32:54,758 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-23 22:32:55,079 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[INFO] 2026-08-23 22:32:55,134 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-23 22:32:57,650 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-23 22:33:12,224 django.server log_message:213 - "POST /location/update/ HTTP/1.1" 200 49
+[INFO] 2026-08-23 22:33:21,080 django.server log_message:213 - "GET /cookies/ HTTP/1.1" 200 1948
+[WARNING] 2026-08-23 22:33:34,792 django.request log_response:253 - Not Found: /favicon.ico
+[WARNING] 2026-08-23 22:33:34,794 django.server log_message:213 - "GET /favicon.ico HTTP/1.1" 404 15462
+[INFO] 2026-08-23 22:34:09,370 django.server log_message:213 - "GET /terms/ HTTP/1.1" 200 8382
+[INFO] 2026-08-23 22:34:29,735 django.server log_message:213 - "GET /privacy/ HTTP/1.1" 200 8673
+[INFO] 2026-08-23 22:34:41,528 django.server log_message:213 - "GET /cookies/ HTTP/1.1" 200 1948
+[INFO] 2026-08-23 22:35:23,927 django.server log_message:213 - "GET /about/ HTTP/1.1" 200 73027
+[INFO] 2026-08-23 22:35:40,854 django.server log_message:213 - "GET /cart/ HTTP/1.1" 200 60680
+[INFO] 2026-08-23 22:35:56,171 django.server log_message:213 - "GET /deals/ HTTP/1.1" 200 76106
+[INFO] 2026-08-23 22:36:07,720 django.server log_message:213 - "GET / HTTP/1.1" 200 162021
+[INFO] 2026-08-23 22:36:29,471 django.server log_message:213 - "GET /about/ HTTP/1.1" 200 73027
+[INFO] 2026-08-23 22:37:08,609 django.server log_message:213 - "GET /profile/ HTTP/1.1" 200 62057
+[INFO] 2026-08-23 22:37:19,148 django.server log_message:213 - "GET /terms/ HTTP/1.1" 200 8382
+[INFO] 2026-08-23 22:39:32,770 django.server log_message:213 - "GET /wishlist/ HTTP/1.1" 200 56254
+[INFO] 2026-08-23 22:39:56,982 django.server log_message:213 - "GET /profile/ HTTP/1.1" 200 62057
+[INFO] 2026-08-23 22:40:25,103 django.server log_message:213 - "POST /request-account-deletion/ HTTP/1.1" 302 0
+[INFO] 2026-08-23 22:40:25,469 django.server log_message:213 - "GET /profile/ HTTP/1.1" 200 62326
+[INFO] 2026-08-23 22:41:04,175 django.server log_message:213 - "GET / HTTP/1.1" 200 162021
+[INFO] 2026-08-23 22:41:22,683 django.server log_message:213 - "GET /terms/ HTTP/1.1" 200 8382
+[INFO] 2026-08-23 22:48:57,872 django.server log_message:213 - "GET /terms/ HTTP/1.1" 200 68458
+[INFO] 2026-08-23 22:53:59,289 django.server log_message:213 - "GET /terms/ HTTP/1.1" 200 68454
+[INFO] 2026-08-23 22:54:21,892 django.server log_message:213 - "GET /static/images/favicon/favicon_32x32.png HTTP/1.1" 200 2152
+[INFO] 2026-08-23 22:55:10,656 django.server log_message:213 - "GET /contact/ HTTP/1.1" 200 62742
+[INFO] 2026-08-23 22:56:13,745 django.server log_message:213 - "GET / HTTP/1.1" 200 162021
+[INFO] 2026-08-23 22:56:35,437 django.server log_message:213 - "GET /cookies/ HTTP/1.1" 200 58924
+[INFO] 2026-08-23 22:57:24,594 django.server log_message:213 - "GET / HTTP/1.1" 200 162021
+[INFO] 2026-08-23 23:36:33,031 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\views.py changed, reloading.
+[INFO] 2026-08-23 23:36:59,259 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-23 23:36:59,524 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 23:37:47,672 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\services\cart_service.py changed, reloading.
+[INFO] 2026-08-23 23:38:03,521 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-23 23:38:03,835 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 23:38:24,560 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\services\cart_service.py changed, reloading.
+[INFO] 2026-08-23 23:38:38,500 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-23 23:38:38,790 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 23:38:54,108 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\services\cart_service.py changed, reloading.
+[INFO] 2026-08-23 23:39:07,300 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-23 23:39:07,533 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 23:40:27,498 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-23 23:59:22,142 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\KasuMarketplace\settings.py changed, reloading.
+[INFO] 2026-08-23 23:59:37,938 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-23 23:59:38,232 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-24 00:03:26,023 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\views.py changed, reloading.
+[INFO] 2026-08-24 00:03:40,382 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-24 00:03:40,669 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-24 00:04:52,296 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\views.py changed, reloading.
+[INFO] 2026-08-24 00:05:06,268 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-24 00:05:06,565 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-24 00:12:10,624 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-24 00:26:46,705 marketplace.cart get_or_create_cart:34 - get_or_create_cart session_key_mismatch user=25 cart_session=xx5ztodfm325sta3refuod3d7p3is695 request_session=1k1weorbuvxja2q8jrbzazx6vl5yl0a2 — updating
+[INFO] 2026-08-24 00:26:53,835 django.server log_message:213 - "GET / HTTP/1.1" 200 166316
+[INFO] 2026-08-24 00:26:59,817 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-24 00:26:59,946 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-24 00:26:59,962 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-24 00:26:59,964 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-24 00:27:02,642 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-24 00:27:25,016 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-24 00:27:25,127 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-24 00:27:28,594 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-24 00:27:28,599 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-24 00:27:28,611 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-24 00:27:28,613 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-24 00:27:28,619 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-24 00:27:28,628 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-24 00:27:28,665 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-24 00:27:30,536 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-24 00:27:30,545 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-24 00:27:30,588 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[INFO] 2026-08-24 00:27:38,540 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-24 00:27:51,552 django.server log_message:213 - "GET /wishlist/ HTTP/1.1" 200 85156
+[INFO] 2026-08-24 00:29:04,536 django.server log_message:213 - "GET / HTTP/1.1" 200 166316
+[ERROR] 2026-08-24 00:29:21,137 django.request log_response:253 - Internal Server Error: /shop/brotherly-and-fashon-house/products/vcnbvcb/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\kasuMarketplace\apps\vendors\views.py", line 1110, in product_detail_public
+    return render(request, 'products/product_detail.html', context)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 228, in do_block
+    raise TemplateSyntaxError(
+        "'%s' tag with name '%s' appears more than once" % (bits[0], block_name)
+    )
+django.template.exceptions.TemplateSyntaxError: 'block' tag with name 'extra_body' appears more than once
+[INFO] 2026-08-24 00:29:21,494 django.server handle_error:81 - - Broken pipe from ('127.0.0.1', 50835)
+[INFO] 2026-08-24 00:29:24,391 django.server log_message:213 - "GET /wishlist/ HTTP/1.1" 200 85156
+[WARNING] 2026-08-24 00:29:51,081 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-24 00:29:51,178 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 15610
+[INFO] 2026-08-24 00:30:46,979 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/vcnbvcb/wishlist/ HTTP/1.1" 200 37
+[INFO] 2026-08-24 00:30:55,130 django.server log_message:213 - "GET / HTTP/1.1" 200 166480
+[WARNING] 2026-08-24 00:30:56,332 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-24 00:30:56,657 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 15610
+[INFO] 2026-08-24 00:33:24,891 django.server log_message:213 - "GET /wishlist/ HTTP/1.1" 200 84593
+[WARNING] 2026-08-24 00:33:25,689 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-24 00:33:25,810 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 15610
+[INFO] 2026-08-24 00:40:20,695 django.server log_message:213 - "GET /cart/ HTTP/1.1" 200 86650
+[WARNING] 2026-08-24 00:40:21,693 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-24 00:40:21,891 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 15610
+[INFO] 2026-08-24 00:40:55,510 django.server log_message:213 - "GET / HTTP/1.1" 200 166480
+[WARNING] 2026-08-24 00:40:56,606 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-24 00:40:56,663 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 15610
+[INFO] 2026-08-24 00:41:39,940 django.server log_message:213 - "GET /profile/ HTTP/1.1" 200 64568
+[WARNING] 2026-08-24 00:41:40,694 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-24 00:41:40,727 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 15610
+[INFO] 2026-08-24 00:42:31,185 django.server log_message:213 - "GET /privacy/ HTTP/1.1" 200 71792
+[WARNING] 2026-08-24 00:42:32,339 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-24 00:42:32,426 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 15610
+[INFO] 2026-08-24 00:42:54,418 django.server log_message:213 - "GET /contact/ HTTP/1.1" 200 64775
+[WARNING] 2026-08-24 00:42:55,794 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-24 00:42:55,827 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 15610
+[INFO] 2026-08-24 00:43:18,469 django.server log_message:213 - "GET /profile/ HTTP/1.1" 200 64568
+[WARNING] 2026-08-24 00:43:19,830 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-24 00:43:19,833 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 15610
+[INFO] 2026-08-24 00:43:52,695 django.server log_message:213 - "GET /logout/ HTTP/1.1" 302 0
+[DEBUG] 2026-08-24 00:43:53,490 marketplace.cart get_or_create_cart:25 - get_or_create_cart created new session key=2b32zfk2k6c0znkkw64j6784xtfzbbsy
+[INFO] 2026-08-24 00:43:54,210 marketplace.cart get_or_create_cart:53 - get_or_create_cart created_anon_cart session=2b32zfk2k6c0znkkw64j6784xtfzbbsy
+[INFO] 2026-08-24 00:43:54,951 django.server log_message:213 - "GET / HTTP/1.1" 200 155571
+[WARNING] 2026-08-24 00:43:56,503 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-24 00:43:56,505 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 15610
+[INFO] 2026-08-24 00:44:49,102 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:44:52,271 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:44:52,296 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:44:52,464 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:44:56,351 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:44:56,450 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:44:58,072 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:44:58,141 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:44:58,562 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:44:58,639 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:44:59,003 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:44:59,084 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:10,933 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:11,014 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:12,340 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:12,411 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:12,621 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:12,685 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:12,829 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:12,910 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:13,048 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:13,148 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:13,325 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:13,457 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:13,742 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:13,900 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:13,988 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:14,101 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:14,182 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:14,250 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:14,355 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:14,421 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:14,522 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:14,583 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:14,655 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:14,713 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:14,854 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:14,923 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:15,068 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:15,127 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:15,299 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:15,364 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:15,507 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:15,571 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:15,915 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:16,002 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:16,193 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:16,253 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:16,385 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:16,439 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 00:45:16,607 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:45:16,670 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[ERROR] 2026-08-24 00:45:18,882 django.request log_response:253 - Internal Server Error: /shop/brotherly-and-fashon-house/products/guchi-shoe/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\kasuMarketplace\apps\vendors\views.py", line 1110, in product_detail_public
+    return render(request, 'products/product_detail.html', context)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 228, in do_block
+    raise TemplateSyntaxError(
+        "'%s' tag with name '%s' appears more than once" % (bits[0], block_name)
+    )
+django.template.exceptions.TemplateSyntaxError: 'block' tag with name 'extra_body' appears more than once
+[ERROR] 2026-08-24 00:45:18,958 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/products/guchi-shoe/ HTTP/1.1" 500 221684
+[WARNING] 2026-08-24 00:45:20,678 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-24 00:45:20,699 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 15610
+[WARNING] 2026-08-24 00:45:39,303 django.request log_response:253 - Not Found: /favicon.ico
+[WARNING] 2026-08-24 00:45:39,351 django.server log_message:213 - "GET /favicon.ico HTTP/1.1" 404 15462
+[INFO] 2026-08-24 00:46:04,269 django.server handle_error:81 - - Broken pipe from ('127.0.0.1', 51441)
+[INFO] 2026-08-24 00:46:04,653 django.server log_message:213 - "GET / HTTP/1.1" 200 155392
+[INFO] 2026-08-24 00:46:26,475 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/vcnbvcb/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:46:26,613 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/vcnbvcb/wishlist/ HTTP/1.1" 200 12243
+[INFO] 2026-08-24 00:46:27,415 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/vcnbvcb/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:46:27,513 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/vcnbvcb/wishlist/ HTTP/1.1" 200 12243
+[INFO] 2026-08-24 00:46:27,824 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/vcnbvcb/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:46:27,939 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/vcnbvcb/wishlist/ HTTP/1.1" 200 12243
+[INFO] 2026-08-24 00:46:28,044 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/vcnbvcb/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:46:28,137 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/vcnbvcb/wishlist/ HTTP/1.1" 200 12243
+[INFO] 2026-08-24 00:46:28,242 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/vcnbvcb/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 00:46:28,339 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/vcnbvcb/wishlist/ HTTP/1.1" 200 12243
+[ERROR] 2026-08-24 00:46:40,005 django.request log_response:253 - Internal Server Error: /shop/brotherly-and-fashon-house/products/lo/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\kasuMarketplace\apps\vendors\views.py", line 1110, in product_detail_public
+    return render(request, 'products/product_detail.html', context)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 228, in do_block
+    raise TemplateSyntaxError(
+        "'%s' tag with name '%s' appears more than once" % (bits[0], block_name)
+    )
+django.template.exceptions.TemplateSyntaxError: 'block' tag with name 'extra_body' appears more than once
+[ERROR] 2026-08-24 00:46:40,040 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/products/lo/ HTTP/1.1" 500 221019
+[INFO] 2026-08-24 01:12:29,772 django.server handle_error:81 - - Broken pipe from ('127.0.0.1', 52451)
+[INFO] 2026-08-24 01:12:30,131 django.server log_message:213 - "GET / HTTP/1.1" 200 155565
+[INFO] 2026-08-24 01:12:30,548 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-24 01:12:30,561 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-24 01:12:31,284 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-24 01:12:31,286 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-24 01:12:32,322 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-24 01:12:36,851 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-24 01:12:38,115 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-24 01:12:39,134 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-24 01:12:39,147 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-24 01:12:39,156 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-24 01:12:39,165 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-24 01:12:39,284 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-24 01:12:39,358 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[INFO] 2026-08-24 01:12:39,360 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-24 01:12:39,391 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-24 01:12:39,593 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-24 01:12:39,943 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-24 01:12:42,189 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-24 01:12:53,881 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:12:56,474 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:12:56,476 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 12228
+[INFO] 2026-08-24 01:12:56,542 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 12228
+[INFO] 2026-08-24 01:12:56,763 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:12:56,863 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 12228
+[INFO] 2026-08-24 01:12:57,197 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:12:57,257 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 12228
+[INFO] 2026-08-24 01:12:58,892 django.server log_message:213 - "GET / HTTP/1.1" 200 155565
+[INFO] 2026-08-24 01:12:59,655 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-24 01:12:59,656 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-24 01:12:59,656 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-24 01:12:59,657 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-24 01:12:59,754 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-24 01:13:00,603 django.server log_message:213 - "GET / HTTP/1.1" 200 155565
+[INFO] 2026-08-24 01:13:02,982 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-24 01:13:02,984 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-24 01:13:02,985 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-24 01:13:02,985 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-24 01:13:02,990 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-24 01:13:06,770 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-24 01:13:08,890 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-24 01:13:09,749 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-24 01:13:09,750 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-24 01:13:09,753 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-24 01:13:09,754 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-24 01:13:09,754 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-24 01:13:09,768 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-24 01:13:09,826 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-24 01:13:09,835 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-24 01:13:09,875 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-24 01:13:09,891 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[INFO] 2026-08-24 01:13:12,022 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-24 01:13:16,724 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:13:16,856 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 12228
+[INFO] 2026-08-24 01:13:18,975 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:13:19,053 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 12228
+[INFO] 2026-08-24 01:13:19,250 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:13:19,319 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 12228
+[INFO] 2026-08-24 01:13:19,488 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:13:19,574 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/lo/wishlist/ HTTP/1.1" 200 12228
+[INFO] 2026-08-24 01:13:41,386 django.server log_message:213 - "GET /shop/brotherly-and-fashon-house/products/vcnbvcb/ HTTP/1.1" 200 57877
+[INFO] 2026-08-24 01:14:01,769 django.server log_message:213 - "GET / HTTP/1.1" 200 155565
+[INFO] 2026-08-24 01:14:22,035 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:14:22,118 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 01:14:23,071 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:14:23,168 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 01:14:23,420 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:14:23,487 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252
+[INFO] 2026-08-24 01:14:23,716 django.server log_message:213 - "POST /shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 302 0
+[INFO] 2026-08-24 01:14:23,777 django.server log_message:213 - "GET /accounts/login/?next=/shop/brotherly-and-fashon-house/products/guchi-shoe/wishlist/ HTTP/1.1" 200 12252

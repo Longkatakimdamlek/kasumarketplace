@@ -503,9 +503,26 @@ def wishlist_view(request):
         )
         products.append(product)
 
+    wishlisted_pks = {w.product_id for w in wishlist_items}
+
+    # "You Might Also Like" — trending products not already wishlisted
+    from apps.vendors.models import Product
+    recommended = Product.objects.filter(
+        status='published',
+        store__is_published=True,
+    ).exclude(
+        pk__in=wishlisted_pks
+    ).select_related('store').prefetch_related('images').order_by(
+        '-trending_score', '-created_at'
+    )[:8]
+
+    for p in recommended:
+        p.distance = get_distance_to_store(buyer_lat, buyer_lon, p.store)
+
     context = {
         'wishlist_products': products,
-        'wishlisted_ids': {wishlist_item.product_id for wishlist_item in wishlist_items},
+        'wishlisted_ids': wishlisted_pks,
+        'recommended_products': list(recommended),
     }
     return render(request, 'marketplace/wishlist.html', context)
 
@@ -587,9 +604,32 @@ def cart_view(request):
     Shows items grouped by store with subtotals and grand total.
     """
     summary = get_cart_summary(request)
+
+    # "You Might Also Like" — trending products not already in cart
+    from apps.vendors.models import Product
+    from apps.marketplace.services.distance_service import get_distance_to_store
+    cart_product_ids = set()
+    for items in summary.get('items_by_store', {}).values():
+        for ci in items:
+            cart_product_ids.add(ci.product_id)
+
+    buyer_lat, buyer_lon = get_buyer_location(request)
+    recommended = Product.objects.filter(
+        status='published',
+        store__is_published=True,
+    ).exclude(
+        pk__in=cart_product_ids
+    ).select_related('store').prefetch_related('images').order_by(
+        '-trending_score', '-created_at'
+    )[:8]
+
+    for p in recommended:
+        p.distance = get_distance_to_store(buyer_lat, buyer_lon, p.store)
+
     context = {
         **summary,
         'paystack_public_key': settings.PAYSTACK_PUBLIC_KEY,
+        'recommended_products': list(recommended),
     }
     return render(request, 'marketplace/cart.html', context)
 
@@ -602,14 +642,42 @@ def cart_add(request):
     Expects POST: product_id, quantity (optional, default 1)
     Returns JSON.
     """
+    logger = logging.getLogger('marketplace.cart')
+    user_label = (
+        f"user={request.user.pk}"
+        if request.user.is_authenticated
+        else f"anon session={request.session.session_key}"
+    )
+
     try:
         data = json.loads(request.body)
         product_id = int(data.get('product_id'))
         quantity = int(data.get('quantity', 1))
-    except (ValueError, TypeError, json.JSONDecodeError):
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        logger.warning(
+            "cart_add bad_request %s product_id=%s error=%s",
+            user_label, data.get('product_id') if isinstance(data, dict) else '?', exc,
+        )
         return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
 
-    result = add_to_cart(request, product_id, quantity)
+    try:
+        result = add_to_cart(request, product_id, quantity)
+    except Exception as exc:
+        import traceback
+        logger.error(
+            "cart_add exception %s product_id=%s error_type=%s error=%s\n%s",
+            user_label, product_id, type(exc).__name__, exc, traceback.format_exc(),
+        )
+        return JsonResponse({
+            'success': False,
+            'message': 'Something went wrong. Please try again.',
+            '_debug_error': f"{type(exc).__name__}: {exc}",
+        }, status=500)
+
+    if not result.get('success'):
+        logger.info("cart_add declined %s product_id=%s message=%s", user_label, product_id, result.get('message'))
+
+    logger.info("cart_add ok %s product_id=%s qty=%s cart_items=%s", user_label, product_id, quantity, result.get('cart_total_items'))
     return JsonResponse(result)
 
 
@@ -1061,3 +1129,55 @@ def profile(request):
 def about_page(request):
     """About KasuMarketplace page."""
     return render(request, 'marketplace/about.html')
+
+
+def cookies_page(request):
+    """Cookie policy page."""
+    return render(request, 'marketplace/cookies.html')
+
+
+def privacy_policy(request):
+    """Privacy policy page."""
+    return render(request, 'marketplace/privacy.html')
+
+
+def terms_of_service(request):
+    """Terms of service page."""
+    return render(request, 'marketplace/terms.html')
+
+
+# ==========================================
+# ACCOUNT DELETION REQUEST
+# ==========================================
+
+@login_required
+@require_POST
+def request_account_deletion(request):
+    """
+    Send an account deletion request email to platform admin.
+    No automatic deletion — this is a manual review queue.
+    """
+    user = request.user
+
+    from apps.marketplace.services.email_service import _send, ADMIN_EMAIL
+
+    if ADMIN_EMAIL:
+        subject = f'[Account Deletion Request] Buyer: {user.email}'
+        body = (
+            f"Account Deletion Request\n"
+            f"========================\n\n"
+            f"User ID: {user.pk}\n"
+            f"Email: {user.email}\n"
+            f"Account Type: Buyer\n"
+            f"Request Date: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+            f"Action Required: Review and process this deletion request manually."
+        )
+        _send(subject, body, [ADMIN_EMAIL])
+
+    messages.success(
+        request,
+        'Your account deletion request has been received. '
+        'Our team will review it and process it manually. '
+        'You will be notified via email once the request is handled.'
+    )
+    return redirect('marketplace:profile')

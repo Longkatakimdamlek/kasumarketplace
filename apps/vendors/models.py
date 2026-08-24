@@ -121,7 +121,20 @@ class VendorProfile(models.Model):
         max_length=11,
         blank=True,
         validators=[RegexValidator(r'^\d{11}$', 'BVN must be 11 digits')],
-        verbose_name="BVN"
+        verbose_name="BVN",
+        help_text="Cleared after successful verification — never retained long-term."
+    )
+
+    # ==========================================
+    # BVN Consent
+    # ==========================================
+    bvn_consent_given = models.BooleanField(
+        default=False,
+        help_text="Vendor consented to BVN collection and submission to Dojah for identity verification."
+    )
+    bvn_consent_timestamp = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Timestamp when BVN collection consent was given."
     )
 
     # ==========================================
@@ -386,13 +399,13 @@ class VendorProfile(models.Model):
         """
         if self.pk:
             original = VendorProfile.objects.filter(pk=self.pk).values(
-                'bank_status', 'bvn_number', 'full_name', 'gender', 'dob',
+                'bank_status', 'full_name', 'gender', 'dob',
                 'selfie_match', 'selfie_confidence'
             ).first()
 
             if original and original['bank_status'] == 'verified':
                 locked_fields = [
-                    'bvn_number', 'full_name', 'gender', 'dob',
+                    'full_name', 'gender', 'dob',
                     'selfie_match', 'selfie_confidence'
                 ]
                 for field in locked_fields:

@@ -78,7 +78,7 @@
                     {{ product.discount_percentage|floatformat:0 }}% OFF
                 </span>
                 {% endif %}
-                {% if not is_owner and request.user.is_authenticated %}
+                {% if not is_owner %}
                 <button type="button" onclick="toggleWishlist()" id="wishlist-btn"
                         class="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-white/90 shadow-sm transition active:scale-90"
                         aria-label="Toggle wishlist">
@@ -514,8 +514,15 @@
             method: 'POST',
             headers: { 'X-CSRFToken': CSRF },
         })
-        .then(r => r.json())
+        .then(r => {
+            if (r.status === 401 || r.status === 403) {
+                showAuthModal();
+                return null;
+            }
+            return r.json();
+        })
         .then(data => {
+            if (!data) return;
             if (data.success) {
                 const icon = document.getElementById('wishlist-icon');
                 if (data.wishlisted) {
@@ -560,5 +567,70 @@
         })
         .catch(() => showToast('Something went wrong.', 'error'));
     }
+    // ---- Auth modal helpers ----
+    function showAuthModal() {
+        if (window.innerWidth >= 768) {
+            window.location.href = "{% url 'users:login' %}?next=" + encodeURIComponent(window.location.pathname);
+            return;
+        }
+        const modal = document.getElementById('auth-modal');
+        const content = document.getElementById('auth-modal-content');
+        if (!modal || !content) {
+            window.location.href = "{% url 'users:login' %}?next=" + encodeURIComponent(window.location.pathname);
+            return;
+        }
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => content.classList.remove('translate-y-full'), 10);
+    }
+
+    function hideAuthModal() {
+        const modal = document.getElementById('auth-modal');
+        const content = document.getElementById('auth-modal-content');
+        if (!modal || !content) return;
+        content.classList.add('translate-y-full');
+        document.body.style.overflow = '';
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
 </script>
+
+<!-- Mobile footer for product detail -->
+<footer class="md:hidden border-t border-border bg-white px-4 pt-6 pb-28">
+  <div class="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-400 mb-4">
+    <a href="{% url 'marketplace:deals' %}" class="hover:text-brand transition">Deals</a>
+    <a href="{% url 'marketplace:store_directory' %}" class="hover:text-brand transition">Stores</a>
+    <a href="{% url 'marketplace:new_arrivals' %}" class="hover:text-brand transition">New Arrivals</a>
+    <a href="{% url 'marketplace:trending' %}" class="hover:text-brand transition">Trending</a>
+    <a href="{% url 'marketplace:contact' %}" class="hover:text-brand transition">Contact Us</a>
+    <a href="{% url 'marketplace:terms' %}" class="hover:text-brand transition">Terms of Service</a>
+    <a href="{% url 'marketplace:privacy' %}" class="hover:text-brand transition">Privacy Policy</a>
+    <a href="{% url 'marketplace:cookies' %}" class="hover:text-brand transition">Cookie Policy</a>
+  </div>
+  <p class="text-xs text-gray-300">&copy; 2026 KasuMarketplace</p>
+</footer>
+
+<!-- Auth modal for non-logged-in users -->
+<div id="auth-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="hideAuthModal()"></div>
+    <div id="auth-modal-content" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl transform translate-y-full transition-transform duration-300 ease-out md:hidden">
+        <div class="p-6">
+            <div class="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6"></div>
+            <h3 class="text-lg font-semibold text-center text-gray-900 mb-6">Welcome to KasuMarketplace</h3>
+            <div class="space-y-3">
+                <a href="{% url 'users:login' %}?next={{ request.get_full_path }}" class="block w-full py-4 px-6 bg-brand text-white text-center font-medium rounded-xl transition hover:bg-brand/90">
+                    Login
+                </a>
+                <a href="{% url 'users:buyer_signup' %}" class="block w-full py-4 px-6 bg-purple-600 text-white text-center font-medium rounded-xl transition hover:bg-purple-700">
+                    Sign Up as Buyer
+                </a>
+                <a href="{% url 'users:vendor_signup' %}" class="block w-full py-4 px-6 bg-brand text-white text-center font-medium rounded-xl transition hover:bg-brand/90">
+                    Become a Vendor
+                </a>
+            </div>
+            <button onclick="hideAuthModal()" class="w-full mt-4 py-3 px-6 text-gray-500 text-center font-medium rounded-xl hover:bg-gray-50 transition">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}

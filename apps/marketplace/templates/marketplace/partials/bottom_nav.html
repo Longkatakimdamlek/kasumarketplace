@@ -1,6 +1,6 @@
-<!-- Mobile Bottom Navigation — 4 items -->
+<!-- Mobile Bottom Navigation — 5 items -->
 <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border shadow-nav bottom-nav-safe">
-  <div class="grid grid-cols-4 h-16">
+  <div class="grid grid-cols-5 h-16">
 
     <!-- Home -->
     <a href="{% url 'marketplace:product_list' %}"
@@ -19,6 +19,25 @@
       </svg>
       <span class="text-xs font-medium">Categories</span>
     </button>
+
+    <!-- Wishlist -->
+    {% if user.is_authenticated %}
+    <a href="{% url 'marketplace:wishlist' %}"
+       class="flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'wishlist' %}text-primary{% else %}text-muted{% endif %} transition">
+      <svg class="w-6 h-6" fill="{% if request.resolver_match.url_name == 'wishlist' %}currentColor{% else %}none{% endif %}" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+      </svg>
+      <span class="text-xs font-medium">Wishlist</span>
+    </a>
+    {% else %}
+    <button onclick="toggleAuthModal()"
+       class="flex flex-col items-center justify-center gap-1 text-muted transition active:text-primary">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+      </svg>
+      <span class="text-xs font-medium">Wishlist</span>
+    </button>
+    {% endif %}
 
     <!-- Cart -->
     <a href="{% url 'marketplace:cart' %}"

@@ -23,6 +23,21 @@ urlpatterns = [
         name='about'
     ),
     path(
+        'cookies/',
+        views.cookies_page,
+        name='cookies'
+    ),
+    path(
+        'privacy/',
+        views.privacy_policy,
+        name='privacy'
+    ),
+    path(
+        'terms/',
+        views.terms_of_service,
+        name='terms'
+    ),
+    path(
         'search/',
         views.search_results,
         name='search'
@@ -148,4 +163,5 @@ urlpatterns = [
     ),
     path('profile/', views.profile, name='profile'),
     path('contact/', views.contact_us, name='contact'),
+    path('request-account-deletion/', views.request_account_deletion, name='request_account_deletion'),
 ]

@@ -140,9 +140,9 @@
                            x-model="consentGiven"
                            class="mt-0.5 w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
                     <span class="text-xs text-gray-600 leading-relaxed">
-                        I agree to verify my BVN and selfie for identity and payment setup.
+                        I consent to KasuMarketplace collecting and submitting my BVN to Dojah for identity verification purposes.
                         My data will be handled per the
-                        <a href="#" class="text-primary hover:underline">Privacy Policy</a>.
+                        <a href="{% url 'marketplace:privacy' %}" class="text-primary hover:underline">Privacy Policy</a>.
                     </span>
                 </label>
                 {% if form.consent.errors %}

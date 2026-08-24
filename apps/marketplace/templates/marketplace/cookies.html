@@ -1,0 +1,78 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}Cookie Policy — KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-8">
+  <h1 class="font-display font-bold text-xl text-dark mb-2">Cookie Policy</h1>
+  <p class="text-sm text-muted mb-5">Last updated: <strong>Monday, August 20, 2026</strong></p>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <p class="text-sm text-muted">
+      This Cookie Policy explains how KasuMarketplace uses cookies and similar technology when you visit
+      kasumarketplace.com.ng.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">What Are Cookies?</h2>
+    <p class="text-sm text-muted">
+      Cookies are small text files stored on your device when you visit a website. They help the site
+      remember information about your visit, like whether you're logged in or what's in your cart.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">Cookies We Use</h2>
+
+    <h3 class="font-semibold text-dark mb-2">Essential Cookies (Required)</h3>
+    <p class="text-sm text-muted mb-2">These are necessary for the site to function and can't be turned off:</p>
+    <ul class="list-disc list-inside text-sm text-muted mb-4 space-y-1">
+      <li><strong class="text-dark">Session cookies</strong> — keep you logged in as you browse</li>
+      <li><strong class="text-dark">Cart cookies</strong> — remember what's in your cart between page visits, including before you log in</li>
+    </ul>
+
+    <h3 class="font-semibold text-dark mb-2">Security Cookies</h3>
+    <ul class="list-disc list-inside text-sm text-muted space-y-1">
+      <li><strong class="text-dark">Google reCAPTCHA</strong> — we use reCAPTCHA to protect signup and identity verification forms from bots and automated abuse. This sets a cookie from Google and may share some browser/interaction data with Google as part of that check. This is used purely for security, not advertising.</li>
+    </ul>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">What We Don't Use</h2>
+    <p class="text-sm text-muted">
+      We do not use advertising cookies, third-party analytics or tracking cookies, or cookies that build an
+      advertising profile of you. We don't sell any data collected through cookies.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">Managing Cookies</h2>
+    <p class="text-sm text-muted mb-2">
+      Because our cookies are essential to running the site (keeping you logged in, remembering your cart) or
+      used for security (reCAPTCHA), disabling them may mean parts of KasuMarketplace — like staying logged in
+      or completing signup — won't work properly.
+    </p>
+    <p class="text-sm text-muted">
+      You can control or delete cookies through your browser settings at any time. Check your browser's help
+      section for instructions specific to it.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">Changes to This Policy</h2>
+    <p class="text-sm text-muted">
+      We may update this Cookie Policy as our use of cookies changes. We'll update the "Last updated" date
+      above when we do.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">Contact Us</h2>
+    <p class="text-sm text-muted mb-2">Questions about our use of cookies? Reach us through:</p>
+    <ul class="list-disc list-inside text-sm text-muted space-y-1">
+      <li>Our <a href="{% url 'marketplace:contact' %}" class="text-primary hover:underline">Contact Us page</a></li>
+      <li>Email: <strong class="text-dark">info@kasumarketplace.com.ng</strong></li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

@@ -74,6 +74,11 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile_view'),
 
     # ==========================================
+    # ACCOUNT DELETION REQUEST
+    # ==========================================
+    path('request-account-deletion/', views.request_account_deletion, name='request_account_deletion'),
+
+    # ==========================================
     # AJAX ENDPOINTS
     # ==========================================
     path('ajax/subcategories/', views.ajax_get_subcategories, name='ajax_subcategories'),

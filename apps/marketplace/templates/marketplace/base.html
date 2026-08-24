@@ -261,6 +261,21 @@
     </div>
   </header>
 
+  <!-- ===================== DESKTOP WISHLIST SUB-HEADER ===================== -->
+  <div class="hidden md:block bg-surface border-b border-border">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-end">
+      <a href="{% url 'marketplace:wishlist' %}" class="flex items-center gap-2 py-2 text-sm font-medium text-muted hover:text-primary transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+        My Wishlist
+        {% if wishlist_count %}
+        <span class="ml-0.5 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ wishlist_count }}</span>
+        {% endif %}
+      </a>
+    </div>
+  </div>
+
   <!-- ===================== MOBILE TOPBAR ===================== -->
   <header class="md:hidden sticky top-0 z-40 bg-white border-b border-border">
     <div class="px-4 h-14 flex items-center gap-3">
@@ -485,8 +500,19 @@
         method: 'POST',
         headers: { 'X-CSRFToken': getCookie('csrftoken') },
       })
-      .then(r => r.json())
+      .then(r => {
+        if (r.status === 401 || r.status === 403) {
+          if (window.innerWidth < 768) {
+            toggleAuthModal();
+          } else {
+            window.location.href = "{% url 'users:login' %}?next=" + encodeURIComponent(window.location.pathname);
+          }
+          return null;
+        }
+        return r.json();
+      })
       .then(data => {
+        if (!data) return;
         if (!data.success) return;
         const icon = btn.querySelector('.wishlist-icon');
         if (data.wishlisted) {
@@ -505,13 +531,27 @@
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
         body: JSON.stringify({ product_id: productId, quantity: 1 })
       })
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) {
+          r.clone().json().then(data => {
+            console.error('[cart] HTTP', r.status, data._debug_error || data.message || data);
+          }).catch(() => {
+            console.error('[cart] HTTP', r.status, r.statusText);
+          });
+        }
+        return r.json();
+      })
       .then(data => {
         if (data.success) {
           btn.classList.add('scale-125');
           setTimeout(() => btn.classList.remove('scale-125'), 150);
           if (data.cart_total_items) updateCartBadge(data.cart_total_items);
+        } else {
+          console.warn('[cart] add failed:', data._debug_error || data.message);
         }
+      })
+      .catch(err => {
+        console.error('[cart] network error:', err);
       });
     }
 
@@ -519,6 +559,29 @@
   </script>
   <script src="{% static 'marketplace/js/global-ui.js' %}" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Cookie Consent Banner -->
+  <div id="cookie-consent-banner"
+       style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#111827;color:#fff;padding:12px 20px;text-align:center;font-size:13px;">
+      <span>We use cookies to run this site. <a href="{% url 'marketplace:cookies' %}" style="color:#6ee7b7;text-decoration:underline;">Learn more</a></span>
+      <button onclick="dismissCookieConsent()"
+              style="margin-left:12px;background:#065f46;color:#fff;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">
+          Accept
+      </button>
+  </div>
+  <script>
+  function dismissCookieConsent() {
+      document.cookie = 'cookie_consent=accepted;path=/;max-age=31536000';
+      var banner = document.getElementById('cookie-consent-banner');
+      if (banner) banner.style.display = 'none';
+  }
+  (function() {
+      if (document.cookie.indexOf('cookie_consent=accepted') === -1) {
+          var banner = document.getElementById('cookie-consent-banner');
+          if (banner) banner.style.display = 'block';
+      }
+  })();
+  </script>
 
   {% block extra_js %}{% endblock %}
 </body>

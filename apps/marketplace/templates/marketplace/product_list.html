@@ -94,6 +94,38 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
     <div id="banner-dots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5"></div>
   </div>
 
+  <!-- QUICK LINKS (mobile) -->
+  <div class="px-4 mt-4 grid grid-cols-2 gap-2">
+    <a href="{% url 'marketplace:deals' %}"
+       class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-accent/10 text-accent text-sm font-semibold">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a2.25 2.25 0 003.182 0l4.318-4.318a2.25 2.25 0 000-3.182L11.16 3.66A2.25 2.25 0 009.568 3z"/>
+      </svg>
+      Deals
+    </a>
+    <a href="{% url 'marketplace:store_directory' %}"
+       class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-semibold">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M5 21V7l8-4v18M13 21V11l6 3v7"/>
+      </svg>
+      Stores
+    </a>
+    <a href="{% url 'marketplace:new_arrivals' %}"
+       class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-purple-50 text-purple-600 text-sm font-semibold">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      New Arrivals
+    </a>
+    <a href="{% url 'marketplace:trending' %}"
+       class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-50 text-emerald-600 text-sm font-semibold">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+      </svg>
+      Trending
+    </a>
+  </div>
+
   <!-- CATEGORIES GRID -->
   <div class="px-4 mt-6">
     <h2 class="font-display font-bold text-base text-dark mb-3">Categories</h2>
@@ -182,6 +214,8 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
   </div>
 
 </div><!-- end mobile -->
+
+{% include 'marketplace/partials/mobile_footer.html' %}
 
 
 <!-- ==================== DESKTOP LAYOUT ==================== -->

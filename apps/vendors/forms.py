@@ -63,8 +63,8 @@ class BVNEntryForm(forms.Form):
 
     consent = forms.BooleanField(
         required=True,
-        label='I authorise KasuMarketplace to verify my BVN and selfie',
-        error_messages={'required': 'You must agree to the verification consent to continue.'}
+        label='I consent to KasuMarketplace collecting and submitting my BVN to Dojah for identity verification purposes.',
+        error_messages={'required': 'You must consent to BVN collection to proceed with verification.'}
     )
 
     def clean_bvn_number(self):

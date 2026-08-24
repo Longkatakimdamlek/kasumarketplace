@@ -220,15 +220,21 @@ def _process_bvn_with_selfie(request, vendor, bvn_number, bank_name, selfie_data
     else:
         attempt_status = 'failed'
 
+    redacted_data = {k: v for k, v in data.items() if k != 'bvn_number'}
+    if 'raw_response' in redacted_data and isinstance(redacted_data['raw_response'], dict):
+        redacted_data['raw_response'] = {
+            k: v for k, v in redacted_data['raw_response'].items()
+            if k != 'bvn'
+        }
     VerificationAttempt.objects.create(
         vendor=vendor, attempt_type='bvn', status=attempt_status,
         request_data={'bvn_masked': f'***{bvn_number[-4:]}'},
-        response_data=data,
+        response_data=redacted_data,
         ip_address=request.META.get('REMOTE_ADDR'),
         user_agent=request.META.get('HTTP_USER_AGENT', ''),
     )
 
-    vendor.bvn_number = bvn_number
+    vendor.bvn_number = ''  # clear immediately — never retain raw BVN
     vendor.full_name = data['full_name']
     vendor.gender = (data.get('gender') or '').lower()
     vendor.phone = data.get('phone', '')
@@ -544,6 +550,9 @@ def bvn_verification(request):
     if request.method == 'POST':
         form = BVNEntryForm(request.POST)
         if form.is_valid():
+            vendor.bvn_consent_given = True
+            vendor.bvn_consent_timestamp = timezone.now()
+            vendor.save(update_fields=['bvn_consent_given', 'bvn_consent_timestamp'])
             _store_bvn_session(
                 request,
                 form.cleaned_data['bvn_number'],
@@ -2270,3 +2279,44 @@ def vendor_order_reject(request, suborder_id):
 
     messages.success(request, f'Order #{sub_order.pk} rejected. Buyer will be refunded.')
     return redirect('vendors:orders_list')
+
+
+# ==========================================
+# ACCOUNT DELETION REQUEST
+# ==========================================
+
+@vendor_required
+@require_http_methods(["POST"])
+def request_account_deletion(request):
+    """
+    Send an account deletion request email to platform admin.
+    No automatic deletion — this is a manual review queue.
+    """
+    vendor = request.user.vendorprofile
+    user = request.user
+
+    from apps.marketplace.services.email_service import _send, ADMIN_EMAIL
+
+    if ADMIN_EMAIL:
+        subject = f'[Account Deletion Request] Vendor: {user.email}'
+        body = (
+            f"Account Deletion Request\n"
+            f"========================\n\n"
+            f"User ID: {user.pk}\n"
+            f"Email: {user.email}\n"
+            f"Account Type: Vendor\n"
+            f"Vendor ID: {vendor.vendor_id}\n"
+            f"Store Name: {getattr(vendor.store, 'store_name', 'N/A')}\n"
+            f"Verification Status: {vendor.verification_status}\n"
+            f"Request Date: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+            f"Action Required: Review and process this deletion request manually."
+        )
+        _send(subject, body, [ADMIN_EMAIL])
+
+    messages.success(
+        request,
+        'Your account deletion request has been received. '
+        'Our team will review it and process it manually. '
+        'You will be notified via email once the request is handled.'
+    )
+    return redirect('vendors:store_settings')

@@ -138,6 +138,29 @@
         window.FaceLandmarksTasksVision = visionTasks;
     </script>
     <script src="{% static 'vendors/js/live_capture.js' %}" defer></script>
+
+    <!-- Cookie Consent Banner -->
+    <div id="cookie-consent-banner"
+         style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#111827;color:#fff;padding:12px 20px;text-align:center;font-size:13px;">
+        <span>We use cookies to run this site. <a href="{% url 'marketplace:cookies' %}" style="color:#6ee7b7;text-decoration:underline;">Learn more</a></span>
+        <button onclick="dismissCookieConsent()"
+                style="margin-left:12px;background:#065f46;color:#fff;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">
+            Accept
+        </button>
+    </div>
+    <script>
+    function dismissCookieConsent() {
+        document.cookie = 'cookie_consent=accepted;path=/;max-age=31536000';
+        var banner = document.getElementById('cookie-consent-banner');
+        if (banner) banner.style.display = 'none';
+    }
+    (function() {
+        if (document.cookie.indexOf('cookie_consent=accepted') === -1) {
+            var banner = document.getElementById('cookie-consent-banner');
+            if (banner) banner.style.display = 'block';
+        }
+    })();
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>

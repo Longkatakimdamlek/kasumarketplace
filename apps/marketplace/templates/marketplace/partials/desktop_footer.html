@@ -77,9 +77,9 @@
         <div>
           <h3 class="mb-4 font-bold text-white">Legal</h3>
           <ul class="space-y-4 text-slate-300">
-            <li class="font-medium hover:text-primary"><a href="#">Terms of Service</a></li>
-            <li class="font-medium hover:text-primary"><a href="#">Privacy Policy</a></li>
-            <li class="font-medium hover:text-primary"><a href="#">Cookie Policy</a></li>
+            <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:terms' %}">Terms of Service</a></li>
+            <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:privacy' %}">Privacy Policy</a></li>
+            <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:cookies' %}">Cookie Policy</a></li>
           </ul>
         </div>
       </div>
@@ -87,8 +87,8 @@
       <div class="mt-24 flex flex-col justify-between gap-4 border-t border-slate-700 pt-8 text-sm font-medium text-slate-300 md:flex-row md:items-center">
         <p>© 2026 KasuMarketplace All rights reserved.</p>
         <ul class="flex flex-wrap gap-4">
-          <li class="underline hover:text-primary"><a href="#">Terms and Conditions</a></li>
-          <li class="underline hover:text-primary"><a href="#">Privacy Policy</a></li>
+          <li class="underline hover:text-primary"><a href="{% url 'marketplace:terms' %}">Terms and Conditions</a></li>
+          <li class="underline hover:text-primary"><a href="{% url 'marketplace:privacy' %}">Privacy Policy</a></li>
         </ul>
       </div>
     </footer>

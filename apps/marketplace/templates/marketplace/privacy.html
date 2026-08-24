@@ -1,0 +1,235 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}Privacy Policy — KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-8">
+  <h1 class="font-display font-bold text-xl text-dark mb-2">Privacy Policy</h1>
+  <p class="text-sm text-muted mb-5">Last updated: <strong>Monday, August 20, 2026</strong></p>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <p class="text-sm text-muted mb-3">
+      KasuMarketplace ("we," "us," "our") operates kasumarketplace.com.ng, an online marketplace connecting
+      Kaduna State University (KASU) students as buyers and student vendors. This Privacy Policy explains
+      what personal data we collect, why we collect it, how it's used, and the rights you have over it.
+    </p>
+    <p class="text-sm text-muted">
+      This policy applies to everyone who uses KasuMarketplace — buyers, vendors, and visitors.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">1. Information We Collect</h2>
+
+    <h3 class="font-semibold text-dark mb-2">1.1 Account Information (All Users)</h3>
+    <p class="text-sm text-muted mb-2">When you create an account, we collect:</p>
+    <ul class="list-disc list-inside text-sm text-muted mb-3 space-y-1">
+      <li>Full name, email address, phone number</li>
+      <li>Password (stored as a secure hash — we never see or store your actual password)</li>
+      <li>Account type (buyer or vendor)</li>
+    </ul>
+    <p class="text-sm text-muted mb-4">
+      If you sign up using Google, Facebook, or Apple, we receive your name and email from that provider
+      instead of a password.
+    </p>
+
+    <h3 class="font-semibold text-dark mb-2">1.2 Buyer Information</h3>
+    <ul class="list-disc list-inside text-sm text-muted mb-4 space-y-1">
+      <li>Delivery address, city, and state</li>
+      <li>Phone number for delivery coordination</li>
+      <li>Location (latitude/longitude), if you choose to share it, to help calculate distance to vendors and improve delivery estimates</li>
+      <li>Order history, wishlist items, and reviews you leave</li>
+    </ul>
+
+    <h3 class="font-semibold text-dark mb-2">1.3 Vendor Information</h3>
+    <p class="text-sm text-muted mb-2">Vendors go through an identity verification process before they can sell on the platform. As part of this, we collect:</p>
+    <ul class="list-disc list-inside text-sm text-muted mb-3 space-y-1">
+      <li>Full legal name, date of birth, gender (confirmed via Bank Verification Number lookup)</li>
+      <li>A live selfie, used to confirm you match the identity linked to your BVN</li>
+      <li>Student verification details: matriculation number, department, level, and a photo of your student ID</li>
+      <li>Bank account details (account number, bank name) — used only to pay out your earnings</li>
+      <li>Store details: store name, address, phone number, WhatsApp number, logo, and banner image</li>
+    </ul>
+    <p class="text-sm text-muted mb-4">
+      <strong class="text-dark">About your BVN specifically:</strong> We use your Bank Verification Number (BVN)
+      solely to verify your identity through Dojah, our identity verification provider, before you're approved
+      to sell. <strong class="text-dark">We do not store your raw BVN.</strong> Once verification completes, the
+      number itself is discarded from our systems — we retain only the verification result (verified/not verified),
+      your verified name, date of birth, and gender as confirmed by that process. Submitting your BVN requires
+      your explicit consent, which we record with a timestamp.
+    </p>
+
+    <h3 class="font-semibold text-dark mb-2">1.4 Payment Information</h3>
+    <p class="text-sm text-muted mb-2">
+      When you make a payment, you enter your card or bank details directly into Paystack's secure checkout —
+      <strong class="text-dark">KasuMarketplace's servers never receive, process, or store your card number, CVV,
+      or banking PIN.</strong> We only receive and store:
+    </p>
+    <ul class="list-disc list-inside text-sm text-muted mb-3 space-y-1">
+      <li>A transaction reference and status (successful, failed, pending)</li>
+      <li>The amount paid</li>
+      <li>Paystack's confirmation response for that transaction</li>
+    </ul>
+    <p class="text-sm text-muted mb-4">
+      Vendor payouts work the same way in reverse: we store the bank account details you provide for receiving
+      payments, and use Paystack's transfer system to send your earnings — we do not touch or store any card
+      data in this process either.
+    </p>
+
+    <h3 class="font-semibold text-dark mb-2">1.5 Technical Information</h3>
+    <ul class="list-disc list-inside text-sm text-muted mb-4 space-y-1">
+      <li>IP address (recorded at registration and during identity verification, for security and fraud prevention)</li>
+      <li>Browser/device information (user agent)</li>
+      <li>Session cookies, used to keep you logged in and remember your cart</li>
+    </ul>
+
+    <h3 class="font-semibold text-dark mb-2">1.6 Communications</h3>
+    <p class="text-sm text-muted">
+      If you contact us — including through our Contact Us form — we collect your name, email, the subject
+      you select, and your message, so we can respond and route it appropriately.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">2. How We Use Your Information</h2>
+    <p class="text-sm text-muted mb-2">We use the information we collect to:</p>
+    <ul class="list-disc list-inside text-sm text-muted mb-3 space-y-1">
+      <li>Create and manage your account</li>
+      <li>Verify vendor identity and eligibility to sell (via Dojah)</li>
+      <li>Process payments and payouts (via Paystack)</li>
+      <li>Facilitate orders between buyers and vendors, including delivery coordination</li>
+      <li>Send order updates, verification status, and account-related emails and SMS</li>
+      <li>Resolve disputes between buyers and vendors</li>
+      <li>Detect and prevent fraud, duplicate accounts, or platform abuse</li>
+      <li>Respond to support requests submitted through our Contact Us page</li>
+      <li>Comply with legal obligations under Nigerian law</li>
+    </ul>
+    <p class="text-sm text-muted">
+      We do not sell your personal data to third parties, and we do not use your data for third-party advertising.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">3. Who We Share Your Information With</h2>
+    <p class="text-sm text-muted mb-3">We share limited data with the following third-party services, only as needed to run the platform:</p>
+    <div class="overflow-x-auto mb-3">
+      <table class="w-full text-sm text-muted border-collapse">
+        <thead>
+          <tr class="text-left text-dark border-b border-border">
+            <th class="py-2 pr-3">Service</th>
+            <th class="py-2 pr-3">What They Receive</th>
+            <th class="py-2">Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-border"><td class="py-2 pr-3 font-medium text-dark">Dojah</td><td class="py-2 pr-3">BVN (for verification only, not retained by us afterward), selfie image</td><td class="py-2">Identity verification</td></tr>
+          <tr class="border-b border-border"><td class="py-2 pr-3 font-medium text-dark">Paystack</td><td class="py-2 pr-3">Transaction amount, your email (for payment initiation), vendor bank details (for payouts)</td><td class="py-2">Payment processing and vendor payouts</td></tr>
+          <tr class="border-b border-border"><td class="py-2 pr-3 font-medium text-dark">Cloudinary</td><td class="py-2 pr-3">Product images, store logos/banners, student ID images, verification selfies</td><td class="py-2">Image hosting</td></tr>
+          <tr class="border-b border-border"><td class="py-2 pr-3 font-medium text-dark">ZeptoMail</td><td class="py-2 pr-3">Your email address, and the content of transactional emails we send you</td><td class="py-2">Order confirmations, verification updates, password resets</td></tr>
+          <tr class="border-b border-border"><td class="py-2 pr-3 font-medium text-dark">Termii</td><td class="py-2 pr-3">Your phone number, SMS message content</td><td class="py-2">Sending SMS notifications</td></tr>
+          <tr><td class="py-2 pr-3 font-medium text-dark">Google / Facebook / Apple</td><td class="py-2 pr-3">Your name and email (only if you use social login)</td><td class="py-2">Account sign-in</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-sm text-muted mb-2">
+      Each of these providers has its own privacy policy governing how they handle the data we share with them.
+      We only share what's necessary for them to perform their specific function.
+    </p>
+    <p class="text-sm text-muted">
+      We may also disclose information if required by law, to protect the rights and safety of our users, or
+      to investigate fraud.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">4. Cookies</h2>
+    <p class="text-sm text-muted mb-3">
+      KasuMarketplace uses cookies that are essential to running the site — for example, keeping you logged in
+      and remembering the contents of your cart. We do not use advertising or analytics cookies to track you
+      across other websites.
+    </p>
+    <p class="text-sm text-muted">
+      We do use Google reCAPTCHA to protect signup and verification forms from bots and abuse. reCAPTCHA may
+      set its own cookies and share some browser/interaction data with Google as part of that check — this is
+      a security measure, not advertising or tracking for marketing purposes. See our
+      <a href="{% url 'marketplace:cookies' %}" class="text-primary hover:underline">Cookie Policy</a> for more detail.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">5. Data Retention</h2>
+    <ul class="list-disc list-inside text-sm text-muted space-y-1">
+      <li><strong class="text-dark">BVN:</strong> Not retained after verification completes (see Section 1.3).</li>
+      <li><strong class="text-dark">Account and order data:</strong> Retained for as long as your account is active, and for a reasonable period afterward to comply with financial recordkeeping obligations and resolve any outstanding disputes.</li>
+      <li><strong class="text-dark">Verification records:</strong> We keep a log of verification attempts (status, timestamp) for security and audit purposes, with sensitive fields like your BVN excluded.</li>
+    </ul>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">6. Your Rights</h2>
+    <p class="text-sm text-muted mb-2">You have the right to:</p>
+    <ul class="list-disc list-inside text-sm text-muted mb-3 space-y-1">
+      <li><strong class="text-dark">Access</strong> the personal data we hold about you</li>
+      <li><strong class="text-dark">Correct</strong> inaccurate information on your profile</li>
+      <li><strong class="text-dark">Request deletion</strong> of your account and associated data</li>
+    </ul>
+    <p class="text-sm text-muted mb-2">
+      <strong class="text-dark">To request account deletion:</strong> Use the "Request Account Deletion" option
+      in your profile (buyer) or store settings (vendor). This submits a request to our team, who will process
+      it manually — we currently handle deletion requests individually rather than through full automatic
+      erasure, particularly where order history or financial records must be retained for legal or
+      dispute-resolution purposes. We'll confirm with you once your request has been actioned.
+    </p>
+    <p class="text-sm text-muted">
+      If you have questions about your data or want to exercise any of these rights directly, contact us at
+      <strong class="text-dark">[insert privacy contact email]</strong>.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">7. Data Security</h2>
+    <p class="text-sm text-muted mb-2">We take reasonable technical and organizational measures to protect your data, including:</p>
+    <ul class="list-disc list-inside text-sm text-muted mb-3 space-y-1">
+      <li>Password hashing (we never store passwords in plain text)</li>
+      <li>Not retaining raw BVN data after identity verification</li>
+      <li>Restricting payment card data entirely to Paystack's secure infrastructure</li>
+      <li>Access controls limiting who on our team can view sensitive verification data</li>
+    </ul>
+    <p class="text-sm text-muted">
+      No system is perfectly secure, and we can't guarantee absolute security, but we work to minimize what
+      sensitive data we hold in the first place.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">8. Age Restrictions</h2>
+    <p class="text-sm text-muted">
+      KasuMarketplace vendor accounts require you to be 18 or older, verified through your BVN-linked date of
+      birth during vendor onboarding. Accounts identified as belonging to someone under 18 are restricted from
+      selling on the platform.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">9. Changes to This Policy</h2>
+    <p class="text-sm text-muted">
+      We may update this Privacy Policy from time to time, for example as we add new features or data
+      protections. We'll update the "Last updated" date above when we do. Continued use of KasuMarketplace
+      after changes take effect means you accept the updated policy.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">10. Contact Us</h2>
+    <p class="text-sm text-muted mb-2">Questions about this Privacy Policy or how your data is handled? Reach us through:</p>
+    <ul class="list-disc list-inside text-sm text-muted space-y-1">
+      <li>Our <a href="{% url 'marketplace:contact' %}" class="text-primary hover:underline">Contact Us page</a></li>
+      <li>Email: <strong class="text-dark">info@kasumarketplace.com.ng</strong></li>
+    </ul>
+  </div>
+
+  <p class="text-xs text-muted italic">
+    This policy describes KasuMarketplace's practices as of the date above. If any part of this doesn't match
+    how the platform actually works, please let us know so we can correct it.
+  </p>
+</div>
+{% endblock %}

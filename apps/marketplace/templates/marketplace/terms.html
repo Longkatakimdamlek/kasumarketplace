@@ -1,0 +1,208 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}Terms of Service — KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-8">
+  <h1 class="font-display font-bold text-xl text-dark mb-2">Terms of Service</h1>
+  <p class="text-sm text-muted mb-5">Last updated: <strong>Monday, August 20, 2026</strong></p>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <p class="text-sm text-muted mb-2">
+      Welcome to KasuMarketplace, the campus marketplace built for Kaduna State University (KASU) students.
+      These Terms of Service ("Terms") govern your use of kasumarketplace.com.ng. By creating an account or
+      using the platform, you agree to these Terms.
+    </p>
+    <p class="text-sm text-muted">
+      If anything here doesn't reflect how the platform actually works, please tell us — this document is
+      meant to describe reality, not the other way around.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">1. Who Can Use KasuMarketplace</h2>
+    <ul class="list-disc list-inside text-sm text-muted space-y-1">
+      <li>You must be at least 18 years old to register as a <strong class="text-dark">vendor</strong>. Age is confirmed through your BVN-linked date of birth during identity verification, and accounts identified as belonging to someone under 18 are restricted from selling.</li>
+      <li>Buyer accounts are open to KASU students and members of the KASU community.</li>
+      <li>You must provide accurate information when registering, and keep your account credentials confidential. You're responsible for activity on your account.</li>
+    </ul>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">2. Account Registration</h2>
+    <p class="text-sm text-muted mb-2">
+      You can create an account using email and password, or sign in with Google, Facebook, or Apple. We
+      verify your email via a one-time code sent at signup.
+    </p>
+    <p class="text-sm text-muted mb-2">You agree not to:</p>
+    <ul class="list-disc list-inside text-sm text-muted space-y-1">
+      <li>Create multiple accounts to circumvent restrictions (including duplicate BVN registrations)</li>
+      <li>Share your account with others</li>
+      <li>Provide false information during registration or identity verification</li>
+    </ul>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">3. Vendor Verification</h2>
+    <p class="text-sm text-muted mb-2">To sell on KasuMarketplace, vendors must complete identity and student verification, which includes:</p>
+    <ul class="list-disc list-inside text-sm text-muted mb-3 space-y-1">
+      <li>BVN verification via Dojah (see our Privacy Policy for how this data is handled)</li>
+      <li>A live selfie match against your verified identity</li>
+      <li>Student ID verification (matriculation number, department, level, and ID photo)</li>
+      <li>Providing bank account details for receiving payouts</li>
+    </ul>
+    <p class="text-sm text-muted">
+      We reserve the right to reject, suspend, or revoke vendor status if verification fails, information
+      provided is false, or duplicate/fraudulent accounts are detected.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">4. How Orders Work</h2>
+    <ol class="list-decimal list-inside text-sm text-muted space-y-2 mb-3">
+      <li><strong class="text-dark">Checkout & Payment:</strong> When you place an order, payment is collected upfront via Paystack. Your order is only created once payment is confirmed.</li>
+      <li>
+        <strong class="text-dark">Vendor Response Window:</strong> Once an order is placed, the vendor has <strong class="text-dark">48 hours</strong> to accept or reject it.
+        <ul class="list-disc list-inside ml-5 mt-1 space-y-1">
+          <li>If the vendor <strong class="text-dark">accepts</strong>, the order proceeds and you'll receive the vendor's contact information for delivery coordination.</li>
+          <li>If the vendor <strong class="text-dark">rejects</strong>, or doesn't respond within 48 hours, the order is automatically cancelled and you are refunded.</li>
+        </ul>
+      </li>
+      <li><strong class="text-dark">Confirming Receipt:</strong> Once you receive your item, you confirm receipt in the app. This releases the order for payout to the vendor (subject to a short hold period before funds become available for withdrawal).</li>
+      <li><strong class="text-dark">Reporting a Problem:</strong> If something is wrong with an order you've received, you can report an issue, which opens a dispute (see Section 6). Please report issues as soon as possible after receiving your order — the longer you wait, the harder it is for us to resolve fairly with the vendor.</li>
+    </ol>
+    <p class="text-sm text-muted">
+      Orders, once accepted by a vendor, are between the buyer and that vendor. KasuMarketplace facilitates
+      the transaction and payment but is not itself the seller of the goods listed.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">5. Payments and Refunds</h2>
+    <ul class="list-disc list-inside text-sm text-muted space-y-1">
+      <li>All payments are processed securely through Paystack. KasuMarketplace does not receive or store your card details at any point.</li>
+      <li>If an order is rejected by the vendor or times out after 48 hours, you're automatically refunded via Paystack.</li>
+      <li>If a dispute is resolved in your favor (see below), a refund is issued the same way.</li>
+      <li>Vendors receive payouts to their registered bank account via Paystack transfers, after a short hold period following buyer confirmation of receipt.</li>
+      <li>Refunds are issued back through Paystack to your original payment method. Timing to see the funds back in your account depends on Paystack and your bank, and is outside our direct control.</li>
+      <li>KasuMarketplace deducts a commission from vendor sales as platform fees; current rates are shown in your vendor dashboard, and may change from time to time — changes apply to orders placed after the new rate takes effect, not retroactively.</li>
+    </ul>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">6. Disputes</h2>
+    <p class="text-sm text-muted mb-2">If you have a problem with an order you've received, you can open a dispute directly from your order. Here's how it works:</p>
+    <ul class="list-disc list-inside text-sm text-muted mb-3 space-y-1">
+      <li>Disputes can currently be opened by the <strong class="text-dark">buyer</strong> on accepted orders.</li>
+      <li>Once opened, the order is marked as disputed in our system, and payout to the vendor is paused until it's resolved — this is an internal account-level pause on our end, not a separate escrow held by Paystack.</li>
+      <li>Our team reviews the dispute and resolves it one of two ways: <strong class="text-dark">releasing</strong> the paused amount to the vendor, or <strong class="text-dark">refunding</strong> the buyer via Paystack.</li>
+      <li>Resolution is currently handled manually by our team rather than through an automated process. We don't currently commit to a fixed resolution timeline, but we aim to review disputes promptly.</li>
+      <li>If you disagree with how a dispute was resolved, you can follow up through our Contact Us page to have it reviewed further.</li>
+    </ul>
+    <p class="text-sm text-muted">
+      We're continuing to improve this process, including adding more communication tools between buyers and
+      vendors during a dispute.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">7. Vendor Responsibilities</h2>
+    <p class="text-sm text-muted mb-2">As a vendor, you agree to:</p>
+    <ul class="list-disc list-inside text-sm text-muted mb-3 space-y-1">
+      <li>Accurately describe and price the items you list</li>
+      <li>Respond to orders within the 48-hour window</li>
+      <li>Fulfil accepted orders in good faith</li>
+      <li>Not list prohibited, counterfeit, or illegal items</li>
+      <li>Keep your store and bank information accurate and up to date</li>
+    </ul>
+    <p class="text-sm text-muted">
+      Repeated failure to respond to orders, fulfil accepted orders, or resolve disputes fairly may result in
+      suspension or removal from the platform.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">8. Buyer Responsibilities</h2>
+    <p class="text-sm text-muted mb-2">As a buyer, you agree to:</p>
+    <ul class="list-disc list-inside text-sm text-muted space-y-1">
+      <li>Provide accurate delivery information</li>
+      <li>Pay for orders through the platform's official checkout only</li>
+      <li>Confirm receipt honestly, and raise disputes in good faith rather than to avoid legitimate payment</li>
+      <li>Treat vendors respectfully during order coordination</li>
+    </ul>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">9. Prohibited Conduct</h2>
+    <p class="text-sm text-muted mb-2">You may not use KasuMarketplace to:</p>
+    <ul class="list-disc list-inside text-sm text-muted mb-3 space-y-1">
+      <li>List or sell illegal, counterfeit, or prohibited goods</li>
+      <li>Attempt to defraud buyers, vendors, or the platform</li>
+      <li>Circumvent the platform's payment system (e.g. arranging off-platform payment to avoid fees)</li>
+      <li>Harass or abuse other users</li>
+      <li>Attempt to access accounts or data that aren't yours</li>
+    </ul>
+    <p class="text-sm text-muted">
+      Violations may result in account suspension, order cancellation, or removal from the platform, at our
+      discretion. If your account is suspended, any pending orders or open disputes at the time will still be
+      resolved (including any refunds or payouts owed) — suspension affects your ability to place new orders
+      or list new items, not your right to outstanding funds already owed to you.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">10. Account Deletion</h2>
+    <p class="text-sm text-muted">
+      You may request deletion of your account at any time through your profile (buyers) or store settings
+      (vendors). Requests are reviewed and processed manually by our team, since order history and financial
+      records may need to be retained for a period to satisfy legal and dispute-resolution obligations. We'll
+      confirm with you once your request has been handled.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">11. Limitation of Liability</h2>
+    <p class="text-sm text-muted mb-2">
+      KasuMarketplace provides the platform connecting buyers and vendors but is not a party to the underlying
+      sale of goods between them. To the extent permitted by law, we are not liable for:
+    </p>
+    <ul class="list-disc list-inside text-sm text-muted mb-3 space-y-1">
+      <li>The quality, safety, or legality of items listed by vendors</li>
+      <li>Losses arising from a vendor's failure to fulfil an order, beyond the refund and dispute processes described above</li>
+      <li>Delays or failures caused by third-party services we rely on (such as Paystack or Dojah)</li>
+    </ul>
+    <p class="text-sm text-muted">
+      Nothing in these Terms limits liability that cannot be limited under Nigerian law.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">12. Changes to These Terms</h2>
+    <p class="text-sm text-muted">
+      We may update these Terms from time to time as the platform evolves. We'll update the "Last updated"
+      date when we do. Continued use of KasuMarketplace after changes take effect means you accept the
+      updated Terms.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">13. Governing Law</h2>
+    <p class="text-sm text-muted">
+      These Terms are governed by the laws of the Federal Republic of Nigeria.
+    </p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">14. Contact Us</h2>
+    <p class="text-sm text-muted mb-2">Questions about these Terms? Reach us through:</p>
+    <ul class="list-disc list-inside text-sm text-muted space-y-1">
+      <li>Our <a href="{% url 'marketplace:contact' %}" class="text-primary hover:underline">Contact Us page</a></li>
+      <li>Email: <strong class="text-dark">info@kasumarketplace.com.ng</strong></li>
+    </ul>
+  </div>
+
+  <p class="text-xs text-muted italic">
+    These Terms describe KasuMarketplace's practices as of the date above. If any part of this doesn't
+    reflect how the platform actually behaves, please let us know so we can correct it.
+  </p>
+</div>
+{% endblock %}

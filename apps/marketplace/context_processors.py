@@ -24,3 +24,14 @@ def categories_processor(request):
     except Exception as e:
         logger.error(f"Error in categories_processor: {str(e)}", exc_info=True)
         return {'categories': []}
+
+
+def wishlist_count_processor(request):
+    """Inject wishlist item count for authenticated buyers."""
+    if not request.user.is_authenticated:
+        return {'wishlist_count': 0}
+    try:
+        from apps.marketplace.models import Wishlist
+        return {'wishlist_count': Wishlist.objects.filter(user=request.user).count()}
+    except Exception:
+        return {'wishlist_count': 0}
