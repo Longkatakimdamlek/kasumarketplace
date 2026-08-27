@@ -938,7 +938,15 @@ class Product(models.Model):
         default='draft'
     )
     is_featured = models.BooleanField(default=False)
-    
+
+    # Sponsorship
+    is_sponsored = models.BooleanField(default=False)
+    sponsored_until = models.DateTimeField(blank=True, null=True)
+    sponsored_priority = models.PositiveIntegerField(
+        default=0,
+        help_text="Higher priority shows first among sponsored products"
+    )
+
     # Video (optional, one per product)
     video = CloudinaryField(
         'video',

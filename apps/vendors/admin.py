@@ -1207,13 +1207,15 @@ class CategoryChangeRequestAdmin(admin.ModelAdmin):
 class ProductAdmin(admin.ModelAdmin):
     list_display = [
         'title', 'vendor_name', 'subcategory', 'price',
-        'stock_badge', 'display_attributes', 'status', 'sales_count', 'created_at'
+        'stock_badge', 'display_attributes', 'status', 'sales_count',
+        'sponsorship_status', 'created_at'
     ]
     list_filter   = [
-        'status', 'track_inventory',
-        'subcategory__main_category', 'subcategory', 'created_at'
+        'status', 'track_inventory', 'is_sponsored',
+        'subcategory__main_category', 'subcategory', 'created_at', 'sponsored_until'
     ]
     search_fields = ['title', 'vendor__full_name', 'sku']
+    actions = ['activate_sponsorship', 'deactivate_sponsorship']
     readonly_fields = [
         'slug', 'vendor', 'store', 'views_count', 'sales_count',
         'created_at', 'updated_at', 'published_at',
@@ -1231,6 +1233,14 @@ class ProductAdmin(admin.ModelAdmin):
             )
         }),
         ('Status',     {'fields': ('status', 'is_featured')}),
+        ('Sponsorship', {
+            'fields': ('is_sponsored', 'sponsored_until', 'sponsored_priority'),
+            'description': (
+                'Sponsored products are prioritised in the marketplace spotlight. '
+                'Leave the expiry blank for an ongoing sponsorship. '
+                'Higher priority shows first among sponsored products.'
+            ),
+        }),
         ('Stats',      {'fields': ('views_count', 'sales_count')}),
         ('SEO', {
             'fields': ('meta_title', 'meta_description'),
@@ -1290,6 +1300,38 @@ class ProductAdmin(admin.ModelAdmin):
             except SubCategoryAttribute.DoesNotExist:
                 continue
         return ', '.join(lines)
+
+    # ─── SPONSORSHIP STATUS DISPLAY METHOD ───
+    def sponsorship_status(self, obj):
+        if not obj.is_sponsored:
+            return format_html('<span style="color:#6b7280;">Not sponsored</span>')
+        if obj.sponsored_until and obj.sponsored_until < timezone.now():
+            return format_html('<strong style="color:#dc2626;">Expired</strong>')
+        if obj.sponsored_until:
+            return format_html(
+                '<strong style="color:#15803d;">Sponsored</strong><br><small>Until {}</small>',
+                timezone.localtime(obj.sponsored_until).strftime('%d %b %Y, %H:%M')
+            )
+        return format_html('<strong style="color:#15803d;">Sponsored</strong><br><small>No expiry</small>')
+    sponsorship_status.short_description = 'Sponsorship'
+
+    # ─── ACTIVATE SPONSORSHIP ACTION ───
+    @admin.action(description='Activate sponsorship for selected products')
+    def activate_sponsorship(self, request, queryset):
+        count = queryset.count()
+        queryset.filter(sponsored_until__lt=timezone.now()).update(sponsored_until=None)
+        queryset.update(is_sponsored=True)
+        self.message_user(
+            request,
+            f'Sponsorship activated for {count} product(s). Set an expiry date from each product page if needed.',
+            messages.SUCCESS,
+        )
+
+    # ─── DEACTIVATE SPONSORSHIP ACTION ───
+    @admin.action(description='Deactivate sponsorship for selected products')
+    def deactivate_sponsorship(self, request, queryset):
+        count = queryset.update(is_sponsored=False, sponsored_until=None)
+        self.message_user(request, f'Sponsorship deactivated for {count} product(s).', messages.SUCCESS)
 
 
 # ==========================================

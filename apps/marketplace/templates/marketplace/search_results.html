@@ -8,7 +8,7 @@
     {% if query %}Results for "{{ query }}"{% else %}Search{% endif %}
   </h1>
   {% if query %}
-  <p class="text-sm text-muted mb-6">{{ store_count }} store{{ store_count|pluralize }} - {{ product_count }} product{{ product_count|pluralize }}</p>
+  <p class="text-sm text-muted mb-6">{{ store_count }} store{{ store_count|pluralize }} - {{ organic_count }} product{{ organic_count|pluralize }}</p>
   {% endif %}
 
   {% if not query %}

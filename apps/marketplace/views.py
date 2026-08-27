@@ -234,7 +234,10 @@ def product_list(request):
     else:
         spotlight_stores = sponsored_stores
 
-    vendor_promotions = Promotion.objects.filter(is_active=True)[:5]
+    vendor_promotions = Promotion.objects.filter(is_active=True, slide_type='vendor_promo')[:5]
+    hero_brand_slides = Promotion.objects.filter(
+        is_active=True, slide_type='hero_brand'
+    ).order_by('sort_order')[:5]
     context = {
         'annotated_products': annotated,
         'featured_products': featured,
@@ -245,6 +248,7 @@ def product_list(request):
         'buyer_lat': buyer_lat,
         'buyer_lon': buyer_lon,
         'vendor_promotions': vendor_promotions,
+        'hero_brand_slides': hero_brand_slides,
         'spotlight_stores': spotlight_stores,
         'top_seller_store': top_seller_store,
         'wishlisted_ids': wishlisted_ids,
@@ -382,16 +386,61 @@ def category_landing(request, slug):
 
     buyer_lat, buyer_lon = get_buyer_location(request)
 
+    organic_products = []
+    for product in products:
+        product.distance = get_distance_to_store(buyer_lat, buyer_lon, product.store)
+        organic_products.append(product)
+
+    # ── Sponsored products ──
+    organic_ids = {p.pk for p in organic_products}
+
+    organic_sponsored = []
+    organic_regular = []
+    for p in organic_products:
+        if p.is_sponsored and (not p.sponsored_until or p.sponsored_until >= timezone.now()):
+            organic_sponsored.append(p)
+        else:
+            organic_regular.append(p)
+
+    organic_count = len(organic_products)
+    max_sponsored = min(4, organic_count)
+    extra_sponsored = []
+
+    if max_sponsored > 0:
+        extra_sponsored = list(
+            Product.objects.filter(
+                status='published',
+                store__is_published=True,
+                subcategory__main_category=category,
+                is_sponsored=True,
+            ).exclude(
+                pk__in=organic_ids
+            ).exclude(
+                sponsored_until__lt=timezone.now()
+            ).order_by(
+                '-sponsored_priority'
+            ).select_related('store').prefetch_related('images')[:max_sponsored]
+        )
+        if subcategory_slug:
+            extra_sponsored = [p for p in extra_sponsored if p.subcategory.slug == subcategory_slug]
+
+    all_sponsored = organic_sponsored + extra_sponsored
+    all_sponsored.sort(key=lambda p: p.sponsored_priority or 0, reverse=True)
+    top_sponsored = all_sponsored[:max_sponsored]
+
+    sponsored_ids = {p.pk for p in top_sponsored}
+
+    for p in top_sponsored:
+        if not hasattr(p, 'distance'):
+            p.distance = get_distance_to_store(buyer_lat, buyer_lon, p.store)
+
+    merged_products = top_sponsored + organic_regular
+
     wishlisted_ids = set()
     if request.user.is_authenticated:
         wishlisted_ids = set(
             Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
         )
-
-    annotated = []
-    for product in products:
-        product.distance = get_distance_to_store(buyer_lat, buyer_lon, product.store)
-        annotated.append(product)
 
     top_store = Store.objects.filter(
         main_category=category,
@@ -402,9 +451,10 @@ def category_landing(request, slug):
         'category': category,
         'subcategories': subcategories,
         'selected_subcategory': subcategory_slug,
-        'annotated_products': annotated,
+        'annotated_products': merged_products,
         'wishlisted_ids': wishlisted_ids,
         'top_store': top_store,
+        'sponsored_ids': sponsored_ids,
     }
     return render(request, 'marketplace/category_landing.html', context)
 
@@ -438,6 +488,44 @@ def trending(request):
         'page_subtitle': f'{len(annotated)} product{{% if annotated|length != 1 %}}s{{% endif %}} flying off the shelves',
     }
     return render(request, 'marketplace/trending.html', context)
+
+
+@vendor_forbidden
+def sponsored_products(request):
+    """Dedicated page showing all currently active sponsored products, ordered by priority."""
+    products = Product.objects.filter(
+        is_sponsored=True,
+        status='published',
+        store__is_published=True,
+    ).exclude(
+        sponsored_until__lt=timezone.now()
+    ).order_by(
+        '-sponsored_priority'
+    ).select_related('store', 'subcategory__main_category').prefetch_related('images')
+
+    buyer_lat, buyer_lon = get_buyer_location(request)
+
+    wishlisted_ids = set()
+    if request.user.is_authenticated:
+        wishlisted_ids = set(
+            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+        )
+
+    annotated = []
+    sponsored_ids = set()
+    for product in products:
+        product.distance = get_distance_to_store(buyer_lat, buyer_lon, product.store)
+        annotated.append(product)
+        sponsored_ids.add(product.pk)
+
+    context = {
+        'annotated_products': annotated,
+        'wishlisted_ids': wishlisted_ids,
+        'sponsored_ids': sponsored_ids,
+        'page_title': 'Promoted for You',
+        'page_subtitle': f'{len(annotated)} sponsored product{{% if annotated|length != 1 %}}s{{% endif %}} from our partners',
+    }
+    return render(request, 'marketplace/sponsored_products.html', context)
 
 
 @vendor_forbidden
@@ -547,12 +635,60 @@ def search_results(request):
         ).select_related('main_category')
 
     buyer_lat, buyer_lon = get_buyer_location(request)
-    annotated_products = []
+    organic_products = []
     for product in products:
         product.distance = get_distance_to_store(
             buyer_lat, buyer_lon, product.store
         )
-        annotated_products.append(product)
+        organic_products.append(product)
+
+    # ── Sponsored products ──
+    organic_ids = {p.pk for p in organic_products}
+
+    # Split organic into sponsored and regular
+    organic_sponsored = []
+    organic_regular = []
+    for p in organic_products:
+        if p.is_sponsored and (not p.sponsored_until or p.sponsored_until >= timezone.now()):
+            organic_sponsored.append(p)
+        else:
+            organic_regular.append(p)
+
+    # Query extra sponsored products not already in organic results
+    organic_count = len(organic_products)
+    max_sponsored = min(4, organic_count)
+    extra_sponsored = []
+
+    if max_sponsored > 0 and query:
+        extra_sponsored = list(
+            Product.objects.filter(
+                Q(title__icontains=query) | Q(description__icontains=query),
+                status='published',
+                store__is_published=True,
+                is_sponsored=True,
+            ).exclude(
+                pk__in=organic_ids
+            ).exclude(
+                sponsored_until__lt=timezone.now()
+            ).order_by(
+                '-sponsored_priority'
+            ).select_related('store').prefetch_related('images')[:max_sponsored]
+        )
+
+    # Combine all sponsored, sort by priority, cap
+    all_sponsored = organic_sponsored + extra_sponsored
+    all_sponsored.sort(key=lambda p: p.sponsored_priority or 0, reverse=True)
+    top_sponsored = all_sponsored[:max_sponsored]
+
+    # Badges: all sponsored products (capped list) get the badge
+    sponsored_ids = {p.pk for p in top_sponsored}
+
+    # Annotate distance on sponsored products
+    for p in top_sponsored:
+        if not hasattr(p, 'distance'):
+            p.distance = get_distance_to_store(buyer_lat, buyer_lon, p.store)
+
+    merged_products = top_sponsored + organic_regular
 
     wishlisted_ids = set()
     if request.user.is_authenticated:
@@ -564,11 +700,13 @@ def search_results(request):
 
     context = {
         'query': query,
-        'products': annotated_products,
+        'products': merged_products,
         'stores': stores,
-        'product_count': len(annotated_products),
+        'product_count': len(merged_products),
+        'organic_count': organic_count,
         'store_count': stores.count(),
         'wishlisted_ids': wishlisted_ids,
+        'sponsored_ids': sponsored_ids,
     }
     return render(request, 'marketplace/search_results.html', context)
 

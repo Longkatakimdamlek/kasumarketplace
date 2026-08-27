@@ -58,6 +58,11 @@ urlpatterns = [
         name='trending'
     ),
     path(
+        'sponsored/',
+        views.sponsored_products,
+        name='sponsored_products'
+    ),
+    path(
         'stores/',
         views.store_directory,
         name='store_directory'

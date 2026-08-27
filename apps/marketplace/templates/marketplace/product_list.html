@@ -16,38 +16,27 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
   <div class="relative overflow-hidden mx-4 mt-4 rounded-2xl" style="height:180px;">
     <div id="banner-track" class="flex h-full transition-transform duration-500 ease-in-out">
 
-      <!-- Slide 1 -->
-      <div class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0b3f26] to-[#072c1a] flex items-center px-6">
-        <div class="z-10">
-          <p class="text-white/80 text-xs font-medium mb-1">New Arrivals</p>
-          <h2 class="text-white font-display font-bold text-xl leading-tight mb-3">Shop the Latest<br/>Tech & Fashion</h2>
-          <a href="{% url 'marketplace:product_list' %}" class="inline-block bg-white text-primary text-xs font-bold px-4 py-2 rounded-xl">Shop Now</a>
+      {% for slide in hero_brand_slides %}
+      <a href="{{ slide.link_url }}"
+         class="min-w-full h-full relative rounded-2xl overflow-hidden flex items-center px-6">
+        {% if slide.background_image %}
+        <div class="absolute inset-0 bg-cover bg-center"
+             style="background-image: url('{{ slide.background_image.url }}')"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+        {% else %}
+        <div class="absolute inset-0 bg-gradient-to-br from-[#0b3f26] to-[#072c1a]"></div>
+        {% endif %}
+        <div class="relative z-10">
+          <h2 class="text-white font-display font-bold text-xl leading-tight mb-3">{{ slide.title }}</h2>
+          {% if slide.subtitle %}
+          <p class="text-white/80 text-xs font-medium mb-3">{{ slide.subtitle }}</p>
+          {% endif %}
+          <span class="inline-block bg-white text-primary text-xs font-bold px-4 py-2 rounded-xl">Shop Now</span>
         </div>
-        <div class="absolute right-4 top-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-white/10"></div>
-        <div class="absolute right-10 top-4 w-16 h-16 rounded-full bg-white/10"></div>
-      </div>
+      </a>
+      {% endfor %}
 
-      <!-- Slide 2 -->
-      <div class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-accent to-orange-600 flex items-center px-6">
-        <div class="z-10">
-          <p class="text-white/80 text-xs font-medium mb-1">Flash Deals</p>
-          <h2 class="text-white font-display font-bold text-xl leading-tight mb-3">Up to 50% Off<br/>Selected Items</h2>
-          <a href="{% url 'marketplace:product_list' %}" class="inline-block bg-white text-accent text-xs font-bold px-4 py-2 rounded-xl">See Deals</a>
-        </div>
-        <div class="absolute right-4 top-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-white/10"></div>
-      </div>
-
-      <!-- Slide 3 -->
-      <div class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center px-6">
-        <div class="z-10">
-          <p class="text-white/80 text-xs font-medium mb-1">Campus Essentials</p>
-          <h2 class="text-white font-display font-bold text-xl leading-tight mb-3">Everything You<br/>Need on KasuMarketplace</h2>
-          <a href="{% url 'marketplace:about' %}" class="inline-block bg-white text-emerald-600 text-xs font-bold px-4 py-2 rounded-xl">See About</a>
-        </div>
-        <div class="absolute right-4 top-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-white/10"></div>
-      </div>
-
-      <!-- Slide 4 — Weekly Top Seller (dynamic, omitted entirely if no sales this week) -->
+      <!-- Slide — Weekly Top Seller (dynamic, omitted entirely if no sales this week) -->
       {% if top_seller_store %}
       <a href="{% url 'marketplace:store_detail' top_seller_store.slug %}"
          class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0b3f26] to-[#072c1a] flex items-center gap-4 px-6">
@@ -123,6 +112,13 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
       </svg>
       Trending
+    </a>
+    <a href="{% url 'marketplace:sponsored_products' %}"
+       class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-50 text-amber-600 text-sm font-semibold">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+      </svg>
+      Sponsored
     </a>
   </div>
 

@@ -30,6 +30,14 @@
     </span>
     {% endif %}
 
+    <!-- Sponsored badge -->
+    {% if item.pk in sponsored_ids %}
+    <span class="absolute top-2 left-2 bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-lg"
+          {% if item.discount_percentage > 0 %}style="top: 2rem;"{% endif %}>
+      Sponsored
+    </span>
+    {% endif %}
+
     <button type="button"
             onclick="event.preventDefault(); event.stopPropagation(); toggleCardWishlist(this, '{{ item.store.slug }}', '{{ item.slug }}');"
             class="absolute top-2 right-2 grid size-7 place-items-center rounded-full bg-white/90 shadow-sm transition active:scale-90"
