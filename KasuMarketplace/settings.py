@@ -57,7 +57,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "https://kasumarketplace.onrender.com",
-
 ]
 CORS_ALLOW_CREDENTIALS = True
 SITE_ID = 1
@@ -114,7 +113,6 @@ INSTALLED_APPS = [
     'apps.users.apps.UsersConfig',
     'apps.vendors.apps.VendorsConfig',
     'apps.marketplace.apps.MarketplaceConfig',
-
 ]
 
 MIDDLEWARE = [
@@ -130,7 +128,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
-    
 ]
 RECAPTCHA_ENABLED = not DEBUG
 
@@ -142,6 +139,9 @@ TEMPLATES = [
         'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
+            'libraries': {
+                'currency_filters': 'apps.marketplace.templatetags.currency_filters',
+            },
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
@@ -149,16 +149,16 @@ TEMPLATES = [
                 'django.template.context_processors.media',
                 'django.template.context_processors.static',
 
-
                 # installed apps context processors
                 'apps.users.context_processors.recaptcha_keys',
                 'apps.users.context_processors.user_role_context',
                 'apps.users.context_processors.site_settings',
                 'apps.users.context_processors.otp_settings',
-                 'apps.marketplace.context_processors.cart_context',
-                 'apps.marketplace.context_processors.categories_processor',
-                 'apps.marketplace.context_processors.wishlist_count_processor',
-                 'apps.vendors.context_processors.vendor_context',
+                'apps.marketplace.context_processors.cart_context',
+                'apps.marketplace.context_processors.categories_processor',
+                'apps.marketplace.context_processors.wishlist_count_processor',
+                'apps.marketplace.context_processors.event_popup_processor',
+                'apps.vendors.context_processors.vendor_context',
             ],
         },
     },
@@ -226,7 +226,14 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 # configure WhiteNoise to serve root-level files (favicon, manifest, etc.)
 WHITENOISE_ROOT = BASE_DIR / 'static'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -442,4 +449,3 @@ LOGGING = {
         },
     },
 }
-

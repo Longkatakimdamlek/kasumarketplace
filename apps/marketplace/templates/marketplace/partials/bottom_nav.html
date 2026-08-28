@@ -23,14 +23,17 @@
     <!-- Wishlist -->
     {% if user.is_authenticated %}
     <a href="{% url 'marketplace:wishlist' %}"
-       class="flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'wishlist' %}text-primary{% else %}text-muted{% endif %} transition">
-      <svg class="w-6 h-6" fill="{% if request.resolver_match.url_name == 'wishlist' %}currentColor{% else %}none{% endif %}" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-      </svg>
+       class="flex flex-col items-center justify-center gap-1 {% if request.resolver_match.url_name == 'wishlist' %}text-primary{% else %}text-muted{% endif %} transition relative">
+      <div class="relative">
+        <svg class="w-6 h-6" fill="{% if request.resolver_match.url_name == 'wishlist' %}currentColor{% else %}none{% endif %}" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+        <span id="bottom-wishlist-badge" class="wishlist-badge {% if not wishlist_count %}hidden{% endif %} absolute -top-2 -right-2 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ wishlist_count|default:0 }}</span>
+      </div>
       <span class="text-xs font-medium">Wishlist</span>
     </a>
     {% else %}
-    <button onclick="toggleAuthModal()"
+    <button onclick="window.location.href='{% url 'users:login' %}?next={{ request.get_full_path|urlencode }}'"
        class="flex flex-col items-center justify-center gap-1 text-muted transition active:text-primary">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
@@ -46,9 +49,7 @@
         <svg class="w-6 h-6" fill="{% if request.resolver_match.url_name == 'cart' %}currentColor{% else %}none{% endif %}" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
         </svg>
-        {% if cart_count and cart_count > 0 %}
-        <span id="mobile-cart-badge" class="absolute -top-2 -right-2 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ cart_count }}</span>
-        {% endif %}
+        <span id="bottom-cart-badge" class="cart-badge {% if not cart_count %}hidden{% endif %} absolute -top-2 -right-2 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ cart_count|default:0 }}</span>
       </div>
       <span class="text-xs font-medium">Cart</span>
     </a>

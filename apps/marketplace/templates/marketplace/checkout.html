@@ -1,4 +1,5 @@
 {% extends 'marketplace/base.html' %}
+{% load currency_filters %}
 {% block title %}Checkout — KasuMarketplace{% endblock %}
 
 {% block content %}
@@ -14,7 +15,7 @@
         <span class="text-muted font-normal">({{ total_items }} item{{ total_items|pluralize }})</span>
       </span>
       <div class="flex items-center gap-2">
-        <span class="font-bold text-primary">₦{{ grand_total|floatformat:0 }}</span>
+        <span class="font-bold text-primary">{{ grand_total|naira }}</span>
         <svg class="w-4 h-4 text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
@@ -36,14 +37,14 @@
             <p class="text-sm font-medium text-dark truncate">{{ item.product.title }}</p>
             <p class="text-xs text-muted">x{{ item.quantity }}</p>
           </div>
-          <p class="text-sm font-bold text-dark shrink-0">₦{{ item.subtotal|floatformat:0 }}</p>
+          <p class="text-sm font-bold text-dark shrink-0">{{ item.subtotal|naira }}</p>
         </div>
         {% endfor %}
       </div>
       {% endfor %}
       <div class="border-t border-border pt-3 flex justify-between font-bold">
         <span class="text-sm">Total</span>
-        <span class="text-primary">₦{{ grand_total|floatformat:0 }}</span>
+        <span class="text-primary">{{ grand_total|naira }}</span>
       </div>
     </div>
   </details>
@@ -104,7 +105,7 @@
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
     </svg>
-    Pay Securely — ₦{{ grand_total|floatformat:0 }}
+    Pay Securely — {{ grand_total|naira }}
   </button>
 
   <p class="text-center text-xs text-muted mt-3">
@@ -168,7 +169,7 @@
       },
       onClose: function() {
         btn.disabled = false;
-        btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Pay Securely — ₦{{ grand_total|floatformat:0 }}`;
+        btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Pay Securely — {{ grand_total|naira }}`;
         showToast('Payment cancelled.', 'warning');
       }
     });

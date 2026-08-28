@@ -1,4 +1,5 @@
 {% extends 'vendors/store/public_base.html' %}
+{% load currency_filters %}
 
 {% block title %}{{ product.title }} — {{ store.store_name }}{% endblock %}
 
@@ -161,10 +162,10 @@
             <!-- Price -->
             <div class="rounded-2xl border border-brand/10 bg-brand/5 p-4">
                 <div class="flex flex-wrap items-baseline gap-3">
-                    <span class="text-3xl font-bold text-brand">₦{{ product.price|floatformat:0 }}</span>
+                    <span class="text-3xl font-bold text-brand">{{ product.price|naira }}</span>
                     {% if product.compare_at_price %}
-                    <span class="text-lg text-gray-400 line-through">₦{{ product.compare_at_price|floatformat:0 }}</span>
-                    <span class="text-sm font-bold text-brand">Save ₦{{ product.savings|floatformat:0 }}</span>
+                    <span class="text-lg text-gray-400 line-through">{{ product.compare_at_price|naira }}</span>
+                    <span class="text-sm font-bold text-brand">Save {{ product.savings|naira }}</span>
                     {% endif %}
                 </div>
                 {% if product.sales_count %}
@@ -373,7 +374,7 @@
                     </div>
                     <div class="p-2.5">
                         <p class="truncate text-xs text-gray-700">{{ rp.title }}</p>
-                        <p class="text-sm font-bold text-brand">₦{{ rp.price|floatformat:0 }}</p>
+                        <p class="text-sm font-bold text-brand">{{ rp.price|naira }}</p>
                     </div>
                 </a>
                 {% endfor %}

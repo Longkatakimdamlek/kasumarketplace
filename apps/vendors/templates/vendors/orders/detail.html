@@ -1,4 +1,5 @@
 {% extends 'vendors/base.html' %}
+{% load currency_filters %}
 {% block title %}Order {{ sub_order.main_order.order_number }} — KasuMarketplace{% endblock %}
 {% block page_title %}Order Detail{% endblock %}
 
@@ -23,7 +24,7 @@
                 <p class="text-xs text-gray-400 mt-0.5">{{ sub_order.created_at|date:"M d, Y · g:i A" }}</p>
             </div>
             <div class="flex flex-col items-end gap-1.5">
-                <p class="text-lg font-bold text-primary">₦{{ sub_order.subtotal|floatformat:0 }}</p>
+                <p class="text-lg font-bold text-primary">{{ sub_order.subtotal|naira }}</p>
                 {# Status badge #}
                 {% if sub_order.status == 'PENDING_VENDOR' %}
                 <span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">Pending</span>
@@ -90,15 +91,15 @@
                 </div>
                 <div class="min-w-0 flex-1">
                     <p class="text-sm font-semibold text-gray-900 truncate">{{ item.product_title }}</p>
-                    <p class="text-xs text-gray-500">x{{ item.quantity }} &middot; ₦{{ item.unit_price|floatformat:0 }} each</p>
+                    <p class="text-xs text-gray-500">x{{ item.quantity }} &middot; {{ item.unit_price|naira }} each</p>
                 </div>
-                <p class="text-sm font-bold text-gray-900 shrink-0">₦{{ item.subtotal|floatformat:0 }}</p>
+                <p class="text-sm font-bold text-gray-900 shrink-0">{{ item.subtotal|naira }}</p>
             </div>
             {% endfor %}
         </div>
         <div class="flex items-center justify-between bg-gray-50 border-t border-gray-100 px-4 py-3">
             <span class="text-sm font-semibold text-gray-700">Subtotal</span>
-            <span class="text-sm font-bold text-primary">₦{{ sub_order.subtotal|floatformat:0 }}</span>
+            <span class="text-sm font-bold text-primary">{{ sub_order.subtotal|naira }}</span>
         </div>
     </div>
 
@@ -124,7 +125,7 @@
             {% csrf_token %}
             <button type="submit"
                     class="w-full rounded-xl bg-gradient-to-r from-primary to-soft-blue py-3.5 text-sm font-bold text-white transition-all hover:shadow-md active:scale-[.99]">
-                Accept Order &mdash; ₦{{ sub_order.subtotal|floatformat:0 }}
+                Accept Order &mdash; {{ sub_order.subtotal|naira }}
             </button>
         </form>
 
@@ -170,7 +171,7 @@
             </svg>
             <p class="text-sm text-green-900">
                 <span class="font-semibold">Buyer confirmed receipt</span> on {{ sub_order.confirmed_at|date:"M d, Y" }}.
-                ₦{{ sub_order.subtotal|floatformat:0 }} releasing to your wallet within 24h.
+                {{ sub_order.subtotal|naira }} releasing to your wallet within 24h.
             </p>
         </div>
 
@@ -203,7 +204,7 @@
             <svg class="size-5 shrink-0 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
             </svg>
-            <p class="text-sm text-rose-900"><span class="font-semibold">Refunded ₦{{ sub_order.subtotal|floatformat:0 }}</span> to buyer.</p>
+            <p class="text-sm text-rose-900"><span class="font-semibold">Refunded {{ sub_order.subtotal|naira }}</span> to buyer.</p>
         </div>
 
         {# DISPUTED #}

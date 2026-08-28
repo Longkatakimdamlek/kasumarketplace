@@ -1,0 +1,37 @@
+/* Shared KasuMarketplace notifications, loader, and SVG skeleton primitives. */
+
+.marketplace-toast-region{position:fixed;z-index:9999;top:1rem;right:1rem;width:360px;display:flex;flex-direction:column;gap:.75rem;pointer-events:none;align-items:flex-end}
+.marketplace-toast{--toast-accent:#6a3df5;position:relative;overflow:hidden;display:flex;align-items:flex-start;gap:.75rem;min-height:3.75rem;padding:1rem 1rem .9rem;border:1px solid rgba(106,61,245,.2);border-radius:16px;background:rgba(255,255,255,.94);box-shadow:0 18px 40px rgba(15,23,42,.16),0 2px 12px rgba(15,23,42,.08);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:#16231c;pointer-events:auto;will-change:transform,opacity;animation:marketplace-toast-in .32s cubic-bezier(.16,1,.3,1) both}
+.marketplace-toast--error{--toast-accent:#dc2626;border-color:rgba(220,38,38,.22)}
+.marketplace-toast--warning{--toast-accent:#d97706;border-color:rgba(217,119,6,.22)}
+.marketplace-toast--info{--toast-accent:#4b8bff;border-color:rgba(75,139,255,.22)}
+.marketplace-toast__icon{color:var(--toast-accent);flex:none;width:1.2rem;height:1.2rem;margin-top:.05rem}
+.marketplace-toast__message{padding-right:.1rem;font:500 .85rem/1.4 Inter,ui-sans-serif,system-ui,sans-serif;text-align:left;word-break:break-word}
+.marketplace-toast__progress{position:absolute;bottom:0;left:0;width:100%;height:3px;background:var(--toast-accent);transform-origin:left;animation:marketplace-toast-progress 4s linear forwards;will-change:transform}
+.marketplace-toast.is-paused .marketplace-toast__progress{animation-play-state:paused}
+.marketplace-toast.is-leaving{animation:marketplace-toast-out .24s ease-in both}
+@keyframes marketplace-toast-in{from{opacity:0;transform:translate3d(0,-8px,0) scale(.986)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes marketplace-toast-out{to{opacity:0;transform:translate3d(0,-10px,0) scale(.985)}}
+@keyframes marketplace-toast-progress{to{transform:scaleX(0)}}
+
+.marketplace-skeleton{opacity:1;transition:opacity .2s ease}
+.marketplace-skeleton.is-complete{opacity:0;pointer-events:none}
+.marketplace-skeleton svg{display:block;width:100%;height:auto}
+.marketplace-skeleton__base{fill:#e8edf0}
+.marketplace-skeleton__shimmer{fill:url(#marketplace-skeleton-gradient);animation:marketplace-skeleton-shimmer 1.5s linear infinite;will-change:transform}
+@keyframes marketplace-skeleton-shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+@media(max-width:767px){
+  .marketplace-toast-region{top:max(.75rem,env(safe-area-inset-top));right:auto;left:50%;width:92vw;max-width:92vw;transform:translateX(-50%)}
+  .marketplace-toast{width:100%;max-width:92vw;border-radius:16px}
+  .marketplace-toast-region{align-items:center}
+}
+@media(prefers-color-scheme:dark){
+  .marketplace-toast{background:rgba(24,20,36,.95);color:#f1f5f9}
+  .marketplace-skeleton__base{fill:#24222f}
+}
+.dark .marketplace-toast{background:rgba(24,20,36,.95);color:#f1f5f9}
+
+@media(prefers-reduced-motion:reduce){
+  .marketplace-toast,.marketplace-toast.is-leaving,.marketplace-toast__progress,.marketplace-skeleton__shimmer{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-timing-function:linear!important}
+}

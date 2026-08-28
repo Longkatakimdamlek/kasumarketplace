@@ -1,6 +1,7 @@
 {% extends 'marketplace/base.html' %}
 {% load static %}
 {% load humanize %}
+{% load currency_filters %}
 
 {% block title %}KasuMarketplace — Shop Everything Campus{% endblock %}
 
@@ -23,6 +24,10 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
         <div class="absolute inset-0 bg-cover bg-center"
              style="background-image: url('{{ slide.background_image.url }}')"></div>
         <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+        {% elif slide.static_image_path %}
+        <div class="absolute inset-0 bg-cover bg-center"
+             style="background-image: url('{% static slide.static_image_path %}')"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
         {% else %}
         <div class="absolute inset-0 bg-gradient-to-br from-[#0b3f26] to-[#072c1a]"></div>
         {% endif %}
@@ -39,12 +44,21 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
       <!-- Slide — Weekly Top Seller (dynamic, omitted entirely if no sales this week) -->
       {% if top_seller_store %}
       <a href="{% url 'marketplace:store_detail' top_seller_store.slug %}"
-         class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0b3f26] to-[#072c1a] flex items-center gap-4 px-6">
+         class="min-w-full h-full relative rounded-2xl overflow-hidden flex items-center gap-4 px-6">
+        {% if top_seller_slide.background_image %}
+        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ top_seller_slide.background_image.url }}')"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+        {% elif top_seller_slide.static_image_path %}
+        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{% static top_seller_slide.static_image_path %}')"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+        {% else %}
+        <div class="absolute inset-0 bg-gradient-to-br from-[#0b3f26] to-[#072c1a]"></div>
+        {% endif %}
         {% if top_seller_store.logo %}
         <img src="{{ top_seller_store.logo.url }}" alt="{{ top_seller_store.store_name }}"
-             class="w-16 h-16 rounded-full object-cover border-2 border-white/40 shrink-0">
+             class="relative z-10 w-16 h-16 rounded-full object-cover border-2 border-white/40 shrink-0">
         {% endif %}
-        <div class="z-10 min-w-0">
+        <div class="relative z-10 min-w-0">
           <p class="text-white/80 text-xs font-medium mb-1">🔥 Top Seller This Week</p>
           <h2 class="text-white font-display font-bold text-lg leading-tight truncate">{{ top_seller_store.store_name }}</h2>
           <span class="inline-block bg-white text-primary text-xs font-bold px-4 py-2 rounded-xl mt-2">Visit Store</span>
@@ -52,15 +66,21 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
       </a>
       {% endif %}
 
-      <!-- Slide(s) 5+ — one per sponsored store. If none are active, a single contact-CTA slide takes its place. -->
-      {% for store in sponsored_stores %}
+      <!-- Slide(s) 5+ — one per sponsored/spotlight store. If none are active, a single contact-CTA slide takes its place. -->
+      {% for store in spotlight_stores %}
       <a href="{% url 'marketplace:store_detail' store.slug %}"
-         class="min-w-full h-full relative rounded-2xl overflow-hidden bg-gradient-to-br from-accent to-orange-600 flex items-center gap-4 px-6">
+         class="min-w-full h-full relative rounded-2xl overflow-hidden flex items-center gap-4 px-6">
+        {% if store.banner %}
+        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ store.banner.url }}')"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+        {% else %}
+        <div class="absolute inset-0 bg-gradient-to-br from-accent to-orange-600"></div>
+        {% endif %}
         {% if store.logo %}
         <img src="{{ store.logo.url }}" alt="{{ store.store_name }}"
-             class="w-16 h-16 rounded-full object-cover border-2 border-white/40 shrink-0">
+             class="relative z-10 w-16 h-16 rounded-full object-cover border-2 border-white/40 shrink-0">
         {% endif %}
-        <div class="z-10 min-w-0">
+        <div class="relative z-10 min-w-0">
           <p class="text-white/80 text-xs font-medium mb-1">⭐ Sponsored Store</p>
           <h2 class="text-white font-display font-bold text-lg leading-tight truncate">{{ store.store_name }}</h2>
           <span class="inline-block bg-white text-accent text-xs font-bold px-4 py-2 rounded-xl mt-2">Visit Store</span>
@@ -81,45 +101,6 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
 
     <!-- Dots — populated dynamically by JS below, since slide count now varies (4 to 10 slides depending on live data) -->
     <div id="banner-dots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5"></div>
-  </div>
-
-  <!-- QUICK LINKS (mobile) -->
-  <div class="px-4 mt-4 grid grid-cols-2 gap-2">
-    <a href="{% url 'marketplace:deals' %}"
-       class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-accent/10 text-accent text-sm font-semibold">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a2.25 2.25 0 003.182 0l4.318-4.318a2.25 2.25 0 000-3.182L11.16 3.66A2.25 2.25 0 009.568 3z"/>
-      </svg>
-      Deals
-    </a>
-    <a href="{% url 'marketplace:store_directory' %}"
-       class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary/10 text-primary text-sm font-semibold">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M5 21V7l8-4v18M13 21V11l6 3v7"/>
-      </svg>
-      Stores
-    </a>
-    <a href="{% url 'marketplace:new_arrivals' %}"
-       class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-purple-50 text-purple-600 text-sm font-semibold">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-      </svg>
-      New Arrivals
-    </a>
-    <a href="{% url 'marketplace:trending' %}"
-       class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-50 text-emerald-600 text-sm font-semibold">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-      </svg>
-      Trending
-    </a>
-    <a href="{% url 'marketplace:sponsored_products' %}"
-       class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-50 text-amber-600 text-sm font-semibold">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-      </svg>
-      Sponsored
-    </a>
   </div>
 
   <!-- CATEGORIES GRID -->
@@ -145,7 +126,7 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
   <div class="mt-6">
     <div class="flex items-center justify-between px-4 mb-3">
       <h2 class="font-display font-bold text-base text-dark">Flash Deals</h2>
-      <a href="{% url 'marketplace:product_list' %}" class="text-xs text-primary font-semibold">See All</a>
+      <a href="{% url 'marketplace:deals' %}" class="text-xs text-primary font-semibold">See All</a>
     </div>
     <div class="flex gap-3 overflow-x-auto scroll-hidden px-4 pb-1">
       {% for item in featured_products %}
@@ -374,7 +355,7 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
           <div class="bg-card rounded-3xl p-6 shadow-card">
             <div class="flex items-center justify-between mb-4">
               <h2 class="font-display font-bold text-xl text-dark">Flash Deals</h2>
-              <a href="{% url 'marketplace:product_list' %}" class="text-sm text-primary font-semibold">See All</a>
+              <a href="{% url 'marketplace:deals' %}" class="text-sm text-primary font-semibold">See All</a>
             </div>
             <div class="space-y-4">
               {% for item in featured_products|slice:":3" %}
@@ -391,7 +372,7 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
                   {% endwith %}
                   <div class="min-w-0">
                     <p class="text-sm font-semibold text-dark line-clamp-2">{{ item.title }}</p>
-                    <p class="text-xs text-muted">₦{{ item.price|floatformat:0 }}</p>
+                    <p class="text-xs text-muted">{{ item.price|naira }}</p>
                   </div>
                 </div>
               </a>
@@ -583,8 +564,5 @@ KasuMarketplace – Official Multi-Vendor Marketplace for Kaduna State Universit
 
     startCategoryAutoScroll();
   }
-  // When reduced motion is requested, the categories rail simply stays put —
-  // it's still a normal horizontally-scrollable element the user can swipe
-  // manually, it just won't move on its own.
 </script>
 {% endblock %}

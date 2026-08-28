@@ -233,13 +233,11 @@
 
       <!-- Cart + Profile -->
       <div class="flex items-center gap-3 ml-auto">
-        <a href="{% url 'marketplace:cart' %}" class="relative p-2 rounded-xl hover:bg-surface transition">
+        <a href="{% url 'marketplace:cart' %}" class="relative p-2 rounded-xl hover:bg-surface transition" aria-label="Cart">
           <svg class="w-6 h-6 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
           </svg>
-          {% if cart_count and cart_count > 0 %}
-          <span class="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold">{{ cart_count }}</span>
-          {% endif %}
+          <span id="desktop-cart-badge" class="cart-badge {% if not cart_count %}hidden{% endif %} absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold">{{ cart_count|default:0 }}</span>
         </a>
 
         {% if user.is_authenticated %}
@@ -270,21 +268,19 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
         </svg>
         My Wishlist
-        {% if wishlist_count %}
-        <span class="ml-0.5 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ wishlist_count }}</span>
-        {% endif %}
+        <span id="desktop-wishlist-badge" class="wishlist-badge {% if not wishlist_count %}hidden{% endif %} ml-0.5 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ wishlist_count|default:0 }}</span>
       </a>
     </div>
   </div>
 
   <!-- ===================== MOBILE TOPBAR ===================== -->
-  <header class="md:hidden sticky top-0 z-40 bg-white border-b border-border">
+  <header class="md:hidden sticky top-0 z-40 bg-white border-b border-border shadow-sm">
     <div class="px-4 h-14 flex items-center gap-3">
 
       <!-- Logo / Scan -->
-      <div class="w-10 h-10 flex items-center justify-center shrink-0">
+      <a href="{% url 'marketplace:product_list' %}" class="w-10 h-10 flex items-center justify-center shrink-0" aria-label="Home">
         <img src="{% static 'images/kasu-logo.png' %}" alt="KASU Logo" class="w-full h-full object-contain">
-      </div>
+      </a>
 
       <!-- Search -->
       <form method="GET" action="{% url 'marketplace:search' %}" class="flex-1">
@@ -303,28 +299,50 @@
       </form>
 
       <!-- Cart icon -->
-      <a href="{% url 'marketplace:cart' %}" class="relative p-1.5 shrink-0">
+      <a href="{% url 'marketplace:cart' %}" class="relative p-1.5 shrink-0" aria-label="Cart">
         <svg class="w-6 h-6 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
         </svg>
-        {% if cart_count and cart_count > 0 %}
-        <span id="mobile-cart-badge" class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ cart_count }}</span>
-        {% endif %}
+        <span id="mobile-cart-badge" class="cart-badge {% if not cart_count %}hidden{% endif %} absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ cart_count|default:0 }}</span>
       </a>
 
       <!-- Profile icon (mobile) -->
       {% if user.is_authenticated %}
-      <a href="{% url 'marketplace:profile' %}" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0">
+      <a href="{% url 'marketplace:profile' %}" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0" aria-label="Profile">
         {{ user.email|first|upper }}
       </a>
       {% else %}
-      <button onclick="toggleAuthModal()" class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-sm font-bold shrink-0">
+      <button onclick="toggleAuthModal()" class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-sm font-bold shrink-0" aria-label="Account">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
         </svg>
       </button>
       {% endif %}
     </div>
+
+    <!-- Mobile Subheader Quick Navigation (Plain text, no container / icon, subtle hover) -->
+    <nav class="px-4 pb-2.5 pt-0.5 flex items-center gap-5 overflow-x-auto scroll-hidden text-xs font-medium border-t border-border/40">
+      <a href="{% url 'marketplace:deals' %}"
+         class="shrink-0 transition-colors duration-150 py-0.5 {% if request.resolver_match.url_name == 'deals' %}text-primary font-bold border-b-2 border-primary{% else %}text-muted hover:text-primary{% endif %}">
+        Deals
+      </a>
+      <a href="{% url 'marketplace:store_directory' %}"
+         class="shrink-0 transition-colors duration-150 py-0.5 {% if request.resolver_match.url_name == 'store_directory' %}text-primary font-bold border-b-2 border-primary{% else %}text-muted hover:text-primary{% endif %}">
+        Stores
+      </a>
+      <a href="{% url 'marketplace:new_arrivals' %}"
+         class="shrink-0 transition-colors duration-150 py-0.5 {% if request.resolver_match.url_name == 'new_arrivals' %}text-primary font-bold border-b-2 border-primary{% else %}text-muted hover:text-primary{% endif %}">
+        New Arrivals
+      </a>
+      <a href="{% url 'marketplace:trending' %}"
+         class="shrink-0 transition-colors duration-150 py-0.5 {% if request.resolver_match.url_name == 'trending' %}text-primary font-bold border-b-2 border-primary{% else %}text-muted hover:text-primary{% endif %}">
+        Trending
+      </a>
+      <a href="{% url 'marketplace:sponsored_products' %}"
+         class="shrink-0 transition-colors duration-150 py-0.5 {% if request.resolver_match.url_name == 'sponsored_products' %}text-primary font-bold border-b-2 border-primary{% else %}text-muted hover:text-primary{% endif %}">
+        Sponsored
+      </a>
+    </nav>
   </header>
 
   <!-- ===================== CATEGORY DRAWER ===================== -->
@@ -419,15 +437,42 @@
       }
     }
 
-    // ---- Update cart badge ----
+    const IS_AUTHENTICATED = {{ user.is_authenticated|yesno:"true,false" }};
+    const LOGIN_URL = "{% url 'users:login' %}?next=" + encodeURIComponent(window.location.pathname + window.location.search);
+
+    // ---- Update cart badge in real-time across desktop and mobile navs ----
     function updateCartBadge(count) {
-      const badges = document.querySelectorAll('#mobile-cart-badge, #desktop-cart-badge');
+      const num = Number(count) || 0;
+      const badges = document.querySelectorAll('.cart-badge, #mobile-cart-badge, #desktop-cart-badge, #bottom-cart-badge');
       badges.forEach(b => {
-        b.textContent = count;
+        b.textContent = num;
+        b.classList.remove('badge-pulse');
+        void b.offsetWidth; // trigger reflow
         b.classList.add('badge-pulse');
-        if (count > 0) b.classList.remove('hidden');
-        else b.classList.add('hidden');
-        setTimeout(() => b.classList.remove('badge-pulse'), 300);
+        if (num > 0) {
+          b.classList.remove('hidden');
+        } else {
+          b.classList.add('hidden');
+        }
+        setTimeout(() => b.classList.remove('badge-pulse'), 350);
+      });
+    }
+
+    // ---- Update wishlist badge in real-time across desktop and mobile navs ----
+    function updateWishlistBadge(count) {
+      const num = Number(count) || 0;
+      const badges = document.querySelectorAll('.wishlist-badge, #desktop-wishlist-badge, #bottom-wishlist-badge');
+      badges.forEach(b => {
+        b.textContent = num;
+        b.classList.remove('badge-pulse');
+        void b.offsetWidth; // trigger reflow
+        b.classList.add('badge-pulse');
+        if (num > 0) {
+          b.classList.remove('hidden');
+        } else {
+          b.classList.add('hidden');
+        }
+        setTimeout(() => b.classList.remove('badge-pulse'), 350);
       });
     }
 
@@ -496,63 +541,117 @@
       });
     }
 
+    // ---- Toggle Wishlist from Product Card ----
     function toggleCardWishlist(btn, storeSlug, productSlug) {
+      if (!IS_AUTHENTICATED) {
+        // If not logged in, take the user directly to login on desktop and mobile
+        if (window.showToast) {
+          window.showToast('Please log in to save items to your wishlist.', 'info');
+        }
+        setTimeout(() => {
+          window.location.href = LOGIN_URL;
+        }, 300);
+        return;
+      }
+
+      const icon = btn.querySelector('.wishlist-icon') || btn.querySelector('svg');
+      btn.disabled = true;
+
       fetch(`/shop/${storeSlug}/products/${productSlug}/wishlist/`, {
         method: 'POST',
         headers: { 'X-CSRFToken': getCookie('csrftoken') },
       })
       .then(r => {
         if (r.status === 401 || r.status === 403) {
-          if (window.innerWidth < 768) {
-            toggleAuthModal();
-          } else {
-            window.location.href = "{% url 'users:login' %}?next=" + encodeURIComponent(window.location.pathname);
-          }
+          window.location.href = LOGIN_URL;
           return null;
         }
         return r.json();
       })
       .then(data => {
+        btn.disabled = false;
         if (!data) return;
-        if (!data.success) return;
-        const icon = btn.querySelector('.wishlist-icon');
-        if (data.wishlisted) {
-          icon.classList.add('fill-primary', 'text-primary');
-          icon.classList.remove('fill-none', 'text-muted');
-        } else {
-          icon.classList.remove('fill-primary', 'text-primary');
-          icon.classList.add('fill-none', 'text-muted');
+
+        if (data.authenticated === false) {
+          window.location.href = LOGIN_URL;
+          return;
         }
+
+        if (data.success) {
+          if (icon) {
+            if (data.wishlisted) {
+              icon.classList.add('fill-primary', 'text-primary');
+              icon.classList.remove('fill-none', 'text-muted');
+            } else {
+              icon.classList.remove('fill-primary', 'text-primary');
+              icon.classList.add('fill-none', 'text-muted');
+            }
+          }
+          if (typeof data.wishlist_count !== 'undefined') {
+            updateWishlistBadge(data.wishlist_count);
+          }
+          if (window.showToast) {
+            window.showToast(data.message || (data.wishlisted ? 'Saved to wishlist!' : 'Removed from wishlist.'), 'success');
+          }
+        } else if (data.message && window.showToast) {
+          window.showToast(data.message, 'error');
+        }
+      })
+      .catch(err => {
+        btn.disabled = false;
+        console.error('[wishlist] error:', err);
       });
     }
 
+    // ---- Add to Cart from Product Card ----
     function addToCartCard(productId, btn) {
-      fetch('/cart/add/', {
+      if (!productId) return;
+
+      const originalSvg = btn.innerHTML;
+      btn.disabled = true;
+      btn.classList.add('scale-90', 'opacity-75');
+
+      fetch('{% url "marketplace:cart_add" %}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
         body: JSON.stringify({ product_id: productId, quantity: 1 })
       })
-      .then(r => {
-        if (!r.ok) {
-          r.clone().json().then(data => {
-            console.error('[cart] HTTP', r.status, data._debug_error || data.message || data);
-          }).catch(() => {
-            console.error('[cart] HTTP', r.status, r.statusText);
-          });
-        }
-        return r.json();
-      })
+      .then(r => r.json())
       .then(data => {
+        btn.disabled = false;
+        btn.classList.remove('opacity-75');
+
         if (data.success) {
-          btn.classList.add('scale-125');
-          setTimeout(() => btn.classList.remove('scale-125'), 150);
-          if (data.cart_total_items) updateCartBadge(data.cart_total_items);
+          btn.innerHTML = `<svg class="size-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>`;
+          btn.classList.add('bg-emerald-600');
+          btn.classList.remove('bg-primary');
+
+          if (typeof data.cart_total_items !== 'undefined') {
+            updateCartBadge(data.cart_total_items);
+          }
+          if (window.showToast) {
+            window.showToast(data.message || 'Added to cart!', 'success');
+          }
+
+          setTimeout(() => {
+            btn.innerHTML = originalSvg;
+            btn.classList.remove('bg-emerald-600', 'scale-90');
+            btn.classList.add('bg-primary');
+          }, 1200);
         } else {
-          console.warn('[cart] add failed:', data._debug_error || data.message);
+          btn.classList.remove('scale-90');
+          if (window.showToast) {
+            window.showToast(data.message || 'Could not add to cart.', 'error');
+          }
         }
       })
       .catch(err => {
+        btn.disabled = false;
+        btn.classList.remove('scale-90', 'opacity-75');
         console.error('[cart] network error:', err);
+        if (window.showToast) {
+          window.showToast('Network error while adding to cart.', 'error');
+        }
       });
     }
 
@@ -583,6 +682,234 @@
       }
   })();
   </script>
+
+  <!-- Event/Campaign Popup Overlay -->
+  {% if active_event_popups %}
+  <div id="event-popup-overlay" class="fixed inset-0 z-[60] hidden" style="background:rgba(0,0,0,0.6);">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div id="event-popup-card" class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+        <!-- Close button -->
+        <button id="event-popup-close" class="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors" aria-label="Close popup">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+
+        <!-- Arrow navigation (only if multiple popups) -->
+        {% if active_event_popups|length > 1 %}
+        <button id="event-popup-arrow-left" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors" aria-label="Previous popup">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button id="event-popup-arrow-right" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors" aria-label="Next popup">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+        {% endif %}
+
+        <!-- Slides container -->
+        <div id="event-popup-slides" class="relative">
+          {% for popup in active_event_popups %}
+          <div class="event-popup-slide" data-popup-id="{{ popup.id }}" data-frequency-minutes="{{ popup.frequency_minutes }}" {% if not forloop.first %}style="display:none;"{% endif %}>
+            <!-- Background image -->
+            {% if popup.background_image %}
+            <div class="w-full h-48 bg-cover bg-center" style="background-image:url('{{ popup.background_image.url }}');"></div>
+            {% elif popup.image %}
+            <div class="w-full h-48 bg-cover bg-center" style="background-image:url('{{ popup.image.url }}');"></div>
+            {% else %}
+            <div class="w-full h-48 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
+            {% endif %}
+
+            <!-- Content -->
+            <div class="p-6 text-center">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">{{ popup.title }}</h3>
+              {% if popup.subtitle %}
+              <p class="text-gray-600 text-sm mb-4">{{ popup.subtitle }}</p>
+              {% endif %}
+              <a href="{{ popup.link_url }}" class="event-popup-cta inline-block bg-indigo-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
+                Learn More
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Dot navigation (only if multiple popups) -->
+        {% if active_event_popups|length > 1 %}
+        <div id="event-popup-dots" class="flex justify-center gap-2 pb-4">
+          {% for popup in active_event_popups %}
+          <button class="event-popup-dot w-2.5 h-2.5 rounded-full {% if forloop.first %}bg-indigo-600{% else %}bg-gray-300{% endif %}" data-index="{{ forloop.counter0 }}" aria-label="Go to slide {{ forloop.counter }}"></button>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    var overlay = document.getElementById('event-popup-overlay');
+    if (!overlay) return;
+
+    var slides = overlay.querySelectorAll('.event-popup-slide');
+    var dots = overlay.querySelectorAll('.event-popup-dot');
+    var arrowLeft = document.getElementById('event-popup-arrow-left');
+    var arrowRight = document.getElementById('event-popup-arrow-right');
+    var currentIndex = 0;
+    var totalSlides = slides.length;
+    var hasMultiple = totalSlides > 1;
+    var userInteracted = false;
+    var autoSlideTimer = null;
+    var lastActivity = Date.now();
+
+    function showSlide(index) {
+      slides.forEach(function(s, i) { s.style.display = i === index ? 'block' : 'none'; });
+      dots.forEach(function(d, i) { d.className = 'event-popup-dot w-2.5 h-2.5 rounded-full ' + (i === index ? 'bg-indigo-600' : 'bg-gray-300'); });
+      currentIndex = index;
+    }
+
+    function nextSlide() {
+      showSlide((currentIndex + 1) % totalSlides);
+    }
+
+    function prevSlide() {
+      showSlide((currentIndex - 1 + totalSlides) % totalSlides);
+    }
+
+    function dismissPopup(popupId, frequencyMinutes) {
+      var key = 'event_popup_dismissed_' + popupId;
+      var now = Date.now();
+      var expiresAt = now + (frequencyMinutes * 60000);
+      localStorage.setItem(key, JSON.stringify({ dismissed_at: now, expires_at: expiresAt }));
+    }
+
+    function shouldShowPopup(popupId, frequencyMinutes) {
+      var key = 'event_popup_dismissed_' + popupId;
+      var stored = localStorage.getItem(key);
+      if (!stored) return true;
+      try {
+        var data = JSON.parse(stored);
+        return Date.now() > data.expires_at;
+      } catch(e) {
+        return true;
+      }
+    }
+
+    function startAutoSlide() {
+      if (!hasMultiple || userInteracted) return;
+      clearInterval(autoSlideTimer);
+      autoSlideTimer = setInterval(function() {
+        if (!userInteracted && Date.now() - lastActivity >= 5000) {
+          nextSlide();
+        }
+      }, 5000);
+    }
+
+    function stopAutoSlide() {
+      clearInterval(autoSlideTimer);
+    }
+
+    // Determine which slide to start on (first undismissed one)
+    var startSlide = 0;
+    for (var i = 0; i < slides.length; i++) {
+      var id = parseInt(slides[i].getAttribute('data-popup-id'));
+      var freq = parseInt(slides[i].getAttribute('data-frequency-minutes')) || 1440;
+      if (shouldShowPopup(id, freq)) {
+        startSlide = i;
+        break;
+      }
+      startSlide = i + 1;
+    }
+
+    // If all dismissed, hide overlay
+    if (startSlide >= totalSlides) {
+      return;
+    }
+
+    showSlide(startSlide);
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    startAutoSlide();
+
+    // Track user activity for auto-slide pause
+    function markActivity() {
+      lastActivity = Date.now();
+    }
+
+    // Close button
+    document.getElementById('event-popup-close').addEventListener('click', function() {
+      var id = parseInt(slides[currentIndex].getAttribute('data-popup-id'));
+      var freq = parseInt(slides[currentIndex].getAttribute('data-frequency-minutes')) || 1440;
+      dismissPopup(id, freq);
+      stopAutoSlide();
+      overlay.classList.add('hidden');
+      document.body.style.overflow = '';
+    });
+
+    // CTA clicks — dismiss then navigate
+    overlay.querySelectorAll('.event-popup-cta').forEach(function(cta) {
+      cta.addEventListener('click', function(e) {
+        var id = parseInt(slides[currentIndex].getAttribute('data-popup-id'));
+        var freq = parseInt(slides[currentIndex].getAttribute('data-frequency-minutes')) || 1440;
+        dismissPopup(id, freq);
+        stopAutoSlide();
+        overlay.classList.add('hidden');
+        document.body.style.overflow = '';
+      });
+    });
+
+    // Overlay backdrop click to close
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) {
+        var id = parseInt(slides[currentIndex].getAttribute('data-popup-id'));
+        var freq = parseInt(slides[currentIndex].getAttribute('data-frequency-minutes')) || 1440;
+        dismissPopup(id, freq);
+        stopAutoSlide();
+        overlay.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    });
+
+    // Dot navigation
+    dots.forEach(function(dot) {
+      dot.addEventListener('click', function() {
+        var idx = parseInt(dot.getAttribute('data-index'));
+        showSlide(idx);
+        userInteracted = true;
+        stopAutoSlide();
+        markActivity();
+      });
+    });
+
+    // Arrow navigation
+    if (arrowLeft && arrowRight) {
+      arrowLeft.addEventListener('click', function() {
+        prevSlide();
+        userInteracted = true;
+        stopAutoSlide();
+        markActivity();
+      });
+      arrowRight.addEventListener('click', function() {
+        nextSlide();
+        userInteracted = true;
+        stopAutoSlide();
+        markActivity();
+      });
+    }
+
+    // Touch swipe support
+    var touchStartX = 0;
+    overlay.addEventListener('touchstart', function(e) {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    overlay.addEventListener('touchend', function(e) {
+      var diff = e.changedTouches[0].screenX - touchStartX;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) { prevSlide(); } else { nextSlide(); }
+        userInteracted = true;
+        stopAutoSlide();
+        markActivity();
+      }
+    }, { passive: true });
+  })();
+  </script>
+  {% endif %}
 
   {% block extra_js %}{% endblock %}
 </body>

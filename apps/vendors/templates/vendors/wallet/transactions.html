@@ -1,4 +1,5 @@
 {% extends 'vendors/base.html' %}
+{% load currency_filters %}
 
 {% block title %}Transactions - KasuMarketplace{% endblock %}
 
@@ -25,11 +26,11 @@
         <div class="flex items-center justify-between gap-3">
             <div>
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Available balance</p>
-                <p class="mt-1 text-xl font-bold text-gray-900">₦{{ wallet.balance|floatformat:2 }}</p>
+                <p class="mt-1 text-xl font-bold text-gray-900">{{ wallet.balance|naira }}</p>
             </div>
             <div class="text-right">
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">This period</p>
-                <p class="mt-1 text-sm font-semibold text-primary">₦{{ net_balance|floatformat:2|default:"0.00" }}</p>
+                <p class="mt-1 text-sm font-semibold text-primary">{{ net_balance|default:0|naira }}</p>
             </div>
         </div>
     </div>
@@ -140,7 +141,7 @@
                                   {% if transaction.transaction_type == 'AVAILABLE_CREDIT' or transaction.transaction_type == 'PENDING_CREDIT' %}text-primary
                                   {% elif transaction.transaction_type == 'REVERSAL' or transaction.transaction_type == 'WITHDRAWAL' %}text-primary
                                   {% else %}text-gray-900{% endif %}">
-                            {% if transaction.transaction_type == 'AVAILABLE_CREDIT' or transaction.transaction_type == 'PENDING_CREDIT' %}+{% elif transaction.transaction_type == 'REVERSAL' or transaction.transaction_type == 'WITHDRAWAL' %}-{% endif %}₦{{ transaction.amount|floatformat:2 }}
+                            {% if transaction.transaction_type == 'AVAILABLE_CREDIT' or transaction.transaction_type == 'PENDING_CREDIT' %}+{% elif transaction.transaction_type == 'REVERSAL' or transaction.transaction_type == 'WITHDRAWAL' %}-{% endif %}{{ transaction.amount|naira }}
                         </p>
 
                         {% if transaction.status == 'completed' %}

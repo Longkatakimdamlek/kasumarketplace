@@ -1,5 +1,6 @@
 {% extends 'vendors/store/public_base.html' %}
 {% load static %}
+{% load currency_filters %}
 
 {% block title %}{{ store.store_name }} - KasuMarketplace{% endblock %}
 
@@ -418,9 +419,9 @@
                             <div class="flex flex-1 flex-col gap-2 p-4 pb-0">
                                 <h3 class="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug text-ink">{{ product.title }}</h3>
                                 <div class="mt-auto flex items-baseline gap-2">
-                                    <span class="text-base font-bold text-ink">₦{{ product.price|floatformat:2 }}</span>
+                                    <span class="text-base font-bold text-ink">{{ product.price|naira }}</span>
                                     {% if product.compare_at_price %}
-                                    <span class="text-sm text-ink-soft/70 line-through">₦{{ product.compare_at_price|floatformat:2 }}</span>
+                                    <span class="text-sm text-ink-soft/70 line-through">{{ product.compare_at_price|naira }}</span>
                                     {% endif %}
                                 </div>
                                 <div class="flex items-center justify-between text-xs text-ink-soft">

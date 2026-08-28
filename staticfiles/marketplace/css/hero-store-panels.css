@@ -1,0 +1,9 @@
+/* Store-focused texture for the two supporting hero panels. */
+.hero-store-panel { isolation: isolate; }
+.hero-store-slide { isolation: isolate; }
+.hero-store-slide::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(circle at 87% 18%, rgba(255, 255, 255, .28), transparent 24%), linear-gradient(135deg, rgba(3, 35, 21, .38), rgba(3, 35, 21, .1) 60%, rgba(0, 0, 0, .2)); }
+.hero-store-slide::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .48; background-image: linear-gradient(rgba(255, 255, 255, .1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .1) 1px, transparent 1px), radial-gradient(circle at 100% 100%, transparent 0 31%, rgba(255, 255, 255, .18) 31.4% 31.8%, transparent 32.2%); background-size: 24px 24px, 24px 24px, 220px 220px; mask-image: linear-gradient(110deg, transparent 0%, black 48%, black 100%); }
+.hero-store-slide > div { position: relative; z-index: 2; }
+.hero-store-slide > span { z-index: 3; }
+.hero-store-panel--vendor .hero-store-slide::before { background: radial-gradient(circle at 88% 16%, rgba(255, 176, 84, .3), transparent 25%), linear-gradient(135deg, rgba(5, 50, 29, .42), rgba(5, 50, 29, .08) 62%, rgba(0, 0, 0, .24)); }
+.hero-store-slide img, .hero-store-slide .rounded-full { position: relative; z-index: 3; box-shadow: 0 8px 20px rgba(0, 0, 0, .2); }

@@ -1,4 +1,5 @@
 {% extends 'vendors/emails/base_email.html' %}
+{% load currency_filters %}
 
 {% block title %}Payout Successful - KasuMarketplace{% endblock %}
 
@@ -21,7 +22,7 @@
 <h2>Payout Details</h2>
 <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; border-radius: 12px; margin: 25px 0; text-align: center; color: white;">
     <p style="margin: 0 0 10px 0; font-size: 16px; opacity: 0.9;">Amount Transferred</p>
-    <p style="margin: 0; font-size: 48px; font-weight: bold;">₦{{ payout.amount|floatformat:2 }}</p>
+    <p style="margin: 0; font-size: 48px; font-weight: bold;">{{ payout.amount|naira }}</p>
     <p style="margin: 15px 0 0 0; font-size: 14px; opacity: 0.8;">
         Processed on {{ payout.processed_at|date:"F d, Y - g:i A" }}
     </p>
@@ -39,7 +40,7 @@
         <tr>
             <td style="padding: 8px 0; color: #6b7280;">Payout Amount:</td>
             <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace; font-size: 18px; color: #10b981;">
-                ₦{{ payout.amount|floatformat:2 }}
+                {{ payout.amount|naira }}
             </td>
         </tr>
         <tr>
@@ -51,7 +52,7 @@
         <tr style="border-top: 2px solid #e5e7eb;">
             <td style="padding: 12px 0 8px 0; color: #6b7280; font-size: 16px;">Net Amount:</td>
             <td style="padding: 12px 0 8px 0; font-weight: bold; text-align: right; font-family: monospace; font-size: 20px; color: #059669;">
-                ₦{{ payout.amount|floatformat:2 }}
+                {{ payout.amount|naira }}
             </td>
         </tr>
     </table>
@@ -109,19 +110,19 @@
         <tr>
             <td style="padding: 8px 0; color: #6b7280;">Previous Balance:</td>
             <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace;">
-                ₦{{ previous_balance|floatformat:2 }}
+                {{ previous_balance|naira }}
             </td>
         </tr>
         <tr>
             <td style="padding: 8px 0; color: #6b7280;">Withdrawn:</td>
             <td style="padding: 8px 0; font-weight: bold; text-align: right; font-family: monospace; color: #ef4444;">
-                -₦{{ payout.amount|floatformat:2 }}
+                -{{ payout.amount|naira }}
             </td>
         </tr>
         <tr style="border-top: 2px solid #e5e7eb;">
             <td style="padding: 12px 0 8px 0; color: #6b7280; font-size: 16px;">Current Balance:</td>
             <td style="padding: 12px 0 8px 0; font-weight: bold; text-align: right; font-family: monospace; font-size: 18px; color: #6a3df5;">
-                ₦{{ current_balance|floatformat:2 }}
+                {{ current_balance|naira }}
             </td>
         </tr>
     </table>

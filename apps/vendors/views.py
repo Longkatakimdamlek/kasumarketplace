@@ -1156,10 +1156,17 @@ def submit_review(request, store_slug, product_slug):
     return JsonResponse({'success': True, 'message': 'Review submitted. Thank you!'})
 
 
-@login_required
 @require_http_methods(["POST"])
 def toggle_wishlist(request, store_slug, product_slug):
     """AJAX: toggle a product in or out of the buyer's wishlist."""
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False,
+            'authenticated': False,
+            'message': 'Please log in to manage your wishlist.',
+            'login_url': '/accounts/login/',
+        }, status=401)
+
     product = get_object_or_404(
         Product,
         slug=product_slug,
@@ -1170,10 +1177,24 @@ def toggle_wishlist(request, store_slug, product_slug):
     existing = Wishlist.objects.filter(user=request.user, product=product).first()
     if existing:
         existing.delete()
-        return JsonResponse({'success': True, 'wishlisted': False})
+        count = Wishlist.objects.filter(user=request.user).count()
+        return JsonResponse({
+            'success': True,
+            'authenticated': True,
+            'wishlisted': False,
+            'wishlist_count': count,
+            'message': f'"{product.title}" removed from wishlist.',
+        })
 
     Wishlist.objects.create(user=request.user, product=product)
-    return JsonResponse({'success': True, 'wishlisted': True})
+    count = Wishlist.objects.filter(user=request.user).count()
+    return JsonResponse({
+        'success': True,
+        'authenticated': True,
+        'wishlisted': True,
+        'wishlist_count': count,
+        'message': f'"{product.title}" added to wishlist.',
+    })
 
 
 # ==========================================

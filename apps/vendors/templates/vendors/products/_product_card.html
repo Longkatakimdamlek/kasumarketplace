@@ -1,3 +1,4 @@
+{% load currency_filters %}
 {% comment %}
 Compact product card for the 2/3/5-col grid.
 Usage: {% include 'vendors/products/_product_card.html' with product=product %}
@@ -39,7 +40,7 @@ Usage: {% include 'vendors/products/_product_card.html' with product=product %}
     <div class="flex flex-1 flex-col gap-1.5 p-2 sm:p-3">
         <div>
             <h3 class="truncate text-[13px] font-bold text-gray-900 sm:text-sm">{{ product.title }}</h3>
-            <p class="text-sm font-bold text-primary sm:text-base">₦{{ product.price|floatformat:2 }}</p>
+            <p class="text-sm font-bold text-primary sm:text-base">{{ product.price|naira }}</p>
         </div>
 
         <div class="flex items-center gap-2.5 text-[10px] text-gray-500 sm:text-[11px]">

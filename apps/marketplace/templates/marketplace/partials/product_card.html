@@ -1,12 +1,13 @@
+{% load currency_filters %}
 <!-- Product Card Partial
      Usage: Include with item=product where product has _distance attribute
      Distance is attached to product as: product._distance
 -->
 <a href="{% url 'product_detail_public' store_slug=item.store.slug product_slug=item.slug %}"
-   class="group tilt-card bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-200 flex flex-col"
+   class="group tilt-card bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-200 flex flex-col relative"
    style="transform-style: preserve-3d; will-change: transform;">
 
-  <!-- Image -->
+  <!-- Image & Overlays -->
   <div class="relative aspect-square md:aspect-[3/4] overflow-hidden bg-surface">
     {% with primary_img=item.images.all|first %}
     {% if primary_img %}
@@ -25,22 +26,30 @@
 
     <!-- Discount badge -->
     {% if item.discount_percentage > 0 %}
-    <span class="absolute top-2 left-2 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-lg">
+    <span class="absolute top-2 left-2 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-lg z-10 shadow-sm">
       -{{ item.discount_percentage }}%
     </span>
     {% endif %}
 
     <!-- Sponsored badge -->
     {% if item.pk in sponsored_ids %}
-    <span class="absolute top-2 left-2 bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-lg"
+    <span class="absolute top-2 left-2 bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-lg z-10 shadow-sm"
           {% if item.discount_percentage > 0 %}style="top: 2rem;"{% endif %}>
       Sponsored
     </span>
     {% endif %}
 
+    <!-- Featured badge -->
+    {% if item.is_featured %}
+    <span class="absolute bottom-2 left-2 bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-lg z-10 shadow-sm">
+      Featured
+    </span>
+    {% endif %}
+
+    <!-- Wishlist Button -->
     <button type="button"
             onclick="event.preventDefault(); event.stopPropagation(); toggleCardWishlist(this, '{{ item.store.slug }}', '{{ item.slug }}');"
-            class="absolute top-2 right-2 grid size-7 place-items-center rounded-full bg-white/90 shadow-sm transition active:scale-90"
+            class="absolute top-2 right-2 z-10 grid size-8 place-items-center rounded-full bg-white/95 text-muted hover:text-primary shadow-sm hover:shadow-md transition-all active:scale-90"
             aria-label="Save to wishlist">
         <svg class="size-4 wishlist-icon {% if item.pk in wishlisted_ids %}fill-primary text-primary{% else %}fill-none text-muted{% endif %}"
              stroke="currentColor" viewBox="0 0 24 24">
@@ -48,17 +57,11 @@
         </svg>
     </button>
 
-    <!-- Featured badge -->
-    {% if item.is_featured %}
-    <span class="absolute top-2 right-2 bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-lg">
-      Featured
-    </span>
-    {% endif %}
-
+    <!-- Quick Add to Cart Button -->
     <button type="button"
-        onclick="event.preventDefault(); event.stopPropagation(); addToCartCard({{ item.pk }}, this);"
-        class="absolute bottom-2 right-2 grid size-8 place-items-center rounded-full bg-primary text-white shadow-sm transition active:scale-90"
-        aria-label="Add to cart">
+            onclick="event.preventDefault(); event.stopPropagation(); addToCartCard({{ item.pk }}, this);"
+            class="absolute bottom-2 right-2 z-10 grid size-8 place-items-center rounded-full bg-primary text-white shadow-sm hover:shadow-md hover:bg-primary-dark transition-all active:scale-90"
+            aria-label="Add to cart">
       <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
       </svg>
@@ -85,11 +88,21 @@
 
     <!-- Price row -->
     <div class="flex items-center gap-2 mt-auto pt-1">
-      <span class="text-base font-bold text-primary">₦{{ item.price|floatformat:0 }}</span>
+      <span class="text-base font-bold text-accent">{{ item.price|naira }}</span>
       {% if item.compare_at_price %}
-      <span class="text-xs text-muted line-through">₦{{ item.compare_at_price|floatformat:0 }}</span>
+      <span class="text-xs text-muted line-through">{{ item.compare_at_price|naira }}</span>
       {% endif %}
     </div>
+
+    <!-- Sold count -->
+    {% if item.sales_count > 0 %}
+    <p class="text-xs text-muted">{{ item.sales_count }} sold</p>
+    {% endif %}
+
+    <!-- Low stock warning -->
+    {% if item.track_inventory and item.stock_quantity <= item.low_stock_threshold and item.stock_quantity > 0 %}
+    <p class="text-xs text-accent font-medium">Only {{ item.stock_quantity }} left</p>
+    {% endif %}
 
     <!-- Distance badge -->
     {% if item.distance and item.distance != 'Distance unavailable' %}

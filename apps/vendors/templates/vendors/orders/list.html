@@ -1,4 +1,5 @@
 {% extends 'vendors/base.html' %}
+{% load currency_filters %}
 {% block title %}Orders — KasuMarketplace{% endblock %}
 {% block page_title %}Orders{% endblock %}
 
@@ -149,7 +150,7 @@
                     </div>
 
                     <div class="flex shrink-0 flex-col items-end gap-1.5">
-                        <p class="text-base font-bold text-primary">₦{{ sub.subtotal|floatformat:0 }}</p>
+                        <p class="text-base font-bold text-primary">{{ sub.subtotal|naira }}</p>
 
                         {# Status badge #}
                         {% if sub.status == 'PENDING_VENDOR' %}

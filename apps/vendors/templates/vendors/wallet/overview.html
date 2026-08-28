@@ -1,4 +1,5 @@
 {% extends 'vendors/base.html' %}
+{% load currency_filters %}
 
 {% block title %}Wallet - KasuMarketplace{% endblock %}
 
@@ -25,7 +26,7 @@
         <div class="flex items-start justify-between gap-3">
             <div>
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Available balance</p>
-                <p class="mt-1 text-xl font-bold text-primary">₦{{ wallet.balance|floatformat:2 }}</p>
+                <p class="mt-1 text-xl font-bold text-primary">{{ wallet.balance|naira }}</p>
                 <p class="mt-2 text-xs text-gray-500">Last updated {{ wallet.updated_at|date:"M d, Y - g:i A" }}</p>
             </div>
             <a href="{% url 'vendors:wallet_transactions' %}"
@@ -37,15 +38,15 @@
         <div class="mt-4 grid grid-cols-3 gap-2">
             <div class="rounded-xl bg-white p-2.5 shadow-sm ring-1 ring-gray-100">
                 <p class="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Earned</p>
-                <p class="mt-1 text-sm font-bold text-primary">₦{{ wallet.total_earned|floatformat:2 }}</p>
+                <p class="mt-1 text-sm font-bold text-primary">{{ wallet.total_earned|naira }}</p>
             </div>
             <div class="rounded-xl bg-white p-2.5 shadow-sm ring-1 ring-gray-100">
                 <p class="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Withdrawn</p>
-                <p class="mt-1 text-sm font-bold text-primary">₦{{ wallet.total_withdrawn|floatformat:2 }}</p>
+                <p class="mt-1 text-sm font-bold text-primary">{{ wallet.total_withdrawn|naira }}</p>
             </div>
             <div class="rounded-xl bg-white p-2.5 shadow-sm ring-1 ring-gray-100">
                 <p class="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Pending</p>
-                <p class="mt-1 text-sm font-bold text-primary">₦{{ wallet.pending_balance|floatformat:2 }}</p>
+                <p class="mt-1 text-sm font-bold text-primary">{{ wallet.pending_balance|naira }}</p>
             </div>
         </div>
     </div>
@@ -93,7 +94,7 @@
 
                         <div class="flex shrink-0 flex-col items-end gap-1.5">
                             <p class="text-base font-bold text-primary">
-                                {% if transaction.transaction_type == 'AVAILABLE_CREDIT' or transaction.transaction_type == 'PENDING_CREDIT' %}+{% elif transaction.transaction_type == 'REVERSAL' or transaction.transaction_type == 'WITHDRAWAL' %}-{% endif %}₦{{ transaction.amount|floatformat:2 }}
+                                {% if transaction.transaction_type == 'AVAILABLE_CREDIT' or transaction.transaction_type == 'PENDING_CREDIT' %}+{% elif transaction.transaction_type == 'REVERSAL' or transaction.transaction_type == 'WITHDRAWAL' %}-{% endif %}{{ transaction.amount|naira }}
                             </p>
 
                             {% if transaction.status == 'completed' %}

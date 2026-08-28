@@ -1,4 +1,5 @@
 {% extends 'vendors/emails/base_email.html' %}
+{% load currency_filters %}
 
 {% block title %}New Order Received - KasuMarketplace{% endblock %}
 
@@ -36,7 +37,7 @@
         <tr>
             <td style="padding: 15px 0 8px 0; font-size: 14px; opacity: 0.9;">Total Amount:</td>
             <td style="padding: 15px 0 8px 0; font-weight: bold; text-align: right; font-size: 28px;">
-                ₦{{ order.total_amount|floatformat:2 }}
+                {{ order.total_amount|naira }}
             </td>
         </tr>
     </table>
@@ -79,8 +80,8 @@
         <tr style="border-bottom: 1px solid #e5e7eb;">
             <td style="padding: 15px 12px; font-weight: 600;">{{ item.product.name }}</td>
             <td style="padding: 15px 12px; text-align: center;">{{ item.quantity }}</td>
-            <td style="padding: 15px 12px; text-align: right; font-family: monospace;">₦{{ item.price|floatformat:2 }}</td>
-            <td style="padding: 15px 12px; text-align: right; font-weight: bold; font-family: monospace;">₦{{ item.total_price|floatformat:2 }}</td>
+            <td style="padding: 15px 12px; text-align: right; font-family: monospace;">{{ item.price|naira }}</td>
+            <td style="padding: 15px 12px; text-align: right; font-weight: bold; font-family: monospace;">{{ item.total_price|naira }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -88,7 +89,7 @@
         <tr style="background-color: #f9fafb;">
             <td colspan="3" style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 16px;">TOTAL:</td>
             <td style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 18px; color: #6a3df5; font-family: monospace;">
-                ₦{{ order.total_amount|floatformat:2 }}
+                {{ order.total_amount|naira }}
             </td>
         </tr>
     </tfoot>

@@ -603,12 +603,57 @@ class Dispute(models.Model):
     
 class Promotion(models.Model):
     """Admin-managed promotional banner slides (e.g. 'Become a Vendor' call-outs)."""
+    SLIDE_TYPE_CHOICES = [
+        ('vendor_promo', 'Vendor Promo (Desktop Side Banner)'),
+        ('hero_brand', 'Hero Brand Slide (Mobile)'),
+        ('event_popup', 'Event/Campaign Popup'),
+    ]
+
     title = models.CharField(max_length=200)
     subtitle = models.CharField(max_length=300, blank=True)
     image = CloudinaryField('image', blank=True, null=True)
+    background_image = CloudinaryField(
+        'background_image', blank=True, null=True,
+        help_text="Full-width background image for hero_brand slides. "
+                   "If set, displayed behind the text instead of the gradient."
+    )
+    slide_type = models.CharField(
+        max_length=20,
+        choices=SLIDE_TYPE_CHOICES,
+        default='vendor_promo',
+        help_text="Determines where this slide is rendered."
+    )
+    HERO_SLOT_CHOICES = [
+        ('campus_essentials', 'Campus Essentials'),
+        ('tech_electronics', 'Tech & Electronics'),
+        ('fashion_accessories', 'Fashion & Accessories'),
+        ('food_beverages', 'Food & Beverages'),
+        ('deals_marketplace', 'Deals & Marketplace'),
+        ('top_seller', 'Top Seller This Week'),
+    ]
+    hero_slot = models.CharField(
+        max_length=30,
+        choices=HERO_SLOT_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Which fixed hero slot this record overrides. Only used when slide_type=hero_brand."
+    )
     link_url = models.CharField(max_length=300, help_text="Where this slide links to, e.g. /vendor-signup/")
     is_active = models.BooleanField(default=True)
     sort_order = models.PositiveIntegerField(default=0)
+    start_date = models.DateTimeField(
+        blank=True, null=True,
+        help_text="Leave blank to start immediately"
+    )
+    end_date = models.DateTimeField(
+        blank=True, null=True,
+        help_text="Leave blank for no expiry"
+    )
+    frequency_minutes = models.PositiveIntegerField(
+        default=1440,
+        help_text="Minutes before this popup shows again after being dismissed. "
+                  "E.g. 10 for 10 minutes, 1440 for 24 hours."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -621,8 +621,79 @@ class DisputeAdmin(admin.ModelAdmin):
 
 @admin.register(Promotion)
 class PromotionAdmin(admin.ModelAdmin):
-    list_display = ['title', 'is_active', 'sort_order']
+    list_display = ['title', 'slide_type', 'is_active', 'sort_order', 'start_date', 'end_date']
+    list_filter = ['slide_type', 'is_active', 'start_date', 'end_date']
     list_editable = ['is_active', 'sort_order']
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            # Adding a new record — show all fields so admin can pick slide_type
+            return (
+                ('Content', {
+                    'fields': ('title', 'subtitle', 'image', 'background_image', 'link_url')
+                }),
+                ('Display Settings', {
+                    'fields': ('slide_type', 'hero_slot', 'is_active', 'sort_order')
+                }),
+                ('Campaign Window', {
+                    'fields': ('start_date', 'end_date', 'frequency_minutes'),
+                    'classes': ('collapse',),
+                }),
+            )
+
+        if obj.slide_type == 'vendor_promo':
+            return (
+                ('Content', {
+                    'fields': ('title', 'subtitle', 'image', 'link_url')
+                }),
+                ('Display Settings', {
+                    'fields': ('slide_type', 'is_active', 'sort_order')
+                }),
+            )
+
+        if obj.slide_type == 'hero_brand':
+            return (
+                ('Content', {
+                    'fields': ('title', 'subtitle', 'background_image', 'link_url')
+                }),
+                ('Hero Slot', {
+                    'fields': ('hero_slot',)
+                }),
+                ('Display Settings', {
+                    'fields': ('slide_type', 'is_active', 'sort_order')
+                }),
+                ('Campaign Window', {
+                    'fields': ('start_date', 'end_date'),
+                }),
+            )
+
+        if obj.slide_type == 'event_popup':
+            return (
+                ('Content', {
+                    'fields': ('title', 'subtitle', 'image', 'background_image', 'link_url')
+                }),
+                ('Display Settings', {
+                    'fields': ('slide_type', 'is_active', 'sort_order')
+                }),
+                ('Event Popup Settings', {
+                    'fields': ('start_date', 'end_date', 'frequency_minutes'),
+                    'classes': ('collapse',),
+                }),
+            )
+
+        # Fallback — should not happen
+        return (
+            ('Content', {
+                'fields': ('title', 'subtitle', 'image', 'background_image', 'link_url')
+            }),
+            ('Display Settings', {
+                'fields': ('slide_type', 'hero_slot', 'is_active', 'sort_order')
+            }),
+            ('Campaign Window', {
+                'fields': ('start_date', 'end_date', 'frequency_minutes'),
+                'classes': ('collapse',),
+            }),
+        )
 
 
 @admin.register(Wishlist)

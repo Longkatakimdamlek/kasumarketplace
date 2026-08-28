@@ -18,6 +18,7 @@ Views:
 import json
 import logging
 from datetime import timedelta
+from types import SimpleNamespace
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -62,6 +63,56 @@ from apps.marketplace.services.distance_service import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# ==========================================
+# HERO DEFAULTS (static fallback per slot)
+# ==========================================
+
+HERO_DEFAULTS = [
+    {
+        'hero_slot': 'campus_essentials',
+        'title': 'Campus Essentials',
+        'subtitle': 'Everything you need for campus life',
+        'link_url': '/',
+        'static_image': 'marketplace/img/hero-defaults/campus-essentials.jpg',
+    },
+    {
+        'hero_slot': 'tech_electronics',
+        'title': 'Tech & Electronics',
+        'subtitle': 'Phones, laptops, and gadgets',
+        'link_url': '/category/tech-electronics/',
+        'static_image': 'marketplace/img/hero-defaults/tech-electronics.jpg',
+    },
+    {
+        'hero_slot': 'fashion_accessories',
+        'title': 'Fashion & Accessories',
+        'subtitle': 'Style that fits your vibe',
+        'link_url': '/category/fashion-accessories/',
+        'static_image': 'marketplace/img/hero-defaults/fashion-accessories.jpg',
+    },
+    {
+        'hero_slot': 'food_beverages',
+        'title': 'Food & Beverages',
+        'subtitle': 'Quick bites and campus favourites',
+        'link_url': '/category/food-beverages/',
+        'static_image': 'marketplace/img/hero-defaults/food-beverages.jpg',
+    },
+    {
+        'hero_slot': 'deals_marketplace',
+        'title': 'Deals & Marketplace',
+        'subtitle': "Discounts you don't want to miss",
+        'link_url': '/deals/',
+        'static_image': 'marketplace/img/hero-defaults/deals-marketplace.jpg',
+    },
+    {
+        'hero_slot': 'top_seller',
+        'title': 'Top Seller This Week',
+        'subtitle': 'Discover the most popular store on campus',
+        'link_url': '/stores/',
+        'static_image': 'marketplace/img/hero-defaults/top-seller.jpg',
+    },
+]
 
 
 # ==========================================
@@ -235,9 +286,55 @@ def product_list(request):
         spotlight_stores = sponsored_stores
 
     vendor_promotions = Promotion.objects.filter(is_active=True, slide_type='vendor_promo')[:5]
-    hero_brand_slides = Promotion.objects.filter(
-        is_active=True, slide_type='hero_brand'
-    ).order_by('sort_order')[:5]
+
+    # --- Hero brand slides: 5 fixed slots with optional DB overrides ---
+    now = timezone.now()
+    hero_overrides = Promotion.objects.filter(
+        is_active=True,
+        slide_type='hero_brand',
+    ).filter(
+        Q(start_date__isnull=True) | Q(start_date__lte=now),
+        Q(end_date__isnull=True) | Q(end_date__gte=now),
+    ).order_by('sort_order')
+    override_map = {o.hero_slot: o for o in hero_overrides if o.hero_slot}
+
+    hero_brand_slides = []
+    for default in HERO_DEFAULTS:
+        slot = default['hero_slot']
+        if slot in override_map:
+            promo = override_map[slot]
+            hero_brand_slides.append(SimpleNamespace(
+                title=promo.title,
+                subtitle=promo.subtitle,
+                link_url=promo.link_url,
+                background_image=promo.background_image,
+                static_image_path=default['static_image'] if not promo.background_image else None,
+            ))
+        else:
+            hero_brand_slides.append(SimpleNamespace(
+                title=default['title'],
+                subtitle=default['subtitle'],
+                link_url=default['link_url'],
+                background_image=None,
+                static_image_path=default['static_image'],
+            ))
+
+    # --- Top Seller slide: override/default background, store content overlays on top ---
+    top_seller_default = next((d for d in HERO_DEFAULTS if d['hero_slot'] == 'top_seller'), None)
+    if top_seller_default and 'top_seller' in override_map:
+        promo = override_map['top_seller']
+        top_seller_slide = SimpleNamespace(
+            background_image=promo.background_image,
+            static_image_path=top_seller_default['static_image'] if not promo.background_image else None,
+        )
+    elif top_seller_default:
+        top_seller_slide = SimpleNamespace(
+            background_image=None,
+            static_image_path=top_seller_default['static_image'],
+        )
+    else:
+        top_seller_slide = None
+
     context = {
         'annotated_products': annotated,
         'featured_products': featured,
@@ -251,6 +348,7 @@ def product_list(request):
         'hero_brand_slides': hero_brand_slides,
         'spotlight_stores': spotlight_stores,
         'top_seller_store': top_seller_store,
+        'top_seller_slide': top_seller_slide,
         'wishlisted_ids': wishlisted_ids,
         'store_promotion_contact_email': 'support@kasumarketplace.com.ng',
         'paystack_public_key': settings.PAYSTACK_PUBLIC_KEY,

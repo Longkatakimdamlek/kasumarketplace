@@ -1,0 +1,41 @@
+/* Large, editorial commerce hero with a vertically changing headline line. */
+.hero-shopify-copy {
+  font-family: 'Manrope', 'DM Sans', sans-serif;
+}
+
+.hero-shopify-title {
+  font-family: 'Manrope', 'DM Sans', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.065em;
+  line-height: 0.98;
+}
+
+.hero-changing-line {
+  display: block;
+  height: 1.08em;
+  margin-top: 0.1em;
+  overflow: hidden;
+}
+
+.hero-changing-track {
+  display: block;
+  animation: hero-word-drop 12s cubic-bezier(.77, 0, .18, 1) infinite;
+}
+
+.hero-changing-track span {
+  display: block;
+  height: 1.08em;
+  white-space: nowrap;
+}
+
+@keyframes hero-word-drop {
+  0%, 20% { transform: translateY(0); }
+  25%, 45% { transform: translateY(-25%); }
+  50%, 70% { transform: translateY(-50%); }
+  75%, 95% { transform: translateY(-75%); }
+  100% { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-changing-track { animation: none; }
+}

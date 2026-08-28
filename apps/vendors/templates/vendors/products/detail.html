@@ -1,4 +1,5 @@
 {% extends 'vendors/base.html' %}
+{% load currency_filters %}
 
 {% block title %}{{ product.title }} - KasuMarketplace{% endblock %}
 {% block page_title %}Product Details{% endblock %}
@@ -120,9 +121,9 @@
             {# Price + stock #}
             <div>
                 <div class="flex items-baseline gap-3">
-                    <p class="text-2xl font-bold text-primary">₦{{ product.price|floatformat:2 }}</p>
+                    <p class="text-2xl font-bold text-primary">{{ product.price|naira }}</p>
                     {% if product.compare_at_price %}
-                    <p class="text-sm text-gray-400 line-through">₦{{ product.compare_at_price|floatformat:2 }}</p>
+                    <p class="text-sm text-gray-400 line-through">{{ product.compare_at_price|naira }}</p>
                     {% endif %}
                 </div>
 
@@ -153,7 +154,7 @@
                     <p class="text-[11px] text-gray-500 mt-0.5">Sold</p>
                 </div>
                 <div class="flex flex-col items-center px-3 text-center">
-                    <p class="text-lg font-bold text-green-600 sm:text-xl">₦{{ total_revenue|default:0|floatformat:0 }}</p>
+                    <p class="text-lg font-bold text-green-600 sm:text-xl">{{ total_revenue|default:0|naira }}</p>
                     <p class="text-[11px] text-gray-500 mt-0.5">Revenue</p>
                 </div>
             </div>
