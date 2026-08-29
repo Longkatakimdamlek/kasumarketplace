@@ -1,5 +1,5 @@
 from django import template
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 register = template.Library()
 
@@ -14,7 +14,7 @@ def naira(value):
         return '₦0.00'
     try:
         value = Decimal(str(value))
-    except (TypeError, ValueError, Decimal.InvalidOperation):
+    except (TypeError, ValueError, InvalidOperation):
         return '₦0.00'
     negative = value < 0
     value = abs(value)

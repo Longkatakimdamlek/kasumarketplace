@@ -21691,3 +21691,127 @@ django.db.utils.OperationalError: no such column: marketplace_promotion.start_da
 [INFO] 2026-08-28 12:18:32,341 django.server log_message:213 - "GET /static/marketplace/img/hero-defaults/deals-marketplace.jpg HTTP/1.1" 200 81947
 [INFO] 2026-08-28 12:18:32,834 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
 [INFO] 2026-08-28 12:18:38,981 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-29 03:53:20,033 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 03:53:20,514 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 03:53:30,902 django.server log_message:213 - "GET / HTTP/1.1" 200 176071
+[INFO] 2026-08-29 03:53:31,612 django.server log_message:213 - "GET /static/marketplace/css/hero-word-cycle.css HTTP/1.1" 200 930
+[INFO] 2026-08-29 03:53:31,624 django.server log_message:213 - "GET /static/marketplace/css/hero-float.css HTTP/1.1" 200 3288
+[INFO] 2026-08-29 03:53:31,624 django.server log_message:213 - "GET /static/marketplace/css/hero-premium.css HTTP/1.1" 200 3149
+[INFO] 2026-08-29 03:53:31,720 django.server log_message:213 - "GET /static/images/kasu-logo.png HTTP/1.1" 200 83600
+[INFO] 2026-08-29 03:53:31,777 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-29 03:53:33,744 django.server log_message:213 - "GET /static/marketplace/js/hero-side-banners.js HTTP/1.1" 200 1952
+[INFO] 2026-08-29 03:53:34,013 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-29 03:53:34,720 django.server log_message:213 - "GET /static/images/category-icons/food-beverages.webp HTTP/1.1" 200 33338
+[INFO] 2026-08-29 03:53:34,721 django.server log_message:213 - "GET /static/images/category-icons/tech-electronics.webp HTTP/1.1" 200 28292
+[INFO] 2026-08-29 03:53:34,730 django.server log_message:213 - "GET /static/images/category-icons/education-stationery.webp HTTP/1.1" 200 29032
+[INFO] 2026-08-29 03:53:34,731 django.server log_message:213 - "GET /static/images/category-icons/fashion-accessories.webp HTTP/1.1" 200 35172
+[INFO] 2026-08-29 03:53:34,997 django.server log_message:213 - "GET /static/images/category-icons/home-lifestyle.webp HTTP/1.1" 200 31048
+[INFO] 2026-08-29 03:53:35,009 django.server log_message:213 - "GET /static/images/category-icons/events-entertainment.webp HTTP/1.1" 200 26180
+[INFO] 2026-08-29 03:53:35,023 django.server log_message:213 - "GET /static/images/category-icons/services.webp HTTP/1.1" 200 24954
+[INFO] 2026-08-29 03:53:35,036 django.server log_message:213 - "GET /static/images/category-icons/beauty-personal-care.webp HTTP/1.1" 200 31708
+[INFO] 2026-08-29 03:53:35,058 django.server log_message:213 - "GET /static/images/category-icons/miscellaneous.webp HTTP/1.1" 200 26372
+[INFO] 2026-08-29 03:53:35,062 django.server log_message:213 - "GET /static/images/category-icons/sports-fitness.webp HTTP/1.1" 200 27492
+[INFO] 2026-08-29 03:53:36,208 django.server log_message:213 - "GET /static/images/favicon/favicon.ico HTTP/1.1" 200 1150
+[INFO] 2026-08-29 03:53:36,534 django.server log_message:213 - "GET /static/images/favicon/favicon_32x32.png HTTP/1.1" 200 2152
+[INFO] 2026-08-29 03:53:50,597 django.server log_message:213 - "GET /profile/ HTTP/1.1" 200 69222
+[INFO] 2026-08-29 03:53:57,068 django.server log_message:213 - "GET /logout/ HTTP/1.1" 302 0
+[DEBUG] 2026-08-29 03:53:57,562 marketplace.cart get_or_create_cart:25 - get_or_create_cart created new session key=8v1dvoadqzpi687k02fjomz5mgd2omfu
+[INFO] 2026-08-29 03:53:57,957 marketplace.cart get_or_create_cart:53 - get_or_create_cart created_anon_cart session=8v1dvoadqzpi687k02fjomz5mgd2omfu
+[INFO] 2026-08-29 03:53:58,165 django.server log_message:213 - "GET / HTTP/1.1" 200 166166
+[INFO] 2026-08-29 03:54:08,294 django.server log_message:213 - "GET /login/?next=/ HTTP/1.1" 200 12049
+[INFO] 2026-08-29 03:54:08,668 django.server log_message:213 - "GET /static/images/kasu_logo1.png HTTP/1.1" 200 26848
+[INFO] 2026-08-29 03:54:09,900 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 200 270
+[INFO] 2026-08-29 03:54:11,324 django.server log_message:213 - "GET /static/images/favicon/favicon.svg HTTP/1.1" 200 516
+[INFO] 2026-08-29 03:54:25,056 django.server log_message:213 - "POST /login/?next=/ HTTP/1.1" 302 0
+[INFO] 2026-08-29 03:54:25,209 django.server log_message:213 - "GET / HTTP/1.1" 302 0
+[INFO] 2026-08-29 03:54:25,716 marketplace.cart get_or_create_cart:34 - get_or_create_cart session_key_mismatch user=20 cart_session=p7hkqbn2nrq62s41eshgmgpybrqzogg8 request_session=5ixndm5o8o4x0au2eiwv2bp9cbp7w8x5 — updating
+[ERROR] 2026-08-29 03:54:27,451 django.request log_response:253 - Internal Server Error: /vendors/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\templatetags\currency_filters.py", line 16, in naira
+    value = Decimal(str(value))
+decimal.InvalidOperation: [<class 'decimal.ConversionSyntax'>]
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\kasuMarketplace\apps\vendors\decorators.py", line 48, in wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\kasuMarketplace\apps\vendors\views.py", line 399, in dashboard
+    return render(request, 'vendors/dashboard.html', context)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\defaulttags.py", line 327, in render
+    return nodelist.render(context)
+           ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\defaulttags.py", line 243, in render
+    nodelist.append(node.render_annotated(context))
+                    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 1075, in render
+    output = self.filter_expression.resolve(context)
+  File "C:\Users\user\Desktop\kasuMarketplace\venv\Lib\site-packages\django\template\base.py", line 749, in resolve
+    new_obj = func(obj, *arg_vals)
+  File "C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\templatetags\currency_filters.py", line 17, in naira
+    except (TypeError, ValueError, Decimal.InvalidOperation):
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'decimal.Decimal' has no attribute 'InvalidOperation'
+[ERROR] 2026-08-29 03:54:27,500 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 500 231628
+[WARNING] 2026-08-29 03:54:29,907 django.request log_response:253 - Not Found: /favicon.ico
+[WARNING] 2026-08-29 03:54:29,908 django.server log_message:213 - "GET /favicon.ico HTTP/1.1" 404 15732
+[INFO] 2026-08-29 03:55:03,786 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\templatetags\currency_filters.py changed, reloading.
+[INFO] 2026-08-29 03:55:31,218 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 03:55:31,845 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 03:55:44,429 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 03:55:50,831 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\templatetags\currency_filters.py changed, reloading.
+[INFO] 2026-08-29 03:55:52,934 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 03:55:52,996 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
