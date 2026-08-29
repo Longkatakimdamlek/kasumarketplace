@@ -1,0 +1,81 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}Community Guidelines — KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-8">
+  <h1 class="font-display font-bold text-xl text-dark mb-2">Community Guidelines</h1>
+  <p class="text-sm text-muted mb-5">Standards of behavior for all KasuMarketplace users.</p>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">Our Commitment</h2>
+    <p class="text-sm text-muted">KasuMarketplace is built on trust. These guidelines help keep the platform safe, fair, and useful for everyone. By using KasuMarketplace, you agree to follow these standards.</p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">For All Users</h2>
+    <ul class="list-disc list-inside text-sm text-muted space-y-2">
+      <li><strong class="text-dark">Be honest.</strong> Provide accurate information in your profile, listings, and communications.</li>
+      <li><strong class="text-dark">Be respectful.</strong> Treat other users with courtesy. Harassment, threats, hate speech, or discrimination are not tolerated.</li>
+      <li><strong class="text-dark">Keep it lawful.</strong> Do not use KasuMarketplace to buy, sell, or promote anything illegal.</li>
+      <li><strong class="text-dark">Protect accounts.</strong> Do not share your account credentials or access another person's account.</li>
+      <li><strong class="text-dark">No manipulation.</strong> Do not artificially inflate ratings, reviews, order counts, or any other platform metric.</li>
+    </ul>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">For Vendors</h2>
+    <ul class="list-disc list-inside text-sm text-muted space-y-2">
+      <li><strong class="text-dark">List accurate products.</strong> Describe items honestly, with truthful photos and specifications. Do not list counterfeit, fake, or replica goods.</li>
+      <li><strong class="text-dark">Respond to orders.</strong> Accept or reject orders within the 48-hour window. Repeated failure to respond may result in suspension.</li>
+      <li><strong class="text-dark">Fulfill orders.</strong> If you accept an order, deliver what was promised. Do not substitute items without the buyer's agreement.</li>
+      <li><strong class="text-dark">No prohibited items.</strong> Do not list items that are illegal, regulated, hazardous, or otherwise prohibited under these guidelines or applicable law.</li>
+      <li><strong class="text-dark">Keep store information current.</strong> Maintain accurate store details, contact information, and bank details for payouts.</li>
+    </ul>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">For Buyers</h2>
+    <ul class="list-disc list-inside text-sm text-muted space-y-2">
+      <li><strong class="text-dark">Pay through the platform.</strong> Always use KasuMarketplace's official checkout. Off-platform payments are not protected.</li>
+      <li><strong class="text-dark">Confirm receipt honestly.</strong> Only confirm receipt when you have actually received your order. Abuse of the dispute system may result in account restriction.</li>
+      <li><strong class="text-dark">Provide accurate delivery details.</strong> Ensure your delivery address and contact information are correct so vendors can fulfill your order.</li>
+      <li><strong class="text-dark">Communicate respectfully.</strong> Coordinate delivery with vendors courteously and within reasonable hours.</li>
+    </ul>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">Prohibited Conduct</h2>
+    <p class="text-sm text-muted mb-2">The following are grounds for account suspension or removal from KasuMarketplace:</p>
+    <ul class="list-disc list-inside text-sm text-muted space-y-2">
+      <li>Listing or selling counterfeit, stolen, or illegal goods</li>
+      <li>Fraud, including fake orders, fake reviews, or identity misrepresentation</li>
+      <li>Harassment, threats, or abuse toward other users or staff</li>
+      <li>Circumventing platform payments (arranging off-platform transactions)</li>
+      <li>Creating multiple accounts to evade restrictions</li>
+      <li>Scraping, hacking, or attempting to access systems or data you are not authorized to access</li>
+      <li>Manipulating ratings, reviews, order counts, or trending metrics</li>
+    </ul>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">Enforcement</h2>
+    <p class="text-sm text-muted">Violations of these guidelines may result in:</p>
+    <ul class="list-disc list-inside text-sm text-muted space-y-1 mt-2">
+      <li>Warning or temporary restriction</li>
+      <li>Product listing removal</li>
+      <li>Account suspension</li>
+      <li>Permanent removal from the platform</li>
+    </ul>
+    <p class="text-sm text-muted mt-3">We will generally attempt to contact you before taking serious action, except in cases involving illegal activity, imminent harm, or repeated violations. Suspended accounts may still have pending orders and disputes resolved, including any outstanding refunds or payouts.</p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">Reporting Violations</h2>
+    <p class="text-sm text-muted">If you see behavior that violates these guidelines, please report it through the <a href="{% url 'marketplace:contact' %}" class="text-primary hover:underline">Contact Us</a> page (select "Report a problem") or email <strong>support@kasumarketplace.com.ng</strong>.</p>
+  </div>
+
+  <p class="text-xs text-muted italic mt-4">
+    These guidelines may be updated as the platform evolves. Last updated: August 2026.
+  </p>
+</div>
+{% endblock %}

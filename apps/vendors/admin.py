@@ -380,14 +380,15 @@ class PendingReviewAdmin(admin.ModelAdmin):
             try:
                 with transaction.atomic():
                     vendor.bank_status         = 'verified'
-                    vendor.verification_status = 'bvn_verified'
+                    vendor.verification_status = 'approved'
+                    vendor.approved_at         = timezone.now()
                     vendor.bvn_verified_at     = timezone.now()
                     vendor.reviewed_by         = request.user
                     vendor.reviewed_at         = timezone.now()
                     vendor.calculate_risk_score()
                     vendor.save(update_fields=[
-                        'bank_status', 'verification_status', 'bvn_verified_at',
-                        'reviewed_by', 'reviewed_at', 'risk_score',
+                        'bank_status', 'verification_status', 'approved_at',
+                        'bvn_verified_at', 'reviewed_by', 'reviewed_at', 'risk_score',
                     ])
 
                     # Sync wallet
@@ -799,9 +800,38 @@ class VendorProfileAdmin(admin.ModelAdmin):
     reject_vendors.short_description = '❌ Reject selected vendors'
 
     def suspend_vendors(self, request, queryset):
-        count = queryset.update(verification_status='suspended')
-        self.message_user(request, f'⏸ Suspended {count} vendor(s)', messages.WARNING)
-    suspend_vendors.short_description = '⏸ Suspend selected vendors'
+        count = 0
+        for vendor in queryset:
+            vendor.verification_status = 'suspended'
+            vendor.reviewed_by = request.user
+            vendor.reviewed_at = timezone.now()
+            vendor.save(update_fields=['verification_status', 'reviewed_by', 'reviewed_at'])
+            try:
+                store = vendor.store
+                store.is_published = False
+                store.save(update_fields=['is_published'])
+            except Store.DoesNotExist:
+                pass
+            count += 1
+        self.message_user(request, f'Paused {count} vendor(s) — products hidden from marketplace.', messages.WARNING)
+    suspend_vendors.short_description = 'Pause selected vendors (hide products)'
+
+    def unsuspend_vendors(self, request, queryset):
+        count = 0
+        for vendor in queryset:
+            vendor.verification_status = 'approved'
+            vendor.reviewed_by = request.user
+            vendor.reviewed_at = timezone.now()
+            vendor.save(update_fields=['verification_status', 'reviewed_by', 'reviewed_at'])
+            try:
+                store = vendor.store
+                store.is_published = True
+                store.save(update_fields=['is_published'])
+            except Store.DoesNotExist:
+                pass
+            count += 1
+        self.message_user(request, f'Unpaused {count} vendor(s) — products visible again.', messages.SUCCESS)
+    unsuspend_vendors.short_description = 'Unpause selected vendors (restore products)'
 
     def approve_pending_review(self, request, queryset):
         """
@@ -815,7 +845,8 @@ class VendorProfileAdmin(admin.ModelAdmin):
             try:
                 with transaction.atomic():
                     vendor.bank_status         = 'verified'
-                    vendor.verification_status = 'bvn_verified'
+                    vendor.verification_status = 'approved'
+                    vendor.approved_at         = timezone.now()
                     vendor.bvn_verified_at     = timezone.now()
                     vendor.reviewed_by         = request.user
                     vendor.reviewed_at         = timezone.now()

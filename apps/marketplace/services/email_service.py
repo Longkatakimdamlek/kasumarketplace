@@ -18,7 +18,7 @@ Configure in settings.py:
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = 'your@email.com'
     EMAIL_HOST_PASSWORD = 'your_app_password'
-    DEFAULT_FROM_EMAIL = 'KasuMarketplace <noreply@kasumarketplace.com>'
+    DEFAULT_FROM_EMAIL = 'KasuMarketplace <noreply@kasumarketplace.com.ng>'
 """
 
 import logging
@@ -29,7 +29,7 @@ from django.utils.html import strip_tags
 
 logger = logging.getLogger(__name__)
 
-FROM_EMAIL = getattr(settings, 'DEFAULT_FROM_EMAIL', 'KasuMarketplace <noreply@kasumarketplace.com>')
+FROM_EMAIL = getattr(settings, 'DEFAULT_FROM_EMAIL', 'KasuMarketplace <noreply@kasumarketplace.com.ng>')
 ADMIN_EMAIL = getattr(settings, 'ADMIN_EMAIL', settings.ADMINS[0][1] if settings.ADMINS else None)
 
 

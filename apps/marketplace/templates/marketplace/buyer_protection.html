@@ -1,0 +1,50 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}Buyer Protection — KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-8">
+  <h1 class="font-display font-bold text-xl text-dark mb-2">Buyer Protection</h1>
+  <p class="text-sm text-muted mb-5">How your payments are protected on KasuMarketplace.</p>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">How It Works</h2>
+    <p class="text-sm text-muted mb-3">When you buy on KasuMarketplace, your payment is held securely until you confirm you have received your order. Here is the full process:</p>
+    <ol class="list-decimal list-inside text-sm text-muted space-y-2">
+      <li><strong class="text-dark">You place an order and pay.</strong> Your payment is collected via Paystack and held by KasuMarketplace — it is not sent to the vendor yet.</li>
+      <li><strong class="text-dark">The vendor accepts or rejects.</strong> The vendor has 48 hours to respond. If they accept, you receive their contact information to coordinate delivery. If they reject or do not respond, your order is automatically cancelled and you are fully refunded.</li>
+      <li><strong class="text-dark">You receive your item.</strong> Coordinate delivery with the vendor. Once you have the item, confirm receipt in your order details.</li>
+      <li><strong class="text-dark">Payment is released.</strong> After you confirm receipt, the payment enters a short hold period (24 hours) before becoming available to the vendor for withdrawal.</li>
+    </ol>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">What If Something Goes Wrong?</h2>
+    <p class="text-sm text-muted mb-3">If you have a problem with an order you received, you can open a dispute directly from your order details page. Here is what happens:</p>
+    <ul class="list-disc list-inside text-sm text-muted space-y-2">
+      <li>Your payment is <strong class="text-dark">held</strong> and not released to the vendor while the dispute is reviewed.</li>
+      <li>Our team reviews the case and resolves it in one of two ways: <strong class="text-dark">releasing</strong> the payment to the vendor, or <strong class="text-dark">refunding</strong> you via Paystack.</li>
+      <li>You can follow up through our <a href="{% url 'marketplace:contact' %}" class="text-primary hover:underline">Contact Us</a> page if you disagree with how a dispute was resolved.</li>
+    </ul>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">Automatic Refunds</h2>
+    <p class="text-sm text-muted mb-2">You will receive a full refund automatically if:</p>
+    <ul class="list-disc list-inside text-sm text-muted space-y-1">
+      <li>The vendor <strong class="text-dark">rejects</strong> your order</li>
+      <li>The vendor does <strong class="text-dark">not respond</strong> within 48 hours</li>
+      <li>A dispute is <strong class="text-dark">resolved in your favor</strong></li>
+    </ul>
+    <p class="text-sm text-muted mt-2">Refunds are processed through Paystack back to your original payment method. Timing depends on your bank.</p>
+  </div>
+
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">Important: Pay Only Through KasuMarketplace</h2>
+    <p class="text-sm text-muted">Buyer Protection only applies to transactions made through KasuMarketplace's official checkout. <strong class="text-dark">Never pay a vendor directly outside the platform.</strong> If you arrange payment outside KasuMarketplace, we cannot protect your purchase or help you if something goes wrong.</p>
+  </div>
+
+  <p class="text-xs text-muted italic mt-4">
+    Questions? <a href="{% url 'marketplace:contact' %}" class="text-primary hover:underline">Contact us</a> or visit the <a href="{% url 'marketplace:help' %}" class="text-primary hover:underline">Help Center</a>.
+  </p>
+</div>
+{% endblock %}

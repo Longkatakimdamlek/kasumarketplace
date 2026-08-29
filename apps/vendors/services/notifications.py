@@ -42,7 +42,7 @@ class EmailService:
     """
     
     def __init__(self):
-        self.from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@kasumarketplace.com')
+        self.from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@kasumarketplace.com.ng')
         self.resend_api_key = os.getenv('RESEND_API_KEY', '')
     
     def send_email(
@@ -117,6 +117,10 @@ class EmailService:
             True if sent successfully
         """
         try:
+            # Ensure base_url is always available for email templates
+            if 'base_url' not in context:
+                context['base_url'] = settings.SITE_URL
+
             # Render HTML template
             html_message = render_to_string(template_name, context)
             
@@ -284,7 +288,7 @@ class NotificationService:
                 'vendor': vendor,
                 'vendor_name': vendor.full_name,
                 'reason': reason or vendor.admin_comment,
-                'support_email': 'support@kasumarketplace.com'
+                'support_email': 'support@kasumarketplace.com.ng'
             }
         )
     
@@ -486,7 +490,7 @@ KasuMarketplace Team
         Args:
             vendor: VendorProfile instance
         """
-        admin_emails = getattr(settings, 'ADMIN_EMAILS', ['admin@kasumarketplace.com'])
+        admin_emails = getattr(settings, 'ADMIN_EMAILS', ['admin@kasumarketplace.com.ng'])
         
         return self.email.send_email(
             to_email=admin_emails[0],  # Send to first admin

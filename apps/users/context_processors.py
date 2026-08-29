@@ -78,17 +78,17 @@ def site_settings(request):
     try:
         return {
             'SITE_NAME': getattr(settings, 'SITE_NAME', 'KasuMarketplace'),
-            'SITE_URL': getattr(settings, 'SITE_URL', 'https://kasumarketplace.com'),
-            'SUPPORT_EMAIL': getattr(settings, 'SUPPORT_EMAIL', 'support@kasumarketplace.com'),
-            'CONTACT_EMAIL': getattr(settings, 'CONTACT_EMAIL', 'contact@kasumarketplace.com'),
+            'SITE_URL': getattr(settings, 'SITE_URL', 'https://kasumarketplace.com.ng'),
+            'SUPPORT_EMAIL': getattr(settings, 'SUPPORT_EMAIL', 'support@kasumarketplace.com.ng'),
+            'CONTACT_EMAIL': getattr(settings, 'CONTACT_EMAIL', 'contact@kasumarketplace.com.ng'),
         }
     except Exception as e:
         logger.error(f"Error in site_settings context processor: {str(e)}", exc_info=True)
         return {
             'SITE_NAME': 'KasuMarketplace',
-            'SITE_URL': 'https://kasumarketplace.com',
-            'SUPPORT_EMAIL': 'support@kasumarketplace.com',
-            'CONTACT_EMAIL': 'contact@kasumarketplace.com',
+            'SITE_URL': 'https://kasumarketplace.com.ng',
+            'SUPPORT_EMAIL': 'support@kasumarketplace.com.ng',
+            'CONTACT_EMAIL': 'contact@kasumarketplace.com.ng',
         }
 
 

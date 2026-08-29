@@ -880,6 +880,9 @@ class Product(models.Model):
     # ✅ DISCONTINUED STATUS (Only for editing existing products)
     DISCONTINUED_STATUS = ('discontinued', 'Discontinued')
     
+    # ✅ REMOVED STATUS (Admin-only: set when a product is removed for policy violations)
+    REMOVED_STATUS = ('removed', 'Removed')
+    
     vendor = models.ForeignKey(VendorProfile, on_delete=models.CASCADE, related_name='products')
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='products')
     
@@ -934,7 +937,7 @@ class Product(models.Model):
     # Status (stores vendor choice: draft, published, or discontinued)
     status = models.CharField(
         max_length=20, 
-        choices=VENDOR_STATUS_CHOICES + [DISCONTINUED_STATUS],
+        choices=VENDOR_STATUS_CHOICES + [DISCONTINUED_STATUS] + [REMOVED_STATUS],
         default='draft'
     )
     is_featured = models.BooleanField(default=False)
@@ -1216,7 +1219,8 @@ class Wallet(models.Model):
         help_text="Total amount withdrawn"
     )
     
-    # Commission Rate (can be customized per vendor)
+    # Commission Rate — currently unused/reserved for a future monetization feature.
+    # The marketplace flow credits vendors the full subtotal with no deduction today.
     commission_rate = models.DecimalField(
         max_digits=5, 
         decimal_places=2, 

@@ -29,7 +29,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.utils import timezone
 from django.db.models import Q
-from django.db.models import Sum
+from django.db.models import Sum, Count
 
 from apps.vendors.models import Product, Store, MainCategory, SubCategory
 from apps.marketplace.models import (
@@ -238,12 +238,21 @@ def product_list(request):
     # Categories for filter sidebar
     categories = MainCategory.objects.filter(is_active=True).prefetch_related('subcategories')
 
-    # Featured products for Flash Deals section
+    # Featured products for Flash Deals section — only products with actual discounts
+    from django.db.models import F, ExpressionWrapper, DecimalField
     featured_qs = Product.objects.filter(
         status='published',
         store__is_published=True,
-        is_featured=True
-    ).select_related('store').prefetch_related('images')[:10]
+        compare_at_price__isnull=False,
+        compare_at_price__gt=F('price'),
+    ).select_related('store').prefetch_related('images')
+
+    featured_qs = featured_qs.annotate(
+        discount_amount=ExpressionWrapper(
+            F('compare_at_price') - F('price'),
+            output_field=DecimalField(max_digits=12, decimal_places=2)
+        )
+    ).order_by('-discount_amount')[:10]
 
     # Annotate featured products with distance
     featured = []
@@ -253,15 +262,25 @@ def product_list(request):
         featured.append(product)
     
     # ---- Weekly top seller (single store) — used by mobile hero's dedicated slide ----
+    # Minimum threshold: 3 successful orders in trailing 7 days to qualify
     week_ago = timezone.now() - timedelta(days=7)
+    TOP_SELLER_MIN_ORDERS = 3
 
-    top_seller_store = Store.objects.filter(
+    top_seller_candidates = Store.objects.filter(
         is_published=True,
         suborders__payment_status='SUCCESS',
         suborders__created_at__gte=week_ago,
     ).annotate(
-        weekly_units_sold=Sum('suborders__items__quantity')
-    ).order_by('-weekly_units_sold').first()
+        weekly_units_sold=Sum('suborders__items__quantity'),
+        weekly_order_count=Count('suborders', filter=Q(
+            suborders__payment_status='SUCCESS',
+            suborders__created_at__gte=week_ago,
+        )),
+    ).filter(
+        weekly_order_count__gte=TOP_SELLER_MIN_ORDERS
+    ).order_by('-weekly_units_sold')
+
+    top_seller_store = top_seller_candidates.first()
 
     # Sponsored stores first, fallback to top sellers by WEEKLY units sold
     # (previously ranked by all-time cumulative sales_count — see audit notes)
@@ -359,10 +378,12 @@ def product_list(request):
 
 @vendor_forbidden
 def new_arrivals(request):
-    """Show the newest published products first."""
+    """Show the newest published products first (14-day rolling window)."""
+    two_weeks_ago = timezone.now() - timedelta(days=14)
     products = Product.objects.filter(
         status='published',
         store__is_published=True,
+        created_at__gte=two_weeks_ago,
     ).select_related(
         'store', 'subcategory__main_category'
     ).prefetch_related('images').order_by('-created_at')[:60]
@@ -1380,6 +1401,68 @@ def privacy_policy(request):
 def terms_of_service(request):
     """Terms of service page."""
     return render(request, 'marketplace/terms.html')
+
+
+def help_center(request):
+    """Help Center / FAQ page."""
+    return render(request, 'marketplace/help.html')
+
+
+def buyer_protection(request):
+    """Buyer Protection page."""
+    return render(request, 'marketplace/buyer_protection.html')
+
+
+# ==========================================
+# PRODUCT REPORT
+# ==========================================
+
+@require_POST
+def report_product(request, product_id):
+    """
+    AJAX endpoint: anyone (logged-in or anonymous) can report a product.
+    Creates a ProductReport record and notifies admin.
+    Rate-limited: one report per IP per product per 24 hours.
+    """
+    from apps.vendors.models import Product
+    from apps.marketplace.models import ProductReport
+    from apps.marketplace.forms import ProductReportForm
+
+    product = get_object_or_404(Product, id=product_id, status='published', store__is_published=True)
+
+    # Prevent vendor from reporting their own product (only check if logged in)
+    if request.user.is_authenticated and hasattr(request.user, 'vendorprofile') and request.user.vendorprofile == product.store.vendor:
+        return JsonResponse({'success': False, 'message': 'You cannot report your own product.'}, status=400)
+
+    # Rate limit: one report per IP per product per 24 hours
+    ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip()
+    cutoff = timezone.now() - timedelta(hours=24)
+    recent = ProductReport.objects.filter(
+        product=product,
+        created_at__gte=cutoff,
+    )
+    if ip:
+        recent = recent.filter(reporter_ip=ip)
+    if recent.exists():
+        return JsonResponse({'success': False, 'message': 'You have already reported this product recently. Please try again later.'}, status=429)
+
+    form = ProductReportForm(request.POST)
+    if form.is_valid():
+        ProductReport.objects.create(
+            reporter=request.user if request.user.is_authenticated else None,
+            product=product,
+            reason=form.cleaned_data['reason'],
+            details=form.cleaned_data['details'],
+            reporter_ip=ip or None,
+        )
+        return JsonResponse({'success': True, 'message': 'Report submitted. Our team will review it shortly.'})
+
+    return JsonResponse({'success': False, 'message': 'Invalid submission. Please try again.'}, status=400)
+
+
+def community_guidelines(request):
+    """Community Guidelines page."""
+    return render(request, 'marketplace/community_guidelines.html')
 
 
 # ==========================================

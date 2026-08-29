@@ -19,6 +19,7 @@ from apps.marketplace.models import (
 )
 from apps.marketplace.services.cart_service import clear_cart
 from apps.marketplace.services.wallet_service import credit_pending
+from apps.vendors.models import VendorProfile
 
 
 def create_orders_from_cart(cart, payment_transaction, delivery_data: dict) -> dict:
@@ -51,6 +52,22 @@ def create_orders_from_cart(cart, payment_transaction, delivery_data: dict) -> d
 
     items_by_store = cart.get_items_by_store()
     grand_total = cart.grand_total
+
+    # ---- CHECK ALL VENDORS ARE ACTIVE (not suspended) ----
+    suspended_stores = []
+    for store in items_by_store.keys():
+        if store.vendor.verification_status == 'suspended':
+            suspended_stores.append(store.store_name)
+    if suspended_stores:
+        return {
+            'success': False,
+            'message': (
+                f'The following vendor(s) are no longer active on KasuMarketplace: '
+                f'{", ".join(suspended_stores)}. Please remove their items from your cart '
+                f'and try again.'
+            ),
+            'main_order': None,
+        }
 
     try:
         with transaction.atomic():

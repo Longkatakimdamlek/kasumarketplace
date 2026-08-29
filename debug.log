@@ -21815,3 +21815,174 @@ AttributeError: type object 'decimal.Decimal' has no attribute 'InvalidOperation
 [INFO] 2026-08-29 03:55:50,831 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\templatetags\currency_filters.py changed, reloading.
 [INFO] 2026-08-29 03:55:52,934 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
 [INFO] 2026-08-29 03:55:52,996 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 03:55:57,396 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 52318
+[INFO] 2026-08-29 03:55:57,830 django.server log_message:213 - "GET /static/images/kasu_logo111.png HTTP/1.1" 200 14165
+[INFO] 2026-08-29 03:56:00,235 django.server log_message:213 - "GET /static/vendors/js/live_capture.js HTTP/1.1" 200 20093
+[INFO] 2026-08-29 03:56:10,700 django.server log_message:213 - "GET /vendors/wallet/ HTTP/1.1" 200 37023
+[INFO] 2026-08-29 03:57:31,341 django.server log_message:213 - "GET /vendors/products/ HTTP/1.1" 200 62956
+[INFO] 2026-08-29 09:00:58,584 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\users\context_processors.py changed, reloading.
+[INFO] 2026-08-29 09:01:19,033 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:01:19,375 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:01:51,187 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\services\notifications.py changed, reloading.
+[INFO] 2026-08-29 09:01:54,747 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:01:54,813 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:02:30,330 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\views.py changed, reloading.
+[INFO] 2026-08-29 09:02:34,725 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:02:34,821 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:09:31,445 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\models.py changed, reloading.
+[INFO] 2026-08-29 09:09:35,565 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:09:35,655 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:25:25,322 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\models.py changed, reloading.
+[INFO] 2026-08-29 09:25:30,057 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:25:30,146 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:25:47,585 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\admin.py changed, reloading.
+[INFO] 2026-08-29 09:25:52,233 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:25:52,321 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:26:25,707 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\admin.py changed, reloading.
+[INFO] 2026-08-29 09:26:29,596 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:26:29,685 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:26:37,424 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\signals.py changed, reloading.
+[INFO] 2026-08-29 09:26:41,905 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:26:41,982 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:27:25,497 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\views.py changed, reloading.
+[INFO] 2026-08-29 09:27:32,899 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:27:33,036 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:27:47,319 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\urls.py changed, reloading.
+[INFO] 2026-08-29 09:27:51,861 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:27:51,949 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:29:17,792 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\services\notifications.py changed, reloading.
+[INFO] 2026-08-29 09:29:22,349 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:29:22,436 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:29:47,897 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:30:05,499 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:41:21,961 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\views.py changed, reloading.
+[INFO] 2026-08-29 09:41:25,481 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:41:25,573 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:41:42,043 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\models.py changed, reloading.
+[INFO] 2026-08-29 09:41:45,546 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:41:45,622 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:41:53,199 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\admin.py changed, reloading.
+[INFO] 2026-08-29 09:41:57,833 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:41:57,934 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:42:05,529 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\admin.py changed, reloading.
+[INFO] 2026-08-29 09:42:09,131 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:42:09,215 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:42:16,014 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:42:30,263 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:43:11,781 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\signals.py changed, reloading.
+[INFO] 2026-08-29 09:43:16,497 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:43:16,591 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:44:27,195 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\models.py changed, reloading.
+[INFO] 2026-08-29 09:44:31,857 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:44:31,955 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:44:37,986 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\models.py changed, reloading.
+[INFO] 2026-08-29 09:44:41,593 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:44:41,693 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[ERROR] 2026-08-29 09:46:26,900 apps.vendors.signals send_verification_notifications:151 - Error in send_verification_notifications for remedylongkat3030@gmail.com: 'charmap' codec can't encode character '\u2713' in position 0: character maps to <undefined>
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\kasuMarketplace\apps\vendors\signals.py", line 147, in send_verification_notifications
+    print(f"✓ Rejection notification sent to: {instance.full_name}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 0: character maps to <undefined>
+[INFO] 2026-08-29 09:57:44,533 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\views.py changed, reloading.
+[INFO] 2026-08-29 09:57:49,599 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:57:49,691 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:58:12,544 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\views.py changed, reloading.
+[INFO] 2026-08-29 09:58:16,206 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:58:16,283 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:58:38,955 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\views.py changed, reloading.
+[INFO] 2026-08-29 09:58:42,598 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:58:42,697 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:59:09,182 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\views.py changed, reloading.
+[INFO] 2026-08-29 09:59:12,924 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 09:59:13,002 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 09:59:42,124 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 10:11:14,885 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 10:12:19,443 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\signals.py changed, reloading.
+[INFO] 2026-08-29 10:12:24,439 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 10:12:24,565 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 10:12:48,951 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\signals.py changed, reloading.
+[INFO] 2026-08-29 10:12:52,445 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 10:12:52,520 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 10:15:38,804 apps.marketplace.services.email_service _send:50 - Email sent: "Payment Releasing — KSM-20260713-8487" → ['remedylongkat3030@gmail.com']
+[INFO] 2026-08-29 10:31:09,317 django.server log_message:213 - "GET / HTTP/1.1" 302 0
+[INFO] 2026-08-29 10:31:10,042 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 52490
+[INFO] 2026-08-29 10:32:14,657 django.server log_message:213 - "GET /vendors/products/ HTTP/1.1" 200 62952
+[INFO] 2026-08-29 10:32:27,315 django.server log_message:213 - "GET /vendors/products/create/ HTTP/1.1" 200 79857
+[INFO] 2026-08-29 10:33:49,850 django.server log_message:213 - "GET /vendors/orders/ HTTP/1.1" 200 42298
+[INFO] 2026-08-29 10:34:44,448 django.server log_message:213 - "GET /vendors/wallet/ HTTP/1.1" 200 37019
+[INFO] 2026-08-29 10:35:10,099 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 52314
+[INFO] 2026-08-29 10:35:46,710 django.server log_message:213 - "GET /vendors/notifications/ HTTP/1.1" 200 54732
+[INFO] 2026-08-29 10:35:55,973 django.server log_message:213 - "GET /vendors/profile/ HTTP/1.1" 200 54198
+[INFO] 2026-08-29 10:36:07,202 django.server log_message:213 - "GET /vendors/store/brotherly-and-fashon-house/ HTTP/1.1" 200 94551
+[INFO] 2026-08-29 10:36:42,042 django.server log_message:213 - "GET / HTTP/1.1" 302 0
+[INFO] 2026-08-29 10:36:42,152 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 52490
+[INFO] 2026-08-29 10:36:54,701 django.server log_message:213 - "POST /accounts/logout/ HTTP/1.1" 302 0
+[DEBUG] 2026-08-29 10:36:54,894 marketplace.cart get_or_create_cart:25 - get_or_create_cart created new session key=v7j23hmhjznodaulj12antrr147jm2k3
+[INFO] 2026-08-29 10:36:55,134 marketplace.cart get_or_create_cart:53 - get_or_create_cart created_anon_cart session=v7j23hmhjznodaulj12antrr147jm2k3
+[INFO] 2026-08-29 10:36:55,441 django.server log_message:213 - "GET / HTTP/1.1" 200 172633
+[INFO] 2026-08-29 10:37:18,913 django.server log_message:213 - "POST /location/update/ HTTP/1.1" 200 49
+[INFO] 2026-08-29 10:37:32,944 django.server log_message:213 - "GET / HTTP/1.1" 200 184029
+[INFO] 2026-08-29 10:37:54,396 django.server log_message:213 - "GET /deals/ HTTP/1.1" 200 86087
+[INFO] 2026-08-29 10:38:09,533 django.server log_message:213 - "GET /stores/ HTTP/1.1" 200 66497
+[INFO] 2026-08-29 11:27:40,336 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\admin.py changed, reloading.
+[INFO] 2026-08-29 11:27:53,806 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 11:27:53,971 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 11:28:40,590 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\admin.py changed, reloading.
+[INFO] 2026-08-29 11:28:45,639 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 11:28:45,720 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 11:29:07,178 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\services\order_service.py changed, reloading.
+[INFO] 2026-08-29 11:29:13,472 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 11:29:13,530 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 11:29:25,119 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\services\order_service.py changed, reloading.
+[INFO] 2026-08-29 11:29:30,439 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 11:29:30,588 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 11:29:36,698 django.server log_message:213 - "GET /deals/ HTTP/1.1" 200 86087
+[WARNING] 2026-08-29 11:29:36,819 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-29 11:29:36,820 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16983
+[INFO] 2026-08-29 11:29:57,923 django.server log_message:213 - "GET /deals/ HTTP/1.1" 200 86087
+[WARNING] 2026-08-29 11:29:58,119 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-29 11:29:58,154 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16983
+[INFO] 2026-08-29 11:30:05,561 django.server log_message:213 - "GET /stores/ HTTP/1.1" 200 66497
+[WARNING] 2026-08-29 11:30:05,871 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-29 11:30:05,873 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16983
+[INFO] 2026-08-29 11:30:11,975 django.server log_message:213 - "GET /new-arrivals/ HTTP/1.1" 200 70330
+[WARNING] 2026-08-29 11:30:14,165 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-29 11:30:14,198 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16983
+[INFO] 2026-08-29 11:30:24,109 django.server log_message:213 - "GET /trending/ HTTP/1.1" 200 67019
+[WARNING] 2026-08-29 11:30:24,431 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-29 11:30:24,431 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16983
+[INFO] 2026-08-29 11:30:35,931 django.server log_message:213 - "GET /sponsored/ HTTP/1.1" 200 71030
+[WARNING] 2026-08-29 11:30:36,329 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-29 11:30:36,336 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16983
+[INFO] 2026-08-29 11:30:54,354 django.server log_message:213 - "GET / HTTP/1.1" 200 184029
+[WARNING] 2026-08-29 11:30:54,814 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-29 11:30:54,837 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16983
+[INFO] 2026-08-29 11:31:00,741 django.server log_message:213 - "GET /static/marketplace/img/hero-defaults/tech-electronics.jpg HTTP/1.1" 200 73468
+[INFO] 2026-08-29 11:31:00,758 django.server log_message:213 - "GET /static/marketplace/img/hero-defaults/campus-essentials.jpg HTTP/1.1" 200 114119
+[INFO] 2026-08-29 11:31:00,844 django.server log_message:213 - "GET /static/marketplace/img/hero-defaults/food-beverages.jpg HTTP/1.1" 200 104423
+[INFO] 2026-08-29 11:31:00,855 django.server log_message:213 - "GET /static/marketplace/img/hero-defaults/fashion-accessories.jpg HTTP/1.1" 200 103701
+[INFO] 2026-08-29 11:31:01,116 django.server log_message:213 - "GET /static/marketplace/img/hero-defaults/top-seller.jpg HTTP/1.1" 200 77732
+[INFO] 2026-08-29 11:31:01,131 django.server log_message:213 - "GET /static/marketplace/img/hero-defaults/deals-marketplace.jpg HTTP/1.1" 200 81947
+[INFO] 2026-08-29 11:31:14,614 django.server log_message:213 - "GET /contact/ HTTP/1.1" 200 69849
+[WARNING] 2026-08-29 11:31:15,160 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-29 11:31:15,179 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16983
+[WARNING] 2026-08-29 11:32:05,363 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-29 11:32:05,368 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16983
+[WARNING] 2026-08-29 11:32:07,478 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-29 11:32:07,519 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16983
+[INFO] 2026-08-29 11:32:34,829 django.server log_message:213 - "GET /privacy/ HTTP/1.1" 200 77567
+[WARNING] 2026-08-29 11:32:35,408 django.request log_response:253 - Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[WARNING] 2026-08-29 11:32:35,425 django.server log_message:213 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 16983
+[INFO] 2026-08-29 11:32:55,470 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\KasuMarketplace\settings.py changed, reloading.
+[INFO] 2026-08-29 11:33:15,297 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 11:33:15,711 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 11:35:13,441 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\services\utils.py changed, reloading.
+[INFO] 2026-08-29 11:35:18,907 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 11:35:18,984 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 11:53:14,923 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 11:54:09,548 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 11:54:24,263 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode

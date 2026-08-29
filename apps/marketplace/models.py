@@ -736,3 +736,66 @@ class Review(models.Model):
             sub_order__status='CONFIRMED',
             product=product
         ).exists()
+
+
+# ==========================================
+# PRODUCT REPORTS
+# ==========================================
+
+class ProductReport(models.Model):
+    """
+    Buyer-initiated report against a product listing.
+    Routed to admin moderation queue for review.
+    """
+    REASON_CHOICES = [
+        ('counterfeit', 'Counterfeit / fake item'),
+        ('prohibited', 'Prohibited or illegal item'),
+        ('misleading', 'Misleading listing or description'),
+        ('other', 'Other'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('reviewed', 'Under Review'),
+        ('actioned', 'Actioned'),
+        ('dismissed', 'Dismissed'),
+    ]
+
+    reporter = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='product_reports',
+        help_text="Blank if report was submitted anonymously"
+    )
+    reporter_ip = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        help_text="IP address of the reporter, used for rate-limiting anonymous reports"
+    )
+    product = models.ForeignKey(
+        'vendors.Product',
+        on_delete=models.CASCADE,
+        related_name='reports'
+    )
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+    details = models.TextField(blank=True, help_text="Optional additional context from the reporter")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_product_reports'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Product Report"
+        verbose_name_plural = "Product Reports"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        reporter_email = self.reporter.email if self.reporter else 'Anonymous'
+        return f"Report #{self.pk} — {self.product.title[:30]} by {reporter_email}"

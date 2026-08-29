@@ -26,41 +26,52 @@ logger = logging.getLogger(__name__)
 # ENCRYPTION & SECURITY
 # ==========================================
 
+def _get_fernet():
+    """Lazy-load Fernet to avoid import at module level."""
+    from cryptography.fernet import Fernet, InvalidToken
+    key = getattr(settings, 'FIELD_ENCRYPTION_KEY', '')
+    if not key:
+        return None
+    return Fernet(key.encode() if isinstance(key, str) else key)
+
+
 def encrypt_sensitive_data(data: str) -> str:
     """
-    Encrypt sensitive data (BVN, etc.)
-    Uses simple encryption for demo - replace with proper encryption in production
-    
-    Args:
-        data: Data to encrypt
-        
-    Returns:
-        Encrypted string
+    Encrypt sensitive data (BVN, etc.) using Fernet symmetric encryption.
+    Returns a URL-safe base64-encoded ciphertext string.
+    If no encryption key is configured, falls back to masking (last 4 chars).
     """
-    # TODO: Implement proper encryption using cryptography library
-    # For now, just obfuscate the data
     if not data:
         return ''
-    
-    # Show only last 4 digits
-    if len(data) > 4:
-        return '*' * (len(data) - 4) + data[-4:]
-    
-    return data
+
+    fernet = _get_fernet()
+    if fernet is None:
+        # Fallback: mask if no key configured (dev environment)
+        if len(data) > 4:
+            return '*' * (len(data) - 4) + data[-4:]
+        return data
+
+    return fernet.encrypt(data.encode()).decode()
 
 
 def decrypt_sensitive_data(encrypted_data: str) -> str:
     """
-    Decrypt sensitive data
-    
-    Args:
-        encrypted_data: Encrypted string
-        
-    Returns:
-        Decrypted string
+    Decrypt Fernet-encrypted data.
+    If decryption fails (e.g., data was masked, not encrypted), returns the input as-is.
     """
-    # TODO: Implement proper decryption
-    return encrypted_data
+    if not encrypted_data:
+        return ''
+
+    fernet = _get_fernet()
+    if fernet is None:
+        return encrypted_data
+
+    try:
+        from cryptography.fernet import InvalidToken
+        return fernet.decrypt(encrypted_data.encode()).decode()
+    except (InvalidToken, Exception):
+        # Data was not encrypted (e.g., legacy masked value) — return as-is
+        return encrypted_data
 
 
 def hash_data(data: str) -> str:
@@ -322,7 +333,9 @@ def generate_unique_filename(original_filename: str, prefix: str = '') -> str:
 
 def calculate_commission(amount: Decimal, commission_rate: Decimal) -> Tuple[Decimal, Decimal]:
     """
-    Calculate commission and vendor amount
+    Calculate commission and vendor amount.
+    NOTE: Currently unused — reserved for a future monetization feature.
+    The marketplace flow credits vendors the full subtotal with no deduction today.
     
     Args:
         amount: Total amount

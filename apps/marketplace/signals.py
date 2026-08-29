@@ -120,6 +120,34 @@ def handle_dispute_opened(sender, instance, created, **kwargs):
             pass
 
 
+@receiver(post_save, sender='marketplace.ProductReport')
+def handle_product_report_created(sender, instance, created, **kwargs):
+    """Notify admin when a new product report is submitted."""
+    if not created:
+        return
+    try:
+        from apps.marketplace.services.email_service import _send, ADMIN_EMAIL
+        if ADMIN_EMAIL:
+            reporter_email = instance.reporter.email if instance.reporter else 'Anonymous'
+            reporter_ip = instance.reporter_ip or 'Unknown'
+            _send(
+                subject=f'[Product Report] {instance.product.title[:40]} — Action Required',
+                message=(
+                    f'New product report received.\n\n'
+                    f'Product: {instance.product.title}\n'
+                    f'Store: {instance.product.store.store_name}\n'
+                    f'Reason: {instance.get_reason_display()}\n'
+                    f'Reporter: {reporter_email}\n'
+                    f'Reporter IP: {reporter_ip}\n'
+                    f'Details: {instance.details or "None provided"}\n\n'
+                    f'Review in admin: /admin/marketplace/productreport/'
+                ),
+                recipient_list=[ADMIN_EMAIL],
+            )
+    except Exception as e:
+        logger.error(f"Error sending product report notification: {e}", exc_info=True)
+
+
 @receiver(post_save, sender='marketplace.SubOrder')
 def notify_vendor_new_suborder(sender, instance, created, **kwargs):
     """Create a Notification for the vendor when a new SubOrder arrives."""

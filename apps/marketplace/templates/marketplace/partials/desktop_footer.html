@@ -15,7 +15,7 @@
               <span class="text-xl font-semibold text-white">KasuMarketplace</span>
             </a>
           </div>
-          <p class="mt-4 font-bold text-slate-300">The official campus marketplace for KASU students.</p>
+          <p class="mt-4 font-bold text-slate-300">The student marketplace for KASU students.</p>
           <div class="mt-6 flex items-center gap-4 text-slate-300">
             <span class="text-sm uppercase tracking-[0.18em] text-slate-400">Follow us</span>
             <div class="flex items-center gap-3">
@@ -69,7 +69,7 @@
           <h3 class="mb-4 font-bold text-white">Support</h3>
           <ul class="space-y-4 text-slate-300">
             <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:contact' %}">Contact Us</a></li>
-            <li class="font-medium hover:text-primary"><a href="#">Buyer Protection</a></li>
+            <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:buyer_protection' %}">Buyer Protection</a></li>
             <li class="font-medium hover:text-primary"><a href="#">Vendor Support</a></li>
           </ul>
         </div>
@@ -80,6 +80,7 @@
             <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:terms' %}">Terms of Service</a></li>
             <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:privacy' %}">Privacy Policy</a></li>
             <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:cookies' %}">Cookie Policy</a></li>
+            <li class="font-medium hover:text-primary"><a href="{% url 'marketplace:community_guidelines' %}">Community Guidelines</a></li>
           </ul>
         </div>
       </div>

@@ -15,3 +15,19 @@ class ContactForm(forms.Form):
     email = forms.EmailField()
     subject = forms.ChoiceField(choices=SUBJECT_CHOICES)
     message = forms.CharField(widget=forms.Textarea)
+
+
+class ProductReportForm(forms.Form):
+    REASON_CHOICES = [
+        ('counterfeit', 'Counterfeit / fake item'),
+        ('prohibited', 'Prohibited or illegal item'),
+        ('misleading', 'Misleading listing or description'),
+        ('other', 'Other'),
+    ]
+
+    reason = forms.ChoiceField(choices=REASON_CHOICES, label='Reason for reporting')
+    details = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 3, 'placeholder': 'Provide any additional details (optional)'}),
+        label='Additional details'
+    )

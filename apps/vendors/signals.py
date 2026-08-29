@@ -342,13 +342,33 @@ def update_wallet_on_order_delivery(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Order)
 def update_store_order_stats(sender, instance, created, **kwargs):
+    """Update Store.total_orders and total_sales from SubOrder (marketplace checkout flow)."""
+    from apps.marketplace.models import SubOrder
     store = instance.vendor.store
-    store.total_orders = store.vendor.orders.filter(
-        status__in=['delivered', 'completed']
+    store.total_orders = SubOrder.objects.filter(
+        store=store,
+        payment_status='SUCCESS',
     ).count()
-    store.total_sales = store.vendor.orders.filter(
-        status__in=['delivered', 'completed']
-    ).aggregate(total=Sum('vendor_amount'))['total'] or 0
+    store.total_sales = SubOrder.objects.filter(
+        store=store,
+        payment_status='SUCCESS',
+    ).aggregate(total=Sum('subtotal'))['total'] or 0
+    store.save(update_fields=['total_orders', 'total_sales'])
+
+
+@receiver(post_save, sender='marketplace.SubOrder')
+def update_store_order_stats_from_suborder(sender, instance, created, **kwargs):
+    """Update Store.total_orders and total_sales when a SubOrder is saved."""
+    from apps.marketplace.models import SubOrder
+    store = instance.store
+    store.total_orders = SubOrder.objects.filter(
+        store=store,
+        payment_status='SUCCESS',
+    ).count()
+    store.total_sales = SubOrder.objects.filter(
+        store=store,
+        payment_status='SUCCESS',
+    ).aggregate(total=Sum('subtotal'))['total'] or 0
     store.save(update_fields=['total_orders', 'total_sales'])
 
 

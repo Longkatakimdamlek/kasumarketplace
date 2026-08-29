@@ -367,6 +367,10 @@ DOJAH_ENV = os.getenv("DOJAH_ENV")
 DOJAH_SELFIE_AUTO_VERIFY_THRESHOLD = 90.0
 DOJAH_SELFIE_REVIEW_THRESHOLD = 75.0
 
+# Field-level encryption key for sensitive data (BVN, etc.)
+# Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+FIELD_ENCRYPTION_KEY = os.getenv("FIELD_ENCRYPTION_KEY", "")
+
 # Site Configuration
 # SITE_NAME = 'KasuMarketplace'
 # SITE_URL = 'https://kasumarketplace.com.ng'

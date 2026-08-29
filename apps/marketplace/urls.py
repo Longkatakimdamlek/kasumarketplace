@@ -168,5 +168,9 @@ urlpatterns = [
     ),
     path('profile/', views.profile, name='profile'),
     path('contact/', views.contact_us, name='contact'),
+    path('help/', views.help_center, name='help'),
+    path('buyer-protection/', views.buyer_protection, name='buyer_protection'),
+    path('community-guidelines/', views.community_guidelines, name='community_guidelines'),
     path('request-account-deletion/', views.request_account_deletion, name='request_account_deletion'),
+    path('product/<int:product_id>/report/', views.report_product, name='report_product'),
 ]

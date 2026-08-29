@@ -1,0 +1,168 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}Help Center — KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-8">
+  <h1 class="font-display font-bold text-xl text-dark mb-2">Help Center</h1>
+  <p class="text-sm text-muted mb-5">Find answers to common questions about KasuMarketplace.</p>
+
+  <!-- General -->
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-lg text-dark mb-3">General</h2>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">What is KasuMarketplace?</h3>
+      <p class="text-sm text-muted">KasuMarketplace is the student marketplace for Kaduna State University (KASU). It connects KASU students as buyers and verified student vendors, making it easy to buy and sell products within the campus community.</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">Is KasuMarketplace officially affiliated with KASU?</h3>
+      <p class="text-sm text-muted">KasuMarketplace is an independent platform built by and for KASU students. We are not officially affiliated with or endorsed by Kaduna State University. Our goal is to serve the KASU student community with a trusted marketplace.</p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-dark text-sm mb-1">Who can use KasuMarketplace?</h3>
+      <p class="text-sm text-muted">Anyone in the KASU community can browse and buy. To sell, you must be a verified KASU student or alumnus, at least 18 years old, and complete our identity verification process.</p>
+    </div>
+  </div>
+
+  <!-- Accounts & Verification -->
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-dark text-lg mb-3">Accounts & Verification</h2>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">How do I create an account?</h3>
+      <p class="text-sm text-muted">You can sign up with your email and password, or use Google, Facebook, or Apple sign-in. You will receive a one-time code to verify your email address.</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">What does "Verified Vendor" mean?</h3>
+      <p class="text-sm text-muted">A Verified Vendor has completed KasuMarketplace's identity verification process. This includes BVN (Bank Verification Number) verification via Dojah, a live selfie match against their verified identity, and optional student ID verification. Verification helps ensure that vendors are who they claim to be, building trust across the marketplace.</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">How does vendor verification work?</h3>
+      <p class="text-sm text-muted">Verification happens in steps: (1) Enter your BVN and take a live selfie, which is matched against your BVN identity via Dojah. (2) Set up your store. (3) Optionally verify your student status with your matric number and student ID. (4) Our team reviews your application. If your selfie match confidence is high (90%+), you may be auto-approved.</p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-dark text-sm mb-1">Why was my verification rejected?</h3>
+      <p class="text-sm text-muted">Verification can fail if your selfie does not match your BVN identity, if your image quality is too low, or if the information provided is inaccurate. You can retry after a rejection. If you believe there is an error, contact us at <strong>support@kasumarketplace.com.ng</strong>.</p>
+    </div>
+  </div>
+
+  <!-- Buying -->
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-dark text-lg mb-3">Buying on KasuMarketplace</h2>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">How do I place an order?</h3>
+      <p class="text-sm text-muted">Browse products, add items to your cart, and proceed to checkout. Enter your delivery details and pay securely via Paystack. Once payment is confirmed, the vendor has 48 hours to accept or reject your order.</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">What happens after I pay?</h3>
+      <p class="text-sm text-muted">Your payment is held securely by KasuMarketplace. The vendor is notified and has 48 hours to accept or reject the order. If they accept, you will receive their contact information to coordinate delivery. If they reject or do not respond within 48 hours, your order is automatically cancelled and you are fully refunded.</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">How do I confirm I received my order?</h3>
+      <p class="text-sm text-muted">Once you receive your item, go to your order details and click "Yes — I Received My Order." This releases the payment to the vendor (subject to a short hold period before funds become available for withdrawal).</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">What if I have a problem with my order?</h3>
+      <p class="text-sm text-muted">If something is wrong with an order you have received, you can report an issue directly from your order details page. This opens a dispute, and our team will review the case. There is no fixed resolution timeline — it depends on the complexity of the case and vendor responsiveness. Funds are held until the dispute is resolved. See the <a href="{% url 'marketplace:buyer_protection' %}" class="text-primary hover:underline">Buyer Protection</a> page for full details.</p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-dark text-sm mb-1">How do I get a refund?</h3>
+      <p class="text-sm text-muted">Refunds are issued automatically when: (a) a vendor rejects your order, (b) an order times out after 48 hours without vendor response, or (c) a dispute is resolved in your favor. Refunds are processed through Paystack back to your original payment method. Timing depends on your bank.</p>
+    </div>
+  </div>
+
+  <!-- Payments & Buyer Protection -->
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-dark text-lg mb-3">Payments & Buyer Protection</h2>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">How does Buyer Protection work?</h3>
+      <p class="text-sm text-muted">When you pay on KasuMarketplace, your money is held securely and only released to the vendor after you confirm delivery. If anything goes wrong — the vendor rejects, does not respond, or there is a dispute — you can get a full refund. See the <a href="{% url 'marketplace:buyer_protection' %}" class="text-primary hover:underline">Buyer Protection</a> page for the full process.</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">Can I pay a vendor directly outside the platform?</h3>
+      <p class="text-sm text-muted"><strong>No — you should never pay a vendor directly outside KasuMarketplace.</strong> Transactions made off-platform are not covered by Buyer Protection. If you pay outside the platform, we cannot help you if something goes wrong. Always use the official checkout.</p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-dark text-sm mb-1">What payment methods are accepted?</h3>
+      <p class="text-sm text-muted">All payments are processed through Paystack. You can pay with debit cards, bank transfers, and other payment methods supported by Paystack. KasuMarketplace never sees or stores your card details.</p>
+    </div>
+  </div>
+
+  <!-- Selling -->
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-dark text-lg mb-3">Selling on KasuMarketplace</h2>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">How do I become a vendor?</h3>
+      <p class="text-sm text-muted">Sign up as a vendor, complete identity verification (BVN + selfie), set up your store, and optionally verify your student status. Once approved by our team, you can start listing products.</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">How do I receive payments?</h3>
+      <p class="text-sm text-muted">When a buyer confirms receipt, the payment enters a short hold period (24 hours) before becoming available in your wallet. You can then request a payout to your registered bank account via Paystack. Minimum payout is &#8358;500.</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">Does KasuMarketplace charge a commission?</h3>
+      <p class="text-sm text-muted">Currently, KasuMarketplace charges <strong>zero commission</strong> on sales. You receive the full amount from each sale. Future monetization (such as subscription plans or promotional features) may be introduced separately with advance notice.</p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-dark text-sm mb-1">What happens if a buyer opens a dispute?</h3>
+      <p class="text-sm text-muted">If a buyer reports an issue with their order, the payment is held and the dispute is reviewed by our team. You will have the opportunity to respond. The dispute is resolved either by releasing the funds to you or refunding the buyer. See the <a href="{% url 'marketplace:terms' %}" class="text-primary hover:underline">Terms of Service</a> for details.</p>
+    </div>
+  </div>
+
+  <!-- Safety & Reporting -->
+  <div class="bg-card rounded-2xl shadow-card p-5 mb-4">
+    <h2 class="font-display font-bold text-dark text-lg mb-3">Safety & Reporting</h2>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">How do I report a problem with a vendor or product?</h3>
+      <p class="text-sm text-muted">You can report a problem through the <a href="{% url 'marketplace:contact' %}" class="text-primary hover:underline">Contact Us</a> page by selecting "Report a problem" as the subject. For order-specific issues, use the "Report an Issue" button on your order details page to open a dispute directly.</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">What if I receive a counterfeit or fake product?</h3>
+      <p class="text-sm text-muted">Counterfeit goods are prohibited on KasuMarketplace. If you believe you received a counterfeit item, you can: (1) click "Report this product" on the product page to flag it for our team, and (2) open a dispute from your order details page to request a refund. Our team will investigate, and the vendor may face suspension or removal from the platform.</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">How do I report a vendor or a product?</h3>
+      <p class="text-sm text-muted">To report a specific product listing, click "Report this product" on the product page — you can flag it as counterfeit, prohibited, misleading, or other. For order-specific issues, use the "Report an Issue" button on your order details page to open a dispute. For general concerns, use the <a href="{% url 'marketplace:contact' %}" class="text-primary hover:underline">Contact Us</a> page.</p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">How does a dispute work?</h3>
+      <p class="text-sm text-muted">If something goes wrong with an order, you can open a dispute from your order details page. Our team will review the case and may contact both you and the vendor. Funds are held until the dispute is resolved — either released to the vendor or refunded to you. There is no fixed timeline for resolution; it depends on the complexity of the case and vendor responsiveness.</p>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-dark text-sm mb-1">Who handles delivery?</h3>
+      <p class="text-sm text-muted">Delivery is arranged directly between you and the vendor after your order is accepted. The vendor's contact information (phone and WhatsApp) is unlocked once payment is confirmed. You coordinate delivery terms — including location, timing, and any delivery fees — with the vendor directly.</p>
+    </div>
+
+    <div class="mt-4">
+      <h3 class="font-semibold text-dark text-sm mb-1">How do I contact support?</h3>
+      <p class="text-sm text-muted">You can reach us through the <a href="{% url 'marketplace:contact' %}" class="text-primary hover:underline">Contact Us</a> page or email us at <strong>support@kasumarketplace.com.ng</strong>. We aim to respond promptly to all inquiries.</p>
+    </div>
+  </div>
+
+  <p class="text-xs text-muted italic mt-4">
+    Have a question not covered here? <a href="{% url 'marketplace:contact' %}" class="text-primary hover:underline">Contact us</a> and we will be happy to help.
+  </p>
+</div>
+{% endblock %}
