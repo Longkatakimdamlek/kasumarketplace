@@ -1081,6 +1081,14 @@ class ProductForm(forms.ModelForm):
         }
 
 
+    def clean_description(self):
+        description = (self.cleaned_data.get('description') or '').strip()
+        if len(description) < 10:
+            raise forms.ValidationError(
+                'Description must be at least 10 characters long.'
+            )
+        return description
+
     def __init__(self, *args, **kwargs):
         self.vendor = kwargs.pop('vendor', None)
         self.subcategory_id = kwargs.pop('subcategory_id', None)

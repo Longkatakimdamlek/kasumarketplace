@@ -260,7 +260,12 @@ def product_list(request):
         distance = get_distance_to_store(buyer_lat, buyer_lon, product.store)
         product.distance = distance
         featured.append(product)
-    
+
+    # Dedup: exclude featured products from the "All Products" grid so they
+    # don't appear twice on the same page load.
+    featured_ids = {p.id for p in featured}
+    annotated = [p for p in annotated if p.id not in featured_ids]
+
     # ---- Weekly top seller (single store) — used by mobile hero's dedicated slide ----
     # Minimum threshold: 3 successful orders in trailing 7 days to qualify
     week_ago = timezone.now() - timedelta(days=7)

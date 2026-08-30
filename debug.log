@@ -22005,3 +22005,10 @@ UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 
 [INFO] 2026-08-29 12:02:48,313 marketplace.cart get_or_create_cart:34 - get_or_create_cart session_key_mismatch user=20 cart_session=5ixndm5o8o4x0au2eiwv2bp9cbp7w8x5 request_session=yhyu46ioimsrb0tefxrxjkfexy1zdyr8 — updating
 [INFO] 2026-08-29 12:02:49,047 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 52579
 [INFO] 2026-08-29 18:13:44,735 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 19:00:07,327 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\vendors\forms.py changed, reloading.
+[INFO] 2026-08-29 19:00:19,395 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 19:00:19,518 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 19:00:59,120 django.utils.autoreload trigger_reload:265 - C:\Users\user\Desktop\kasuMarketplace\apps\marketplace\views.py changed, reloading.
+[INFO] 2026-08-29 19:01:04,058 django.utils.autoreload run_with_reloader:667 - Watching for file changes with StatReloader
+[INFO] 2026-08-29 19:01:04,136 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 19:25:03,663 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
