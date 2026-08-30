@@ -21986,3 +21986,22 @@ UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 
 [INFO] 2026-08-29 11:53:14,923 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
 [INFO] 2026-08-29 11:54:09,548 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
 [INFO] 2026-08-29 11:54:24,263 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
+[INFO] 2026-08-29 12:00:32,833 django.server log_message:213 - "GET /vendors/profile/ HTTP/1.1" 302 0
+[INFO] 2026-08-29 12:00:33,255 django.server log_message:213 - "GET /login/?next=/vendors/profile/ HTTP/1.1" 200 12257
+[INFO] 2026-08-29 12:00:33,662 django.server log_message:213 - "GET /static/marketplace/css/global-ui.css HTTP/1.1" 200 3232
+[INFO] 2026-08-29 12:00:33,726 django.server log_message:213 - "GET /static/images/kasu_logo1.png HTTP/1.1" 200 26848
+[INFO] 2026-08-29 12:00:36,413 django.server log_message:213 - "GET /static/marketplace/js/global-ui.js HTTP/1.1" 200 2983
+[INFO] 2026-08-29 12:00:37,044 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 200 270
+[INFO] 2026-08-29 12:00:46,933 django.server log_message:213 - "GET / HTTP/1.1" 200 184029
+[INFO] 2026-08-29 12:01:07,053 django.server log_message:213 - "GET /buyer-protection/ HTTP/1.1" 200 66002
+[INFO] 2026-08-29 12:01:38,001 django.server log_message:213 - "GET /help/ HTTP/1.1" 200 74654
+[INFO] 2026-08-29 12:01:59,905 django.server log_message:213 - "GET /contact/ HTTP/1.1" 200 69849
+[INFO] 2026-08-29 12:02:15,701 django.server log_message:213 - "GET /signup/vendor/ HTTP/1.1" 200 12479
+[INFO] 2026-08-29 12:02:17,432 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-29 12:02:20,175 django.server log_message:213 - "GET /login/?next=/contact/ HTTP/1.1" 200 12077
+[INFO] 2026-08-29 12:02:21,287 django.server log_message:213 - "GET /site.webmanifest HTTP/1.1" 304 0
+[INFO] 2026-08-29 12:02:48,146 django.server log_message:213 - "POST /login/?next=/contact/ HTTP/1.1" 302 0
+[INFO] 2026-08-29 12:02:48,211 django.server log_message:213 - "GET /contact/ HTTP/1.1" 302 0
+[INFO] 2026-08-29 12:02:48,313 marketplace.cart get_or_create_cart:34 - get_or_create_cart session_key_mismatch user=20 cart_session=5ixndm5o8o4x0au2eiwv2bp9cbp7w8x5 request_session=yhyu46ioimsrb0tefxrxjkfexy1zdyr8 — updating
+[INFO] 2026-08-29 12:02:49,047 django.server log_message:213 - "GET /vendors/ HTTP/1.1" 200 52579
+[INFO] 2026-08-29 18:13:44,735 apps.vendors.services.dojah __init__:47 - 🧪 Dojah Service running in SANDBOX mode
