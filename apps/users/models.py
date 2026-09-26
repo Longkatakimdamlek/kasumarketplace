@@ -185,14 +185,6 @@ class BuyerProfile(models.Model):
     # Primary phone number
     phone = models.CharField(max_length=20, blank=True)
 
-    # Default delivery address (pre-filled at checkout, editable)
-    default_address = models.TextField(
-        blank=True,
-        help_text="Default delivery address for orders"
-    )
-    city = models.CharField(max_length=100, blank=True)
-    state = models.CharField(max_length=100, blank=True)
-
     # Location coordinates (set via browser geolocation)
     # Used for Haversine distance calculation to stores
     latitude = models.DecimalField(

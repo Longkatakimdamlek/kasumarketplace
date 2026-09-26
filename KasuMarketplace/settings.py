@@ -113,13 +113,14 @@ INSTALLED_APPS = [
     'apps.users.apps.UsersConfig',
     'apps.vendors.apps.VendorsConfig',
     'apps.marketplace.apps.MarketplaceConfig',
+    'apps.quicksell.apps.QuickSellConfig',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    # capture session key before login rotates it so cart merging works
+    # capture session key before login rotates it so wishlist merging works
     'apps.marketplace.middleware.PreserveSessionKeyMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -154,10 +155,10 @@ TEMPLATES = [
                 'apps.users.context_processors.user_role_context',
                 'apps.users.context_processors.site_settings',
                 'apps.users.context_processors.otp_settings',
-                'apps.marketplace.context_processors.cart_context',
                 'apps.marketplace.context_processors.categories_processor',
                 'apps.marketplace.context_processors.wishlist_count_processor',
                 'apps.marketplace.context_processors.event_popup_processor',
+                'apps.marketplace.context_processors.buyer_notification_processor',
                 'apps.vendors.context_processors.vendor_context',
             ],
         },
@@ -276,6 +277,9 @@ ACCOUNT_SESSION_REMEMBER = True
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email'],
+        # Also fetch the profile image from Google's user-info endpoint when
+        # it is not included in the ID token.
+        'FETCH_USERINFO': True,
         'AUTH_PARAMS': {
             'access_type': 'online',
             'prompt': 'select_account'
@@ -343,6 +347,7 @@ RECAPTCHA_PRIVATE_KEY = os.getenv("RECAPTCHA_PRIVATE_KEY")
 PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', '')
 PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', '')
 PAYSTACK_BASE_URL = os.environ.get('PAYSTACK_BASE_URL', 'https://api.paystack.co')
+PAYSTACK_SUBSCRIPTION_PLAN_CODE = os.environ.get('PAYSTACK_SUBSCRIPTION_PLAN_CODE', '')  # TODO: Remedy — set this in .env
 
 
 REST_FRAMEWORK = {
@@ -426,6 +431,11 @@ LOGGING = {
         'level': 'DEBUG',
     },
     'loggers': {
+        'allauth.socialaccount': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
         'django': {
             'handlers': ['console', 'file'],
             'level': 'INFO',

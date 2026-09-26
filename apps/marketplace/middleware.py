@@ -8,8 +8,8 @@ class PreserveSessionKeyMiddleware(MiddlewareMixin):
 
     Django may rotate/flush the session during login, which makes the
     previous anonymous session key unavailable to post-login signals.  By
-    capturing the value here we can reference it in our `merge_cart_on_login`
-    signal handler and therefore correctly migrate the anonymous cart.
+    capturing the value here we can reference it in our `merge_wishlist_on_login`
+    signal handler and therefore correctly migrate the anonymous wishlist.
     """
 
     def process_request(self, request):

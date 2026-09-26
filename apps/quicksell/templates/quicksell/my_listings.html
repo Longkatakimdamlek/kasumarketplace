@@ -1,0 +1,167 @@
+{% extends 'marketplace/base.html' %}
+{% load currency_filters %}
+
+{% block title %}My Products - KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white min-h-screen md:my-8 md:rounded-2xl md:shadow-card md:border md:border-border">
+
+    <!-- Header -->
+    <div class="sticky top-0 z-30 bg-white border-b border-border/60">
+        <div class="flex items-center px-4 h-14">
+            <a href="{% url 'marketplace:product_list' %}"
+               class="w-10 h-10 flex items-center justify-center -ml-2 rounded-full hover:bg-surface transition-colors"
+               aria-label="Back">
+                <svg class="w-5 h-5 text-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <h1 class="flex-1 text-center text-base font-bold text-dark pr-10">My Products</h1>
+        </div>
+
+        <!-- Status Filter Tabs -->
+        <div class="flex px-4 gap-1 pb-3">
+            <a href="?status=all"
+               class="px-4 py-2 rounded-full text-sm font-semibold transition-all {% if current_filter == 'all' %}bg-primary text-white{% else %}bg-surface text-muted hover:bg-border/50{% endif %}">
+                All
+            </a>
+            <a href="?status=active"
+               class="px-4 py-2 rounded-full text-sm font-semibold transition-all {% if current_filter == 'active' %}bg-primary text-white{% else %}bg-surface text-muted hover:bg-border/50{% endif %}">
+                Active
+            </a>
+            <a href="?status=expired"
+               class="px-4 py-2 rounded-full text-sm font-semibold transition-all {% if current_filter == 'expired' %}bg-primary text-white{% else %}bg-surface text-muted hover:bg-border/50{% endif %}">
+                Expired
+            </a>
+        </div>
+    </div>
+
+    <!-- Listings -->
+    <div class="px-4 py-4">
+        {% if listings %}
+        <div class="space-y-3">
+            {% for listing in listings %}
+            <div class="bg-surface rounded-2xl overflow-hidden" x-data="{ showDelete: false }">
+                <div class="flex gap-3 p-3">
+                    <!-- Image -->
+                    <a href="{% url 'quicksell:detail' slug=listing.slug %}" class="shrink-0 w-20 h-20 rounded-xl overflow-hidden bg-border/30">
+                        {% with primary_img=listing.images.all|first %}
+                        {% if primary_img %}
+                        <img src="{{ primary_img.image.url }}" alt="{{ listing.title }}" class="w-full h-full object-cover">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-muted/30" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                    </a>
+
+                    <!-- Info -->
+                    <div class="flex-1 min-w-0">
+                        <a href="{% url 'quicksell:detail' slug=listing.slug %}" class="block">
+                            <p class="text-sm font-bold text-dark truncate">{{ listing.title }}</p>
+                        </a>
+                        <p class="text-base font-bold text-accent mt-0.5">{{ listing.price|naira }}</p>
+                        <div class="flex items-center gap-2 mt-1">
+                            {% if listing.is_active %}
+                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                Active
+                            </span>
+                            <span class="text-xs text-muted">&middot; {{ listing.days_remaining }} day{{ listing.days_remaining|pluralize }} left</span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-muted">
+                                <span class="w-1.5 h-1.5 rounded-full bg-muted"></span>
+                                Expired
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex border-t border-border/60">
+                    <a href="{% url 'quicksell:detail' slug=listing.slug %}"
+                       class="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-dark hover:bg-border/30 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        View
+                    </a>
+                    <div class="w-px bg-border/60"></div>
+                    <a href="{% url 'quicksell:edit' slug=listing.slug %}"
+                       class="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-dark hover:bg-border/30 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Edit
+                    </a>
+                    <div class="w-px bg-border/60"></div>
+                    <button @click="showDelete = true"
+                            class="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Delete
+                    </button>
+                </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div x-show="showDelete" x-cloak
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0">
+                    <div class="absolute inset-0 bg-black/50" @click="showDelete = false"></div>
+                    <div class="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 z-10"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100">
+                        <h3 class="text-lg font-bold text-dark mb-2">Delete this product?</h3>
+                        <p class="text-sm text-muted mb-6">Are you sure you want to delete "{{ listing.title }}"?</p>
+                        <div class="flex gap-3">
+                            <button @click="showDelete = false"
+                                    class="flex-1 py-3 px-4 border border-border rounded-xl text-sm font-semibold text-dark hover:bg-surface transition-colors">
+                                Cancel
+                            </button>
+                            <form method="post" action="{% url 'quicksell:delete' slug=listing.slug %}" class="flex-1">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="w-full py-3 px-4 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-16">
+            <div class="w-16 h-16 mx-auto mb-4 bg-surface rounded-2xl flex items-center justify-center">
+                <svg class="w-8 h-8 text-muted/40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m6 4.125l2.25 2.25m0 0l2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-dark mb-2">No products yet</h3>
+            <p class="text-sm text-muted mb-6">Start selling by creating your first listing.</p>
+            <a href="{% url 'quicksell:create' %}"
+               class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                </svg>
+                Create Product
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

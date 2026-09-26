@@ -210,11 +210,6 @@ class LoginView(View):
         if form.is_valid():
             user = form.get_user()
 
-            # merge any anonymous cart before the session is flushed by login
-            from apps.marketplace.services.cart_service import merge_session_cart_to_user
-            old_key = request.session.session_key
-            merge_session_cart_to_user(old_key, user)
-            
             # Login user (explicit backend required when multiple auth backends are configured)
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             # clear any leftover signup hint so normal login can't influence anything

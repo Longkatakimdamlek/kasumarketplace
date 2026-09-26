@@ -11,12 +11,25 @@
   </div>
 
   {% if annotated_products %}
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 items-start">
     {% for item in annotated_products %}
       {% include 'marketplace/partials/product_card.html' with item=item %}
     {% endfor %}
   </div>
-  {% else %}
+  {% endif %}
+
+  {% if quicksell_items %}
+  <div class="mt-8">
+    <h2 class="font-display font-bold text-base text-dark mb-3">⚡ Quick Sell Listings</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 items-start">
+      {% for item in quicksell_items %}
+        {% include 'marketplace/partials/quicksell_card.html' with item=item %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not annotated_products and not quicksell_items %}
   <div class="flex flex-col items-center justify-center py-16 text-center">
     <p class="font-semibold text-dark mb-1">No new products yet</p>
     <p class="text-sm text-muted mb-4">Check back soon - new listings show up here first.</p>

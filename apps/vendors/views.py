@@ -1,31 +1,20 @@
 from django.http import JsonResponse
-from .decorators import vendor_required
 from decimal import Decimal, InvalidOperation
 
 """
 Vendor App Views
-All views for vendor dashboard, verification, products, orders, wallet, etc.
-
-CHANGED IN THIS VERSION:
-- DELETED: nin_entry, nin_otp, nin_success, bvn_otp, bvn_success
-- REPLACED: bvn_entry -> bvn_verification (single screen: BVN number +
-  live selfie capture, one submit, one Dojah call, 3-tier outcome)
-- verification_center rewritten for the 4-step flow (was 5)
-- payment_method, store_setup, pending_review: small reference updates
-  for the new bank_status choices (not_started/verified/pending_review/failed)
-
-Everything else (dashboard, products, orders, wallet, store settings,
-category change requests, notifications, AJAX endpoints) is UNCHANGED.
+All views for vendor dashboard, verification, products, store, notifications, etc.
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.http import Http404
-from django.db.models import Sum, Count, Q
-from apps.marketplace.models import Review, SubOrder, SubOrderItem, Wishlist
+from django.db.models import Sum, Count, Q, Avg
+from apps.marketplace.models import Review, Wishlist
 from apps.marketplace.services.distance_service import get_distance_to_store
 from django.utils import timezone
 from django.db.models import F
@@ -38,50 +27,27 @@ import logging
 
 from .models import (
     VendorProfile, Store, Product, ProductImage,
-    Order, OrderItem, Wallet, Transaction,
     MainCategory, SubCategory, SubCategoryAttribute, CategoryChangeRequest,
-    Notification, VerificationAttempt
+    Notification, VerificationAttempt, Subscription
 )
 
-# API: Get Paystack banks
-@vendor_required
-def api_get_banks(request):
-    """Return Paystack bank list as JSON for dropdown."""
-    from apps.vendors.services.paystack import paystack_service
-    success, banks = paystack_service.get_banks()
-    if success:
-        return JsonResponse({'banks': banks})
-    return JsonResponse({'banks': []})
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse, HttpResponse
-from django.http import Http404
-from django.db.models import Sum, Count, Q
-from apps.marketplace.services.distance_service import get_distance_to_store
-from django.utils import timezone
-from django.db.models import F
-from django.core.paginator import Paginator
-from django.urls import reverse
-from decimal import Decimal
-from datetime import datetime, date, timedelta
-import logging
-
-from .forms import (
-    BVNEntryForm, BVNSelfieForm,
-    StudentVerificationForm, StoreSetupForm, StoreSettingsForm,
-    ProductForm, ProductImageFormSet, OrderStatusUpdateForm,
-    CategoryChangeRequestForm
-)
 from .decorators import (
     vendor_required, vendor_verified_required,
-    vendor_owns_product, vendor_owns_order,
+    vendor_owns_product,
     rate_limit_verification
 )
-from .services import dojah_service, paystack_service, notification_service
+
+from .services import dojah_service, notification_service, email_name
 from .services.utils import generate_reference, calculate_commission
-
-
+from .forms import (
+    BVNEntryForm,
+    BVNSelfieForm,
+    CategoryChangeRequestForm,
+    StoreSettingsForm,
+    StoreSetupForm,
+    ProductForm,
+    ProductImageFormSet,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -118,8 +84,8 @@ def _bvn_verification_guard(request, vendor):
         messages.info(request, 'Identity already verified')
         return redirect('vendors:verification_center')
     if vendor.bank_status == 'pending_review':
-        messages.info(request, 'Your verification is pending admin review.')
-        return redirect('vendors:pending_review')
+        messages.info(request, 'Your verification is pending review.')
+        return redirect('vendors:verification_center')
     failed_attempts_count = VerificationAttempt.objects.filter(
         vendor=vendor, attempt_type='bvn', status='failed'
     ).count()
@@ -135,11 +101,9 @@ def _bvn_verification_guard(request, vendor):
     return None
 
 
-def _store_bvn_session(request, bvn_number, bank_name, bank_code=''):
+def _store_bvn_session(request, bvn_number):
     request.session[BVN_SESSION_KEY] = {
         'bvn_number': bvn_number,
-        'bank_name': bank_name,
-        'bank_code': bank_code,
         'started_at': timezone.now().isoformat(),
     }
     request.session.modified = True
@@ -170,9 +134,9 @@ def _clear_bvn_session(request):
         request.session.modified = True
 
 
-def _process_bvn_with_selfie(request, vendor, bvn_number, bank_name, selfie_data_uri):
+def _process_bvn_with_selfie(request, vendor, bvn_number, selfie_data_uri):
     """
-    Run Dojah BVN+selfie verification and persist vendor/wallet state.
+    Run Dojah BVN+selfie verification and persist vendor identity state.
     Returns a redirect response.
     """
     selfie_base64 = (
@@ -262,29 +226,6 @@ def _process_bvn_with_selfie(request, vendor, bvn_number, bank_name, selfie_data
         outcome_message = 'Identity verified successfully!'
         redirect_target = 'vendors:verification_success'
 
-    elif confidence >= review_threshold:
-        vendor.bank_status = 'pending_review'
-        outcome_message = (
-            "We're reviewing your verification — this usually takes 24-48 hours. "
-            "We'll notify you once it's complete."
-        )
-        redirect_target = 'vendors:pending_review'
-
-        try:
-            import base64 as _b64
-            import cloudinary.uploader as _cu
-            selfie_bytes = _b64.b64decode(selfie_base64)
-            upload_result = _cu.upload(
-                selfie_bytes,
-                folder='vendor_review_selfies',
-                public_id=f'review_{vendor.vendor_id}_{int(timezone.now().timestamp())}',
-                resource_type='image',
-                format='jpg',
-            )
-            vendor.identity_selfie = upload_result['public_id']
-        except Exception as selfie_upload_err:
-            logger.error(f"Failed to store review selfie for vendor {vendor.pk}: {selfie_upload_err}")
-
     else:
         vendor.bank_status = 'failed'
         outcome_message = (
@@ -298,12 +239,6 @@ def _process_bvn_with_selfie(request, vendor, bvn_number, bank_name, selfie_data
     _clear_bvn_session(request)
 
     if vendor.bank_status == 'verified':
-        wallet = vendor.wallet
-        wallet.account_holder_name = vendor.full_name
-        wallet.bank_name = bank_name
-        wallet.is_verified = True
-        wallet.verified_at = timezone.now()
-        wallet.save()
         try:
             notification_service.send_bvn_verified(vendor)
         except Exception:
@@ -341,6 +276,22 @@ def profile_view(request):
 # DASHBOARD
 # ==========================================
 
+def _get_greeting():
+    """Return a time-appropriate greeting string."""
+    hour = timezone.now().hour
+    if hour < 12:
+        return 'Good morning'
+    elif hour < 17:
+        return 'Good afternoon'
+    else:
+        return 'Good evening'
+
+
+def _get_display_name(vendor) -> str:
+    """Display name = the email name (part before @). Never pulls from the profile."""
+    return email_name(vendor)
+
+
 @vendor_required
 def dashboard(request):
     """
@@ -354,35 +305,45 @@ def dashboard(request):
     except Store.DoesNotExist:
         store = None
 
-    # Get stats
-    # Query SubOrders through the vendor's store
-    suborders = SubOrder.objects.filter(store=store) if store else SubOrder.objects.none()
+    # Published products queryset (reused below)
+    published_products = vendor.products.filter(status='published')
 
-    # Compute total sales from confirmed SubOrders
-    total_sales = 0
+    # Subscription status
+    subscription = None
+    try:
+        subscription = vendor.subscription
+    except Subscription.DoesNotExist:
+        pass
+
+    # Aggregate stats
+    total_products = published_products.count()
+    total_views = published_products.aggregate(s=Sum('views_count'))['s'] or 0
+    total_wishlists = Wishlist.objects.filter(
+        product__vendor=vendor,
+        product__status='published',
+    ).count()
     if store:
-        total_sales = SubOrder.objects.filter(
-            store=store,
-            status='CONFIRMED'
-        ).aggregate(total=Sum('subtotal'))['total'] or 0
+        avg_rating = store.average_rating
+    else:
+        avg_rating = published_products.aggregate(
+            avg=Avg('average_rating')
+        )['avg'] or 0
 
     context = {
         'vendor': vendor,
         'store': store,
-        'total_products': vendor.products.filter(status='published').count(),
-        'orders_total': suborders.count(),
-        'orders_pending': suborders.filter(status='PENDING_VENDOR').count(),
-        'orders_confirmed': suborders.filter(status='ACCEPTED').count(),
-        'orders_cancelled': suborders.filter(status__in=['CANCELLED', 'REJECTED']).count(),
-        'total_sales': total_sales,
-        'wallet_balance': vendor.wallet.balance if hasattr(vendor, 'wallet') else 0,
-
-        # Recent orders
-        'recent_orders': suborders.order_by('-id')[:5],
+        'total_products': total_products,
+        'total_views': total_views,
+        'total_wishlists': total_wishlists,
+        'avg_rating': round(float(avg_rating), 1),
+        'subscription': subscription,
+        'greeting': _get_greeting(),
+        'display_name': _get_display_name(vendor),
+        'today': timezone.localdate(),
+        'storefront_url': store.get_absolute_url() if store else reverse('vendors:products_list'),
 
         # Low stock products
-        'low_stock_products': vendor.products.filter(
-            status='published',
+        'low_stock_products': published_products.filter(
             track_inventory=True,
             stock_quantity__lte=5
         )[:5],
@@ -399,6 +360,64 @@ def dashboard(request):
     return render(request, 'vendors/dashboard.html', context)
 
 
+@vendor_required
+def vendor_wishlist(request):
+    """
+    Dedicated wishlist page showing vendor's products that have been wishlisted.
+    Displays aggregate counts only — no buyer-identifying information.
+    """
+    vendor = request.user.vendorprofile
+
+    products_with_wishlists = (
+        Product.objects
+        .filter(vendor=vendor, status='published')
+        .annotate(wishlist_count=Count('wishlisted_by'))
+        .filter(wishlist_count__gt=0)
+        .order_by('-wishlist_count')
+    )
+
+    context = {
+        'vendor': vendor,
+        'products': products_with_wishlists,
+        'total_wishlists': Wishlist.objects.filter(
+            product__vendor=vendor,
+            product__status='published',
+        ).count(),
+        'hide_verification_badge': True,
+    }
+
+    return render(request, 'vendors/wishlist.html', context)
+
+
+@vendor_required
+def vendor_reviews(request):
+    """
+    Dedicated reviews page showing all reviews for the vendor's published products.
+    Displays reviewer display name, initial-based avatar, rating, comment, date, and product.
+    """
+    vendor = request.user.vendorprofile
+
+    reviews = (
+        Review.objects
+        .filter(product__vendor=vendor, product__status='published')
+        .select_related('user', 'product', 'product__store')
+        .order_by('-created_at')
+    )
+
+    total_reviews = reviews.count()
+    avg_rating = reviews.aggregate(avg=Avg('rating'))['avg'] or 0
+
+    context = {
+        'vendor': vendor,
+        'reviews': reviews,
+        'total_reviews': total_reviews,
+        'avg_rating': round(float(avg_rating), 1),
+        'hide_verification_badge': True,
+    }
+
+    return render(request, 'vendors/reviews.html', context)
+
+
 # ==========================================
 # VERIFICATION VIEWS
 # ==========================================
@@ -407,7 +426,7 @@ def dashboard(request):
 def verification_center(request):
     """
     Verification center - shows progress and next steps.
-    4 steps: BVN+selfie -> Store setup -> Student (optional) -> Admin review.
+    2 steps: BVN+selfie -> Store setup.
     """
     vendor = request.user.vendorprofile
 
@@ -430,36 +449,26 @@ def verification_center(request):
     # Lock logic: each step after BVN is locked until the prior step is done.
     bvn_done = vendor.bank_status == 'verified'
     store_done = vendor.store_setup_completed or vendor.store_setup_skipped
-    student_done = vendor.student_status in ('verified', 'not_applicable')
 
     step1_status = bvn_badge_status
-    step2_status = 'completed' if store_done else ('locked' if not bvn_done else 'not_started')
-    step3_status = (
-        'completed' if vendor.student_status == 'verified' else
-        'pending' if vendor.student_status == 'pending' else
-        ('locked' if not store_done else 'not_started')
-    )
-    step4_status = (
-        'completed' if vendor.verification_status == 'approved' else
-        'failed' if vendor.verification_status == 'rejected' else
-        ('locked' if not (bvn_done and store_done) else 'pending')
-    )
+    step2_status = 'completed' if store_done else 'not_started'
 
     steps = [
         {
             'number': 1,
             'name': 'Verify Your Identity',
             'title': 'Verify Your Identity',
-            'description': 'Enter your BVN and bank details, then take a live selfie to verify your identity and link your bank account for payouts.',
+            'description': 'Enter your BVN, then take a live selfie to verify your identity.',
             'status': step1_status,
             'status_label': bvn_status_label,
             'completed': bvn_done,
             'completed_at': vendor.bvn_verified_at,
             'note': (
-                "Your verification is awaiting manual admin review."
+                "Your verification is awaiting manual review."
                 if vendor.bank_status == 'pending_review' else None
             ),
             'url': 'vendors:bvn_verification',
+            'skip_url': 'vendors:store_setup',
             'verification_type': 'bvn',
             'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
@@ -471,53 +480,13 @@ def verification_center(request):
             'title': 'Set Up Your Store',
             'description': 'Add your store name, branding, contact details, and pick a category for your products.',
             'status': step2_status,
-            'status_label': 'Completed' if store_done else ('Locked' if not bvn_done else 'Not Started'),
+            'status_label': 'Completed' if store_done else 'Not Started',
             'completed': store_done,
             'completed_at': None,
             'note': None,
             'url': 'vendors:store_setup',
             'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                       </svg>'''
-        },
-        {
-            'number': 3,
-            'name': 'Verify Student Status (optional)',
-            'title': 'Verify Student Status (optional)',
-            'description': 'Optional badge for Kaduna State University students and alumni. Boosts buyer trust on your storefront.',
-            'status': step3_status,
-            'status_label': (
-                'Verified' if vendor.student_status == 'verified' else
-                'Pending' if vendor.student_status == 'pending' else
-                ('Locked' if not store_done else 'Not Started')
-            ),
-            'completed': vendor.student_status == 'verified',
-            'completed_at': vendor.student_verified_at,
-            'note': None,
-            'url': 'vendors:student_verification',
-            'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path d="M12 14l9-5-9-5-9 5 9 5z"/>
-                         <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/>
-                       </svg>'''
-        },
-        {
-            'number': 4,
-            'name': 'Pending Admin Review',
-            'title': 'Pending Admin Review',
-            'description': 'Our team does a final review of your account before you can start selling.',
-            'status': step4_status,
-            'status_label': (
-                'Approved' if vendor.verification_status == 'approved' else
-                'Rejected' if vendor.verification_status == 'rejected' else
-                ('Locked' if not (bvn_done and store_done) else 'Pending')
-            ),
-            'completed': vendor.verification_status == 'approved',
-            'completed_at': vendor.approved_at,
-            'note': None,
-            'url': 'vendors:pending_review',
-            'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                        </svg>'''
         }
     ]
@@ -538,7 +507,7 @@ def verification_center(request):
 @rate_limit_verification
 def bvn_verification(request):
     """
-    Page 1 of 2: BVN number, bank selection, and consent.
+    Page 1 of 2: BVN number and consent.
     Stores details in session and sends vendor to the selfie capture page.
     """
     vendor = request.user.vendorprofile
@@ -556,8 +525,6 @@ def bvn_verification(request):
             _store_bvn_session(
                 request,
                 form.cleaned_data['bvn_number'],
-                form.cleaned_data['bank_name'],
-                request.POST.get('bank_code', '').strip(),
             )
             return redirect('vendors:bvn_selfie_capture')
         messages.error(request, 'Please correct the errors below.')
@@ -576,7 +543,7 @@ def bvn_verification(request):
 def bvn_selfie_capture(request):
     """
     Page 2 of 2: MediaPipe live selfie capture with auto-submit to Dojah.
-    BVN and bank are read from session (set on page 1).
+    BVN is read from session (set on page 1).
     """
     vendor = request.user.vendorprofile
 
@@ -586,7 +553,7 @@ def bvn_selfie_capture(request):
 
     session_data = _get_bvn_session(request)
     if not session_data:
-        messages.warning(request, 'Please enter your BVN and bank details first.')
+        messages.warning(request, 'Please enter your BVN first.')
         return redirect('vendors:bvn_verification')
 
     if request.method == 'POST':
@@ -596,7 +563,6 @@ def bvn_selfie_capture(request):
                 request,
                 vendor,
                 session_data['bvn_number'],
-                session_data['bank_name'],
                 form.cleaned_data['selfie_image'],
             )
         messages.error(request, 'Selfie capture failed. Please try again.')
@@ -607,7 +573,6 @@ def bvn_selfie_capture(request):
     return render(request, 'vendors/verification/bvn_selfie_capture.html', {
         'form': form,
         'vendor': vendor,
-        'bank_name': session_data['bank_name'],
         'bvn_masked': f'***{bvn_number[-4:]}',
         'hide_verification_badge': True,
     })
@@ -616,133 +581,38 @@ def bvn_selfie_capture(request):
 @vendor_required
 def store_setup(request):
     """
-    Step 2: Store Setup (can be skipped)
+    Store creation — minimal setup page.
     """
     vendor = request.user.vendorprofile
 
-    # Check prerequisites - must have BVN+selfie verified
-    if vendor.bank_status != 'verified':
-        messages.warning(request, 'Please complete identity verification first')
-        return redirect('vendors:verification_center')
-
-    # Get or create store
     try:
         store = vendor.store
-        is_new = False
+        return redirect('vendors:store_settings')
     except Store.DoesNotExist:
         store = None
-        is_new = True
 
     if request.method == 'POST':
-        # Check for skip action
-        if 'skip' in request.POST:
-            vendor.store_setup_skipped = True
-            vendor.save()
-            messages.info(request, 'Store setup skipped. You can complete it later.')
-            return redirect('vendors:verification_center')
-
-        form = StoreSetupForm(request.POST, request.FILES, instance=store, vendor=vendor)
+        form = StoreSetupForm(request.POST, instance=store, vendor=vendor)
 
         if form.is_valid():
             store = form.save()
             vendor.store_setup_completed = True
             vendor.save()
 
-            messages.success(request, 'Store setup complete! ✅')
-            return redirect('vendors:verification_center')
+            messages.success(request, 'Store created successfully.')
+            return redirect('vendors:store_settings')
     else:
         form = StoreSetupForm(instance=store, vendor=vendor)
-        # Prefill store phone with BVN-sourced phone as a starting suggestion
-        # (vendor can freely overwrite - see masked-phone design decision)
-        if is_new and vendor.phone:
+        if vendor.phone:
             form.initial['phone'] = vendor.phone
 
     context = {
         'form': form,
         'vendor': vendor,
-        'graduation_years': range(2024, 2031),
-        'is_new': is_new,
-        'categories': MainCategory.objects.filter(is_active=True).order_by('sort_order'),
-        'store': store,
         'hide_verification_badge': True,
     }
 
     return render(request, 'vendors/verification/store_setup.html', context)
-
-
-@vendor_required
-def student_verification(request):
-    """
-    Step 3: Student & Alumni Verification (Optional)
-    Exclusive for Kaduna State University (KASU) community
-    """
-    vendor = request.user.vendorprofile
-    current_year = datetime.now().year
-
-    if request.method == 'POST':
-        form = StudentVerificationForm(request.POST, request.FILES, instance=vendor)
-
-        if form.is_valid():
-            vendor = form.save(commit=False)
-
-            # Force KASU as institution (hardcoded)
-            vendor.institution = "Kaduna State University (KASU)"
-
-            # Set status to pending for admin review
-            vendor.student_status = 'pending'
-
-            vendor.save()
-
-            messages.success(
-                request,
-                '✅ Student/Alumni verification submitted! We\'ll review your documents within 24-48 hours and notify you via email.'
-            )
-            return redirect('vendors:verification_center')
-        else:
-            messages.error(request, '❌ Please correct the errors below.')
-    else:
-        form = StudentVerificationForm(instance=vendor)
-
-    context = {
-        'form': form,
-        'vendor': vendor,
-        'graduation_years': range(current_year - 5, current_year + 8),
-        'hide_verification_badge': True,
-    }
-
-    return render(request, 'vendors/verification/student_verification.html', context)
-
-
-@vendor_required
-def pending_review(request):
-    """
-    Step 4: Waiting for Admin Review
-    Shown both for the overall vendor approval AND for vendors whose
-    BVN+selfie landed in the 75-90% confidence review band.
-    """
-    vendor = request.user.vendorprofile
-
-    # If already approved
-    if vendor.verification_status == 'approved':
-        messages.success(request, "You're already verified!")
-        return redirect('vendors:dashboard')
-
-    # Allow access if either the BVN step or the overall application is
-    # pending review - don't gate this page behind can_sell, since a
-    # vendor in bank_status='pending_review' hasn't reached can_sell yet
-    # but still needs somewhere to land after submitting.
-    if vendor.bank_status not in ('verified', 'pending_review'):
-        messages.warning(request, 'Please complete identity verification first')
-        return redirect('vendors:verification_center')
-
-    context = {
-        'vendor': vendor,
-        'submitted_at': vendor.bvn_verified_at,
-        'estimated_review_time': '24-48 hours',
-        'hide_verification_badge': True,
-    }
-
-    return render(request, 'vendors/verification/pending_review.html', context)
 
 
 @vendor_required
@@ -999,11 +869,6 @@ def product_detail(request, slug):
     context = {
         'product': product,
         'vendor': vendor,
-        'total_orders': OrderItem.objects.filter(product=product).count(),
-        'total_revenue': OrderItem.objects.filter(
-            product=product,
-            order__status='delivered'
-        ).aggregate(total=Sum('total'))['total'] or 0,
         'hide_verification_badge': True,
     }
 
@@ -1030,7 +895,7 @@ def product_detail_public(request, store_slug, product_slug):
         request.user.vendorprofile == store.vendor
     )
 
-    if not store.is_published and not is_owner:
+    if not store.is_publicly_visible and not is_owner:
         raise Http404("No Store matches the given query.")
 
     product_qs = Product.objects.filter(slug=product_slug, store=store)
@@ -1041,6 +906,43 @@ def product_detail_public(request, store_slug, product_slug):
     product.views_count = F('views_count') + 1
     product.save(update_fields=['views_count'])
     product.refresh_from_db()
+
+    try:
+        from apps.marketplace.models import ProductView
+        user = request.user if request.user.is_authenticated else None
+        session_key = ''
+        if not user:
+            if not request.session.session_key:
+                request.session.create()
+            session_key = request.session.session_key
+        if not is_owner:
+            ProductView.objects.create(
+                user=user,
+                session_key=session_key,
+                product=product,
+                store=store,
+            )
+    except Exception:
+        logger.exception("Failed to create ProductView")
+
+    VIEW_MILESTONES = {100, 500, 1000, 5000, 10000}
+    if product.views_count in VIEW_MILESTONES:
+        try:
+            from apps.vendors.services.notification_dispatch import create_notification
+            create_notification(
+                user=store.vendor.user,
+                notification_type='system',
+                title=f'Product View Milestone — {product.views_count:,} Views! 📊',
+                message=(
+                    f'Your product "{product.title}" has reached '
+                    f'{product.views_count:,} views. Great job!'
+                ),
+                link=f'/vendors/products/{product.slug}/',
+                in_app_only=True,
+                vendor=store.vendor,
+            )
+        except Exception:
+            logger.exception("Failed to send view milestone notification")
 
     attributes = SubCategoryAttribute.objects.filter(
         subcategory=product.subcategory,
@@ -1067,28 +969,33 @@ def product_detail_public(request, store_slug, product_slug):
     if request.user.is_authenticated and not is_owner:
         user_review = reviews.filter(user=request.user).first()
         if not user_review:
-            can_review = Review.user_has_purchased(request.user, product)
+            can_review = True
 
     is_wishlisted = False
-    if request.user.is_authenticated and not is_owner:
-        is_wishlisted = Wishlist.objects.filter(
-            user=request.user, product=product
-        ).exists()
+    if not is_owner:
+        if request.user.is_authenticated:
+            is_wishlisted = Wishlist.objects.filter(
+                user=request.user, product=product
+            ).exists()
+        else:
+            # Check session-based guest wishlist
+            session_key = request.session.session_key
+            if session_key:
+                is_wishlisted = Wishlist.objects.filter(
+                    session_key=session_key, product=product
+                ).exists()
 
-    related_products = Product.objects.filter(
+    related_products = Product.objects.publicly_visible().filter(
         subcategory=product.subcategory,
-        status='published',
-        store__is_published=True,
-    ).exclude(pk=product.pk).select_related('store').prefetch_related('images')[:4]
+    ).exclude(pk=product.pk)[:4]
 
     if related_products.count() < 4:
         extra_needed = 4 - related_products.count()
-        extra = Product.objects.filter(
+        extra = Product.objects.publicly_visible().filter(
             store=store,
-            status='published',
         ).exclude(pk=product.pk).exclude(
             pk__in=[related.pk for related in related_products]
-        ).select_related('store').prefetch_related('images')[:extra_needed]
+        )[:extra_needed]
         related_products = list(related_products) + list(extra)
 
     context = {
@@ -1127,15 +1034,6 @@ def submit_review(request, store_slug, product_slug):
             status=400,
         )
 
-    if not Review.user_has_purchased(request.user, product):
-        return JsonResponse(
-            {
-                'success': False,
-                'message': 'Only buyers who purchased this product can review it.',
-            },
-            status=403,
-        )
-
     try:
         rating = int(request.POST.get('rating', 0))
     except (ValueError, TypeError):
@@ -1158,15 +1056,10 @@ def submit_review(request, store_slug, product_slug):
 
 @require_http_methods(["POST"])
 def toggle_wishlist(request, store_slug, product_slug):
-    """AJAX: toggle a product in or out of the buyer's wishlist."""
-    if not request.user.is_authenticated:
-        return JsonResponse({
-            'success': False,
-            'authenticated': False,
-            'message': 'Please log in to manage your wishlist.',
-            'login_url': '/accounts/login/',
-        }, status=401)
+    """AJAX: toggle a product in or out of the buyer's wishlist.
 
+    Supports both authenticated users and anonymous guests via session key.
+    """
     product = get_object_or_404(
         Product,
         slug=product_slug,
@@ -1174,27 +1067,63 @@ def toggle_wishlist(request, store_slug, product_slug):
         status='published',
     )
 
-    existing = Wishlist.objects.filter(user=request.user, product=product).first()
-    if existing:
-        existing.delete()
+    if request.user.is_authenticated:
+        existing = Wishlist.objects.filter(user=request.user, product=product).first()
+        if existing:
+            existing.delete()
+            count = Wishlist.objects.filter(user=request.user).count()
+            return JsonResponse({
+                'success': True,
+                'wishlisted': False,
+                'wishlist_count': count,
+                'message': f'"{product.title}" removed from wishlist.',
+            })
+        Wishlist.objects.create(user=request.user, product=product)
         count = Wishlist.objects.filter(user=request.user).count()
+        try:
+            from apps.vendors.services.notification_dispatch import create_notification
+            create_notification(
+                user=product.store.vendor.user,
+                notification_type='wishlist',
+                title='Product Wishlisted! ❤️',
+                message=(
+                    f'{request.user.email} added "{product.title}" to their wishlist. '
+                    f'Your product is getting attention!'
+                ),
+                link=f'/vendors/products/{product.slug}/',
+                vendor=product.store.vendor,
+            )
+        except Exception:
+            logger.exception("Failed to send wishlist vendor notification")
         return JsonResponse({
             'success': True,
-            'authenticated': True,
-            'wishlisted': False,
+            'wishlisted': True,
             'wishlist_count': count,
-            'message': f'"{product.title}" removed from wishlist.',
+            'message': f'"{product.title}" added to wishlist.',
         })
-
-    Wishlist.objects.create(user=request.user, product=product)
-    count = Wishlist.objects.filter(user=request.user).count()
-    return JsonResponse({
-        'success': True,
-        'authenticated': True,
-        'wishlisted': True,
-        'wishlist_count': count,
-        'message': f'"{product.title}" added to wishlist.',
-    })
+    else:
+        # Anonymous guest — use session key
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
+        existing = Wishlist.objects.filter(session_key=session_key, product=product).first()
+        if existing:
+            existing.delete()
+            count = Wishlist.objects.filter(session_key=session_key).count()
+            return JsonResponse({
+                'success': True,
+                'wishlisted': False,
+                'wishlist_count': count,
+                'message': f'"{product.title}" removed from wishlist.',
+            })
+        Wishlist.objects.create(session_key=session_key, product=product)
+        count = Wishlist.objects.filter(session_key=session_key).count()
+        return JsonResponse({
+            'success': True,
+            'wishlisted': True,
+            'wishlist_count': count,
+            'message': f'"{product.title}" added to wishlist.',
+        })
 
 
 # ==========================================
@@ -1248,363 +1177,14 @@ def ajax_get_attributes(request):
 
 
 # ==========================================
-# ORDER VIEWS
-# ==========================================
-
-@vendor_verified_required
-def orders_list(request):
-    """List all vendor SubOrders from the marketplace."""
-    vendor = request.user.vendorprofile
-
-    try:
-        store = vendor.store
-    except Exception:
-        return render(request, 'vendors/orders/list.html', {
-            'suborders': [], 'pending_count': 0,
-            'status_filter': '', 'hide_verification_badge': True,
-        })
-
-    from apps.marketplace.models import SubOrder
-    status_filter = request.GET.get('status', '')
-
-    if status_filter and status_filter.lower() == 'pending':
-        status_filter = 'PENDING_VENDOR'
-
-    suborders = SubOrder.objects.filter(
-        store=store
-    ).select_related('main_order__buyer').prefetch_related('items').order_by('-created_at')
-
-    if status_filter:
-        suborders = suborders.filter(status=status_filter)
-
-    for sub in suborders:
-        sub.check_and_apply_timeout()
-
-    pending_count = SubOrder.objects.filter(store=store, status='PENDING_VENDOR').count()
-
-    return render(request, 'vendors/orders/list.html', {
-        'suborders': suborders,
-        'status_filter': status_filter,
-        'pending_count': pending_count,
-        'hide_verification_badge': True,
-    })
-
-
-@vendor_required
-@vendor_owns_order
-def order_detail(request, order_id):
-    """
-    View order details and update status
-    """
-    order = request.order
-
-    if request.method == 'POST':
-        form = OrderStatusUpdateForm(request.POST, instance=order)
-
-        if form.is_valid():
-            order = form.save()
-
-            notification_service.send_order_status_update(order, order.customer.email)
-
-            messages.success(request, f'Order status updated to {order.get_status_display()}')
-            return redirect('vendors:order_detail', order_id=order.order_id)
-    else:
-        form = OrderStatusUpdateForm(instance=order)
-
-    context = {
-        'order': order,
-        'form': form,
-        'items': order.items.all(),
-        'hide_verification_badge': True,
-    }
-
-    return render(request, 'vendors/orders/detail.html', context)
-
-@vendor_required
-@vendor_owns_order
-@require_http_methods(["POST"])
-def order_status_update_ajax(request, order_id):
-    """
-    AJAX endpoint for quick status update
-    """
-    order = request.order
-
-    new_status = request.POST.get('status')
-    tracking_number = request.POST.get('tracking_number', '')
-
-    allowed_statuses = {
-        'pending': ['confirmed', 'cancelled'],
-        'confirmed': ['processing', 'cancelled'],
-        'processing': ['shipped'],
-        'shipped': ['delivered']
-    }
-
-    if new_status in allowed_statuses.get(order.status, []):
-        order.status = new_status
-        if tracking_number:
-            order.tracking_number = tracking_number
-        order.save()
-
-        notification_service.send_order_status_update(order, order.customer.email)
-
-        return JsonResponse({'success': True, 'message': 'Status updated'})
-    else:
-        return JsonResponse({'success': False, 'error': 'Invalid status transition'}, status=400)
-
-
-# ==========================================
-# WALLET VIEWS
-# ==========================================
-
-@vendor_required
-def wallet_overview(request):
-    """
-    Wallet overview with balance and transactions
-    """
-    vendor = request.user.vendorprofile
-
-    from apps.vendors.services.wallet_service import release_all_due
-    release_all_due(vendor)
-
-    wallet = vendor.wallet
-    wallet.refresh_from_db()
-
-    transactions = wallet.transactions.all().order_by('-created_at')[:10]
-
-    context = {
-        'wallet': wallet,
-        'transactions': transactions,
-        'total_earned': wallet.total_earned,
-        'total_withdrawn': wallet.total_withdrawn,
-        'pending_balance': wallet.pending_balance,
-        'hide_verification_badge': True,
-    }
-
-    return render(request, 'vendors/wallet/overview.html', context)
-
-
-@vendor_required
-def wallet_transactions(request):
-    vendor = request.user.vendorprofile
-    wallet = vendor.wallet
-
-    transactions = wallet.transactions.all().order_by('-created_at')
-
-    tx_type = request.GET.get('type', '')
-    status = request.GET.get('status', '')
-    date_range = request.GET.get('date_range', '')
-
-    if tx_type:
-        transactions = transactions.filter(transaction_type__icontains=tx_type)
-    if status:
-        transactions = transactions.filter(status__iexact=status)
-    if date_range:
-        from django.utils import timezone
-        now = timezone.now()
-        if date_range == 'today':
-            transactions = transactions.filter(created_at__date=now.date())
-        elif date_range == 'week':
-            transactions = transactions.filter(created_at__gte=now - timezone.timedelta(days=7))
-        elif date_range == 'month':
-            transactions = transactions.filter(created_at__gte=now - timezone.timedelta(days=30))
-        elif date_range == 'year':
-            transactions = transactions.filter(created_at__gte=now - timezone.timedelta(days=365))
-
-    from django.db.models import Sum
-    credits = transactions.filter(transaction_type__in=['PENDING_CREDIT', 'AVAILABLE_CREDIT'])
-    debits = transactions.filter(transaction_type__in=['REVERSAL', 'WITHDRAWAL'])
-    total_credits = credits.aggregate(t=Sum('amount'))['t'] or 0
-    total_debits = debits.aggregate(t=Sum('amount'))['t'] or 0
-
-    paginator = Paginator(transactions, 20)
-    page_obj = paginator.get_page(request.GET.get('page'))
-
-    return render(request, 'vendors/wallet/transactions.html', {
-        'wallet': wallet,
-        'transactions': page_obj,
-        'total_credits': total_credits,
-        'total_debits': total_debits,
-        'net_balance': total_credits - total_debits,
-        'total_transactions': transactions.count(),
-        'hide_verification_badge': True,
-    })
-
-
-@vendor_required
-def request_payout(request):
-    from apps.marketplace.models import WalletTransaction
-    """Instant payout to vendor's verified bank account."""
-    vendor = request.user.vendorprofile
-
-    from apps.vendors.services.wallet_service import release_all_due
-    release_all_due(vendor)
-
-    wallet = vendor.wallet
-    wallet.refresh_from_db()
-
-    min_payout = Decimal('500.00')
-
-    if request.method == 'POST':
-        try:
-            amount = Decimal(request.POST.get('amount', '0'))
-        except Exception:
-            messages.error(request, 'Invalid amount.')
-            return redirect('vendors:request_payout')
-
-        if amount < min_payout:
-            messages.error(request, f'Minimum payout is ₦{min_payout:,.0f}')
-            return redirect('vendors:request_payout')
-
-        if amount > wallet.balance:
-            messages.error(request, 'Amount exceeds available balance.')
-            return redirect('vendors:request_payout')
-
-        if not wallet.account_number or not wallet.bank_code:
-            messages.error(request, 'Please add your bank account details first.')
-            return redirect('vendors:payment_method')
-
-        # Name match check against BVN verified name
-        bvn_name = (vendor.full_name or '').strip().lower()
-        account_name = (wallet.account_holder_name or '').strip().lower()
-        if bvn_name and account_name and bvn_name != account_name:
-            messages.error(request,
-                f'Account name "{wallet.account_holder_name}" does not match your verified name "{vendor.full_name}". Please update your bank details.')
-            return redirect('vendors:payment_method')
-
-        from apps.vendors.services.paystack import paystack_service
-
-        if not wallet.paystack_recipient_code:
-            success, recipient_data = paystack_service.create_transfer_recipient(
-                account_number=wallet.account_number,
-                bank_code=wallet.bank_code,
-                name=wallet.account_holder_name,
-            )
-            if not success:
-                messages.error(request, f'Could not set up transfer: {recipient_data}')
-                return redirect('vendors:request_payout')
-
-            wallet.paystack_recipient_code = recipient_data.get('recipient_code')
-            wallet.save(update_fields=['paystack_recipient_code'])
-
-        from apps.marketplace.services.payment_service import generate_reference
-        reference = generate_reference('PAYOUT')
-
-        success, transfer_data = paystack_service.initiate_transfer(
-            recipient_code=wallet.paystack_recipient_code,
-            amount=amount,
-            reason=f'KasuMarketplace payout — {vendor.full_name or vendor.user.email}',
-            reference=reference,
-        )
-
-        if success:
-            balance_before = wallet.balance
-            wallet.balance -= amount
-            wallet.total_withdrawn += amount
-            wallet.save(update_fields=['balance', 'total_withdrawn', 'updated_at'])
-
-            from apps.marketplace.models import WalletTransaction
-            WalletTransaction.objects.create(
-                wallet=wallet,
-                transaction_type='WITHDRAWAL',
-                amount=amount,
-                status='AVAILABLE',
-                reference=reference,
-                note=f'Payout to {wallet.bank_name} {wallet.account_number} — {request.POST.get("notes", "")}',
-            )
-
-            messages.success(request, f'₦{amount:,.2f} has been sent to your {wallet.bank_name} account ending in {wallet.account_number[-4:]}. It should arrive instantly.')
-            return redirect('vendors:wallet_overview')
-        else:
-            messages.error(request, f'Transfer failed: {transfer_data}. Please try again.')
-            return redirect('vendors:request_payout')
-
-    recent_payouts = WalletTransaction.objects.filter(
-        wallet=wallet,
-        transaction_type='WITHDRAWAL'
-    ).order_by('-created_at')[:5]
-
-    return render(request, 'vendors/wallet/payout_request.html', {
-        'wallet': wallet,
-        'vendor': vendor,
-        'min_payout': min_payout,
-        'recent_payouts': recent_payouts,
-        'hide_verification_badge': True,
-    })
-@vendor_required
-def payment_method(request):
-    """
-    View/Edit bank account details
-    Account Holder Name is READ-ONLY if BVN+selfie is verified (auto-filled)
-    Account Number and Bank Name can be changed
-    """
-    vendor = request.user.vendorprofile
-    wallet = vendor.wallet
-
-    # Check if BVN+selfie is verified (account holder name should be locked)
-    bvn_verified = vendor.bank_status == 'verified'
-
-    if request.method == 'POST':
-        account_number = request.POST.get('account_number', '').strip()
-        bank_name = request.POST.get('bank_name', '').strip()
-        confirm = request.POST.get('confirm')
-
-        errors = []
-        if not bank_name:
-            errors.append('Bank name is required.')
-        if not account_number:
-            errors.append('Account number is required.')
-        if not confirm:
-            errors.append('Please confirm that the details are correct.')
-
-        if errors:
-            for error in errors:
-                messages.error(request, error)
-        else:
-            try:
-                if not bvn_verified:
-                    account_holder_name = request.POST.get('account_name', '').strip()
-                    if account_holder_name:
-                        wallet.account_holder_name = account_holder_name
-
-                wallet.account_number = account_number
-                wallet.bank_name = bank_name
-                wallet.bank_code = request.POST.get('bank_code', '').strip()
-                wallet.save()
-
-                logger.info(f'✅ Bank account updated for vendor {vendor.vendor_id}: Bank={bank_name}, Account={account_number}')
-                messages.success(request, '✅ Bank account updated successfully!')
-                return redirect('vendors:payment_method')
-            except Exception as e:
-                logger.error(f'❌ Error updating bank account: {str(e)}')
-                messages.error(request, f'Failed to update bank account: {str(e)}')
-
-    class SimpleForm:
-        def __init__(self):
-            self.bank_name = type('obj', (object,), {'html_name': 'bank_name', 'id_for_label': 'id_bank_name'})()
-            self.account_number = type('obj', (object,), {'html_name': 'account_number', 'id_for_label': 'id_account_number'})()
-            self.account_name = type('obj', (object,), {'html_name': 'account_name', 'id_for_label': 'id_account_name'})()
-
-    context = {
-        'wallet': wallet,
-        'vendor': vendor,
-        'bank_account': wallet,
-        'form': SimpleForm(),
-        'bvn_verified': bvn_verified,
-        'hide_verification_badge': True,
-    }
-
-    return render(request, 'vendors/wallet/payment_method.html', context)
-
-
-# ==========================================
 # STORE SETTINGS VIEWS
 # ==========================================
 
 @vendor_required
 def store_settings(request):
     """
-    Edit store settings with 1-YEAR CHANGE LIMIT on store name
-    Displays warning if store name is locked
+    Store settings — clean, single-page form for all store fields.
+    Enforces 1-year limit on store name and category changes.
     """
     vendor = request.user.vendorprofile
 
@@ -1625,33 +1205,22 @@ def store_settings(request):
 
             if old_store_name != new_store_name:
                 logger.warning(
-                    f"🔄 STORE NAME CHANGED: '{old_store_name}' → '{new_store_name}' "
+                    f"STORE NAME CHANGED: '{old_store_name}' -> '{new_store_name}' "
                     f"(Vendor: {vendor.full_name}, Change #{store.store_name_change_count})"
                 )
                 messages.success(
                     request,
-                    f'✅ Store name changed to "{new_store_name}". '
+                    f'Store name changed to "{new_store_name}". '
                     f'You can change it again after {(store.store_name_last_changed_at + timezone.timedelta(days=365)).strftime("%B %d, %Y")}.'
                 )
             else:
-                messages.success(request, '✅ Store settings updated successfully!')
+                messages.success(request, 'Store settings updated.')
 
-            return redirect('vendors:store_settings')
+            return redirect('vendors:store_public', slug=store.slug)
         else:
-            messages.error(request, '❌ Please correct the errors below.')
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = StoreSettingsForm(instance=store)
-
-    can_change_name = store.can_change_store_name()
-    days_until_name_change = store.days_until_next_name_change()
-    can_change_category = store.can_request_category_change()
-    days_until_category_change = store.days_until_next_category_change()
-
-    # Compute the next allowed category change date (if available)
-    if getattr(store, 'main_category_last_changed_at', None):
-        category_next_change_date = store.main_category_last_changed_at + timedelta(days=365)
-    else:
-        category_next_change_date = None
 
     active_products_count = vendor.products.filter(status='published').count()
 
@@ -1660,11 +1229,6 @@ def store_settings(request):
         'form': form,
         'vendor': vendor,
         'active_products_count': active_products_count,
-        'can_change_name': can_change_name,
-        'days_until_name_change': days_until_name_change,
-        'can_change_category': can_change_category,
-        'days_until_category_change': days_until_category_change,
-        'category_next_change_date': category_next_change_date,
         'hide_verification_badge': True,
     }
 
@@ -1963,7 +1527,7 @@ def store_public(request, slug):
                 hasattr(request.user, 'vendorprofile') and
                 request.user.vendorprofile == store.vendor)
 
-    if not store.is_published and not is_owner:
+    if not store.is_publicly_visible and not is_owner:
         raise Http404("No Store matches the given query.")
 
     all_products = store.vendor.products.filter(status='published').order_by('-created_at')
@@ -2010,21 +1574,27 @@ def store_public(request, slug):
     page_obj = paginator.get_page(page_number)
 
     from apps.marketplace.services.distance_service import get_distance_to_store
+    from apps.marketplace.views import get_wishlisted_ids
     buyer_lat = request.session.get('buyer_lat')
     buyer_lon = request.session.get('buyer_lon')
 
-    suborders = SubOrder.objects.filter(store=store)
+    # Sponsored product IDs (products that are sponsored)
+    sponsored_ids = set(
+        all_products.filter(is_sponsored=True).values_list('pk', flat=True)
+    )
+
+    # Wishlisted product IDs for the current user/session
+    wishlisted_ids = get_wishlisted_ids(request)
+
+    # Annotate each product on the current page with distance
+    for product in page_obj:
+        product._distance = get_distance_to_store(buyer_lat, buyer_lon, store)
 
     context = {
         'store': store,
         'vendor': store.vendor,
         'products': page_obj,
         'total_products': total_products_count,
-        'total_orders': suborders.count(),
-        'products_sold': SubOrderItem.objects.filter(
-            sub_order__store=store,
-            sub_order__status='CONFIRMED'
-        ).aggregate(total=Sum('quantity'))['total'] or 0,
         'subcategories': subcategories,
         'selected_subcategory_id': int(selected_subcategory_id) if selected_subcategory_id else None,
         'min_price': min_price_raw,
@@ -2033,6 +1603,8 @@ def store_public(request, slug):
         'is_owner': is_owner,
         'is_preview': not store.is_published and is_owner,
         'distance': get_distance_to_store(buyer_lat, buyer_lon, store),
+        'sponsored_ids': sponsored_ids,
+        'wishlisted_ids': wishlisted_ids,
     }
 
     return render(request, 'vendors/store/public_storefront.html', context)
@@ -2044,23 +1616,23 @@ def store_public(request, slug):
 @vendor_required
 def notifications_list(request):
     """
-    List all notifications
+    List all notifications for the logged-in vendor.
     """
-    vendor = request.user.vendorprofile
+    notifications = Notification.objects.filter(
+        user=request.user
+    ).order_by('-created_at')
 
     filter_value = request.GET.get('filter', '')
-    notifications = vendor.notifications.all().order_by('-created_at')
-
     if filter_value == 'unread':
         notifications = notifications.filter(is_read=False)
-    elif filter_value in ['order', 'payment', 'system', 'refund', 'verification', 'admin_message']:
+    elif filter_value in ['system', 'verification', 'admin_message', 'inventory']:
         notifications = notifications.filter(notification_type=filter_value)
 
     paginator = Paginator(notifications, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    unread_count = vendor.notifications.filter(is_read=False).count()
+    unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
 
     return render(request, 'vendors/notifications/list.html', {
         'page_obj': page_obj,
@@ -2074,8 +1646,7 @@ def notification_detail(request, notification_id):
     """
     View single notification
     """
-    vendor = request.user.vendorprofile
-    notification = get_object_or_404(Notification, id=notification_id, vendor=vendor)
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
 
     if not notification.is_read:
         notification.is_read = True
@@ -2088,8 +1659,7 @@ def notification_detail(request, notification_id):
 @vendor_required
 @require_http_methods(["POST"])
 def notification_mark_read(request, notification_id):
-    vendor = request.user.vendorprofile
-    notification = get_object_or_404(Notification, id=notification_id, vendor=vendor)
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
     if not notification.is_read:
         notification.is_read = True
         notification.read_at = timezone.now()
@@ -2100,8 +1670,7 @@ def notification_mark_read(request, notification_id):
 @vendor_required
 @require_http_methods(["POST"])
 def notification_delete(request, notification_id):
-    vendor = request.user.vendorprofile
-    notification = get_object_or_404(Notification, id=notification_id, vendor=vendor)
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
     notification.delete()
     return redirect('vendors:notifications_list')
 
@@ -2109,8 +1678,7 @@ def notification_delete(request, notification_id):
 @vendor_required
 @require_http_methods(["POST"])
 def notifications_mark_all_read(request):
-    vendor = request.user.vendorprofile
-    qs = vendor.notifications.filter(is_read=False)
+    qs = Notification.objects.filter(user=request.user, is_read=False)
     qs.update(is_read=True, read_at=timezone.now())
     return redirect('vendors:notifications_list')
 
@@ -2166,142 +1734,6 @@ def get_category_attributes_ajax(request):
         return JsonResponse({'error': 'Subcategory not found'}, status=404)
 
 
-
-"""
-Vendor Order Management Views
-"""
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from django.views.decorators.http import require_POST
-from django.utils import timezone
-from apps.marketplace.models import SubOrder
-
-
-@vendor_verified_required
-def vendor_order_list(request):
-    """
-    Vendor sees all SubOrders for their store.
-    Filtered by status. Lazy timeout check on each.
-    """
-    vendor = request.user.vendorprofile
-    store = vendor.store
-
-    status_filter = request.GET.get('status', '')
-
-    suborders = SubOrder.objects.filter(
-        store=store
-    ).select_related(
-        'main_order__buyer'
-    ).prefetch_related('items').order_by('-created_at')
-
-    if status_filter:
-        suborders = suborders.filter(status=status_filter)
-
-    for sub in suborders:
-        sub.check_and_apply_timeout()
-
-    pending_count = SubOrder.objects.filter(store=store, status='PENDING_VENDOR').count()
-    accepted_count = SubOrder.objects.filter(store=store, status='ACCEPTED').count()
-
-    context = {
-        'suborders': suborders,
-        'status_filter': status_filter,
-        'pending_count': pending_count,
-        'accepted_count': accepted_count,
-        'status_choices': SubOrder.STATUS_CHOICES,
-        'hide_verification_badge': True,
-    }
-    return render(request, 'vendors/orders/list.html', context)
-
-
-@vendor_verified_required
-def vendor_order_detail(request, suborder_id):
-    """
-    Full detail of a single SubOrder for the vendor.
-    """
-    vendor = request.user.vendorprofile
-    sub_order = get_object_or_404(
-        SubOrder.objects.select_related(
-            'main_order__buyer',
-            'store',
-            'dispute',
-        ).prefetch_related('items__product'),
-        pk=suborder_id,
-        store=vendor.store,
-    )
-
-    sub_order.check_and_apply_timeout()
-
-    context = {
-        'sub_order': sub_order,
-        'main_order': sub_order.main_order,
-        'hide_verification_badge': True,
-    }
-    return render(request, 'vendors/orders/detail.html', context)
-
-
-@vendor_verified_required
-@require_POST
-def vendor_order_accept(request, suborder_id):
-    """
-    Vendor accepts a SubOrder.
-    """
-    vendor = request.user.vendorprofile
-
-    sub_order = SubOrder.objects.filter(pk=suborder_id, store=vendor.store).first()
-    if not sub_order:
-        raise Http404("SubOrder not found")
-
-    if sub_order.status != 'PENDING_VENDOR':
-        messages.warning(request, f"Order cannot be accepted (currently {sub_order.status}).")
-        return redirect('vendors:vendor_order_detail', suborder_id=sub_order.pk)
-
-    sub_order.status = 'ACCEPTED'
-    sub_order.save(update_fields=['status', 'updated_at'])
-
-    try:
-        from apps.marketplace.services.email_service import send_order_accepted
-        send_order_accepted(sub_order)
-    except Exception:
-        pass
-
-    messages.success(request, f'Order #{sub_order.pk} accepted. Buyer has been notified.')
-    return redirect('vendors:vendor_order_detail', suborder_id=sub_order.pk)
-
-
-@vendor_verified_required
-@require_POST
-def vendor_order_reject(request, suborder_id):
-    """
-    Vendor rejects a SubOrder.
-    """
-    vendor = request.user.vendorprofile
-
-    sub_order = SubOrder.objects.filter(pk=suborder_id, store=vendor.store).first()
-    if not sub_order:
-        raise Http404("SubOrder not found")
-
-    if sub_order.status != 'PENDING_VENDOR':
-        messages.warning(request, f"Order cannot be rejected (currently {sub_order.status}).")
-        return redirect('vendors:vendor_order_detail', suborder_id=sub_order.pk)
-
-    rejection_reason = request.POST.get('rejection_reason', '').strip()
-
-    sub_order.status = 'REJECTED'
-    sub_order.rejection_reason = rejection_reason
-    sub_order.save(update_fields=['status', 'rejection_reason', 'updated_at'])
-
-    try:
-        from apps.marketplace.services.email_service import send_order_rejected
-        send_order_rejected(sub_order)
-    except Exception:
-        pass
-
-    messages.success(request, f'Order #{sub_order.pk} rejected. Buyer will be refunded.')
-    return redirect('vendors:orders_list')
-
-
 # ==========================================
 # ACCOUNT DELETION REQUEST
 # ==========================================
@@ -2341,3 +1773,153 @@ def request_account_deletion(request):
         'You will be notified via email once the request is handled.'
     )
     return redirect('vendors:store_settings')
+
+
+# ==========================================
+# SUBSCRIPTION WEBHOOK
+# ==========================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def subscription_webhook(request):
+    """
+    Dedicated Paystack webhook endpoint for subscription billing events.
+    Fully decoupled from the marketplace payment webhook.
+    """
+    from apps.vendors.services.subscription_service import (
+        verify_subscription_webhook_signature,
+        process_subscription_webhook,
+    )
+
+    signature = request.headers.get('X-Paystack-Signature', '')
+
+    if not verify_subscription_webhook_signature(request.body, signature):
+        logger.warning('Invalid Paystack subscription webhook signature received.')
+        return HttpResponse(status=400)
+
+    try:
+        import json
+        event = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return HttpResponse(status=400)
+
+    event_type = event.get('event', '')
+    data = event.get('data', {})
+    event_id = event.get('id', '')
+
+    result = process_subscription_webhook(event_type, data, event_id=event_id)
+    logger.info('Subscription webhook processed: %s', result.get('message', ''))
+
+    return HttpResponse(status=200)
+
+
+# ==========================================
+# CONTACT INTENT (fire-and-forget)
+# ==========================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def contact_intent(request, product_id):
+    """
+    Lightweight endpoint to track Call/WhatsApp clicks.
+    Called via fire-and-forget fetch/sendBeacon BEFORE navigation.
+    No auth required — guest tracking via session_key.
+    """
+    from apps.marketplace.models import ContactIntent
+    from apps.vendors.models import Product, VendorProfile
+
+    try:
+        product = Product.objects.get(id=product_id, status='published')
+    except Product.DoesNotExist:
+        return JsonResponse({'success': False}, status=404)
+
+    channel = request.POST.get('channel', '')
+    if channel not in ('call', 'whatsapp'):
+        return JsonResponse({'success': False}, status=400)
+
+    user = request.user if request.user.is_authenticated else None
+    session_key = ''
+    if not user:
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
+
+    try:
+        ci = ContactIntent.objects.create(
+            user=user,
+            session_key=session_key,
+            product=product,
+            vendor=product.store.vendor,
+            channel=channel,
+        )
+        # V9: Notify vendor of contact intent
+        from apps.vendors.services.notification_dispatch import create_notification
+        buyer_label = user.email if user else 'a visitor'
+        channel_label = 'called' if channel == 'call' else 'messaged on WhatsApp'
+        create_notification(
+            user=product.store.vendor.user,
+            notification_type='system',
+            title=f'Buyer Contacted You! 📞',
+            message=(
+                f'{buyer_label} {channel_label} regarding "{product.title}". '
+                f'Follow up to close the sale!'
+            ),
+            link=f'/vendors/products/{product.slug}/',
+            vendor=product.store.vendor,
+        )
+    except Exception:
+        logger.exception("Failed to create contact intent")
+
+    return JsonResponse({'success': True})
+
+
+# ==========================================
+# VENDOR REVIEW REPLY
+# ==========================================
+
+@login_required
+@require_http_methods(["POST"])
+def vendor_reply_to_review(request, review_id):
+    """
+    AJAX: vendor submits a reply to a buyer's review.
+    Only the product's vendor can reply.
+    """
+    from apps.marketplace.models import Review, ReviewReply
+
+    try:
+        review = Review.objects.select_related(
+            'product__store__vendor__user'
+        ).get(id=review_id)
+    except Review.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Review not found.'}, status=404)
+
+    vendor = request.user.vendorprofile
+    if review.product.store.vendor != vendor:
+        return JsonResponse({'success': False, 'message': 'Not your product.'}, status=403)
+
+    if hasattr(review, 'reply'):
+        return JsonResponse(
+            {'success': False, 'message': 'You already replied to this review.'},
+            status=400,
+        )
+
+    reply_text = request.POST.get('reply_text', '').strip()
+    if not reply_text:
+        return JsonResponse(
+            {'success': False, 'message': 'Reply text is required.'},
+            status=400,
+        )
+
+    reply = ReviewReply.objects.create(
+        review=review,
+        reply_text=reply_text,
+    )
+
+    # Notification to buyer is handled by the notify_buyer_on_review_reply signal
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Reply submitted.',
+        'reply_text': reply.reply_text,
+        'created_at': reply.created_at.isoformat(),
+    })

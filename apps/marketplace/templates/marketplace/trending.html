@@ -12,8 +12,8 @@
   </div>
 
   {% if annotated_products %}
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-    {% for item in annotated_products %}
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 items-start">
+    {% for item in products %}
       {% include 'marketplace/partials/product_card.html' with item=item %}
     {% endfor %}
   </div>
@@ -25,7 +25,7 @@
       </svg>
     </div>
     <p class="font-semibold text-dark mb-1">Nothing trending yet</p>
-    <p class="text-sm text-muted mb-4">Check back once orders start coming in this week.</p>
+    <p class="text-sm text-muted mb-4">Check back once products start getting views this week.</p>
     <a href="{% url 'marketplace:product_list' %}" class="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl">Browse All Products</a>
   </div>
   {% endif %}

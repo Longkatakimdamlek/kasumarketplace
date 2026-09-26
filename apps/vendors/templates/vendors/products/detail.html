@@ -144,18 +144,10 @@
             </div>
 
             {# Performance strip #}
-            <div class="grid grid-cols-3 divide-x divide-gray-200 rounded-xl border border-gray-200 bg-white py-3">
-                <div class="flex flex-col items-center px-3 text-center">
+            <div class="rounded-xl border border-gray-200 bg-white py-3 px-4">
+                <div class="flex items-center gap-3">
                     <p class="text-lg font-bold text-gray-900 sm:text-xl">{{ product.views_count|default:0 }}</p>
-                    <p class="text-[11px] text-gray-500 mt-0.5">Views</p>
-                </div>
-                <div class="flex flex-col items-center px-3 text-center">
-                    <p class="text-lg font-bold text-gray-900 sm:text-xl">{{ product.sales_count|default:0 }}</p>
-                    <p class="text-[11px] text-gray-500 mt-0.5">Sold</p>
-                </div>
-                <div class="flex flex-col items-center px-3 text-center">
-                    <p class="text-lg font-bold text-green-600 sm:text-xl">{{ total_revenue|default:0|naira }}</p>
-                    <p class="text-[11px] text-gray-500 mt-0.5">Revenue</p>
+                    <p class="text-[11px] text-gray-500">Views</p>
                 </div>
             </div>
 

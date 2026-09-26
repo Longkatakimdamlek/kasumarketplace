@@ -4,7 +4,6 @@ from django import forms
 class ContactForm(forms.Form):
     ROLE_CHOICES = [('buyer', 'Buyer'), ('vendor', 'Vendor'), ('other', 'Other')]
     SUBJECT_CHOICES = [
-        ('order_issue', 'Order issue'),
         ('vendor_application', 'Vendor application'),
         ('report_problem', 'Report a problem'),
         ('general', 'General question'),

@@ -23,16 +23,21 @@ KasuMarketplace – The Student Marketplace for KASU
         {% if slide.background_image %}
         <div class="absolute inset-0 bg-cover bg-center"
              style="background-image: url('{{ slide.background_image.url }}')"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
         {% elif slide.static_image_path %}
         <div class="absolute inset-0 bg-cover bg-center"
              style="background-image: url('{% static slide.static_image_path %}')"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
         {% else %}
         <div class="absolute inset-0 bg-gradient-to-br from-[#0b3f26] to-[#072c1a]"></div>
         {% endif %}
-        <div class="relative z-10">
-          <h2 class="text-white font-display font-bold text-xl leading-tight mb-3">{{ slide.title }}</h2>
+        <div class="relative z-10 max-w-[55%]">
+          <h2 class="text-white font-display font-bold text-xl leading-tight mb-3">
+            {% with parts=slide.title|split_title %}
+            <span class="block">{{ parts.0 }}</span>
+            {% if parts.1 %}<span class="block">{{ parts.1 }}</span>{% endif %}
+            {% endwith %}
+          </h2>
           {% if slide.subtitle %}
           <p class="text-white/80 text-xs font-medium mb-3">{{ slide.subtitle }}</p>
           {% endif %}
@@ -47,10 +52,10 @@ KasuMarketplace – The Student Marketplace for KASU
          class="min-w-full h-full relative rounded-2xl overflow-hidden flex items-center gap-4 px-6">
         {% if top_seller_slide.background_image %}
         <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ top_seller_slide.background_image.url }}')"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
         {% elif top_seller_slide.static_image_path %}
         <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{% static top_seller_slide.static_image_path %}')"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
         {% else %}
         <div class="absolute inset-0 bg-gradient-to-br from-[#0b3f26] to-[#072c1a]"></div>
         {% endif %}
@@ -72,7 +77,7 @@ KasuMarketplace – The Student Marketplace for KASU
          class="min-w-full h-full relative rounded-2xl overflow-hidden flex items-center gap-4 px-6">
         {% if store.banner %}
         <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ store.banner.url }}')"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
         {% else %}
         <div class="absolute inset-0 bg-gradient-to-br from-accent to-orange-600"></div>
         {% endif %}
@@ -138,6 +143,29 @@ KasuMarketplace – The Student Marketplace for KASU
   </div>
   {% endif %}
 
+  <!-- QUICK SELL LISTINGS (auto-slide carousel) -->
+  {% if quicksell_items %}
+  <div class="mt-6" x-data="quickSellCarousel()">
+    <div class="flex items-center justify-between px-4 mb-3">
+      <h2 class="font-display font-bold text-base text-dark">⚡ Quick Sell</h2>
+      <a href="{% url 'marketplace:quicksell_listing' %}" class="text-xs text-primary font-semibold">See All</a>
+    </div>
+    <div class="relative overflow-hidden">
+      <div id="quicksell-track"
+           class="flex gap-3 overflow-x-auto scroll-hidden px-4 pb-1 snap-x snap-mandatory"
+           @scroll.passive="onScroll()"
+           @mouseenter="pauseAuto()" @mouseleave="resumeAuto()"
+           @touchstart.passive="pauseAuto()" @touchend.passive="resumeAuto()">
+        {% for item in quicksell_items %}
+        <div class="min-w-[160px] max-w-[160px] snap-start">
+          {% include 'marketplace/partials/quicksell_card.html' with item=item %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ALL PRODUCTS -->
   <div class="px-4 mt-6">
     <div class="flex items-center justify-between mb-3">
@@ -171,7 +199,7 @@ KasuMarketplace – The Student Marketplace for KASU
     {% endif %}
 
     {% if annotated_products %}
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-2 gap-3 items-start">
       {% for item in annotated_products %}
         {% include 'marketplace/partials/product_card.html' with item=item %}
       {% endfor %}
@@ -380,6 +408,20 @@ KasuMarketplace – The Student Marketplace for KASU
             </div>
           </div>
           {% endif %}
+
+          {% if quicksell_items %}
+          <div class="bg-card rounded-3xl p-6 shadow-card">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-display font-bold text-xl text-dark">⚡ Quick Sell</h2>
+              <span class="text-xs text-muted">{{ quicksell_items|length }} listing{{ quicksell_items|length|pluralize }}</span>
+            </div>
+            <div class="space-y-4">
+              {% for item in quicksell_items|slice:":3" %}
+              {% include 'marketplace/partials/quicksell_card.html' with item=item %}
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
         </div>
       </div>
 
@@ -563,6 +605,40 @@ KasuMarketplace – The Student Marketplace for KASU
     });
 
     startCategoryAutoScroll();
+  }
+
+  // ---- Quick Sell auto-slide carousel ----
+  function quickSellCarousel() {
+    return {
+      autoTimer: null,
+      resumeTimer: null,
+      init() {
+        this.startAuto();
+      },
+      onScroll() {},
+      startAuto() {
+        if (prefersReducedMotion) return;
+        const track = document.getElementById('quicksell-track');
+        if (!track || track.children.length < 2) return;
+        this.autoTimer = setInterval(() => {
+          const maxScroll = track.scrollWidth - track.clientWidth;
+          if (track.scrollLeft >= maxScroll - 10) {
+            track.scrollTo({ left: 0, behavior: 'smooth' });
+          } else {
+            track.scrollBy({ left: 170, behavior: 'smooth' });
+          }
+        }, 3000);
+      },
+      pauseAuto() {
+        clearInterval(this.autoTimer);
+        this.autoTimer = null;
+        clearTimeout(this.resumeTimer);
+      },
+      resumeAuto() {
+        clearTimeout(this.resumeTimer);
+        this.resumeTimer = setTimeout(() => this.startAuto(), 5000);
+      }
+    };
   }
 </script>
 {% endblock %}

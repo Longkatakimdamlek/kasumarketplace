@@ -1,9 +1,10 @@
 """
 Vendor App Models
-Complete database schema for vendor verification, store management, products, orders, wallet, etc.
+Complete database schema for vendor verification, store management, products, etc.
 """
 
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from cloudinary.models import CloudinaryField
@@ -12,6 +13,12 @@ from django.utils.text import slugify
 from django.urls import reverse
 from django.utils import timezone
 from decimal import Decimal
+
+# ------------------------------------------------------------------
+# Scoring weights (Phase 8) — shared by Product and Store scoring
+# ------------------------------------------------------------------
+# average_rating * RATING_WEIGHT so a 5-star item earns +100 points.
+RATING_WEIGHT = 20
 from difflib import SequenceMatcher
 import logging
 import uuid
@@ -292,47 +299,41 @@ class VendorProfile(models.Model):
 
     @property
     def can_sell(self):
-        """Check if vendor can list products (BVN+selfie verified)"""
-        return self.bank_status == 'verified'
+        """Check if vendor can list products (store setup + active subscription)"""
+        try:
+            return self.store_setup_completed and self.subscription.is_publicly_active
+        except Subscription.DoesNotExist:
+            return False
 
     @property
     def current_step(self):
-        """Calculate which verification step user should see next"""
+        """Calculate which verification step user should see next.
+        BVN no longer blocks progression to later steps."""
         if self.bank_status == 'pending_review':
             return 'pending_review'
-
-        if self.bank_status != 'verified':
-            return 'bvn_verification'
 
         if not self.store_setup_completed and not self.store_setup_skipped:
             return 'store_setup'
 
-        if self.student_status == 'not_started':
-            return 'student_verification'
+        if self.bank_status != 'verified':
+            return 'bvn_verification'
 
-        return 'admin_review'
+        return 'complete'
 
     @property
     def completion_percentage(self):
-        """Calculate verification progress (0-100). 4 total steps."""
-        total_steps = 4
+        """Calculate verification progress (0-100).
+        2 required steps (BVN + store setup) = 100%."""
+        total_steps = 2
         completed = 0
 
         if self.bank_status == 'verified':
             completed += 1
-        elif self.bank_status == 'pending_review':
-            completed += 0.5
 
         if self.store_setup_completed or self.store_setup_skipped:
             completed += 1
 
-        if self.student_status == 'verified':
-            completed += 1
-
-        if self.verification_status == 'approved':
-            completed += 1
-
-        return int((completed / total_steps) * 100)
+        return min(int((completed / total_steps) * 100), 100)
 
     @property
     def age(self):
@@ -622,11 +623,21 @@ class SubCategoryAttribute(models.Model):
 
 
 
+class PublicStoreManager(models.Manager):
+    def publicly_visible(self):
+        return self.filter(
+            is_published=True
+        ).filter(
+            subscription_visibility_q('vendor__subscription__')
+        ).select_related('vendor__subscription')
+
+
 class Store(models.Model):
     """
     Vendor storefront - one per vendor
     Public-facing store with branding
     """
+    objects = PublicStoreManager()
     vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE, related_name='store')
     
     # Store Info
@@ -673,6 +684,8 @@ class Store(models.Model):
     business_email = models.EmailField(blank=True)
     phone = models.CharField(max_length=20, blank=True)
     whatsapp = models.CharField(max_length=20, blank=True, help_text="WhatsApp number for quick contact")
+    state = models.CharField(max_length=100, blank=True, help_text="State or region")
+    city = models.CharField(max_length=100, blank=True, help_text="Area or city within the state")
     address = models.TextField(blank=True, help_text="Pickup location or delivery address")
     
     # Social Links (Public)
@@ -699,8 +712,6 @@ class Store(models.Model):
 
     # Stats (updated via signals)
     total_products = models.PositiveIntegerField(default=0)
-    total_orders = models.PositiveIntegerField(default=0)
-    total_sales = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0)
     
     # SEO
@@ -729,7 +740,27 @@ class Store(models.Model):
             self.original_main_category = self.main_category
         
         super().save(*args, **kwargs)
-    
+
+    @property
+    def short_location(self) -> str:
+        """Compact location string for buyer-facing display: 'State, City'."""
+        parts = [p for p in (self.state, self.city) if p]
+        return ', '.join(parts)
+
+    @property
+    def is_publicly_visible(self) -> bool:
+        """
+        True only when the store is both published AND the vendor's
+        subscription is publicly active.  Phase 5 will wire this into
+        product-list queries; for now it is defined but not consumed.
+        """
+        if not self.is_published:
+            return False
+        try:
+            return self.vendor.subscription.is_publicly_active
+        except Subscription.DoesNotExist:
+            return False
+
     def get_absolute_url(self):
         return reverse('vendors:store_public', kwargs={'slug': self.slug})
     
@@ -814,6 +845,146 @@ class Store(models.Model):
         days_left = (one_year_later - timezone.now()).days
         return max(0, days_left)
 
+    # ------------------------------------------------------------------
+    # Scoring (Phase 8) — reusable signal for top-seller / ranking
+    # ------------------------------------------------------------------
+    def store_score(self):
+        """
+        Aggregate popularity score for a store:
+          sum of its products' (wishlist_count + views_count)
+          + (store.average_rating * Product.RATING_WEIGHT)
+
+        Used by top-seller ranking in product_list and trending logic.
+        """
+        from django.db.models import Sum, Count
+        agg = self.products.filter(status='published').aggregate(
+            total_wishlists=Count('wishlisted_by'),
+            total_views=Sum('views_count'),
+        )
+        wc = agg['total_wishlists'] or 0
+        vc = agg['total_views'] or 0
+        rc = float(self.average_rating or 0) * RATING_WEIGHT
+        return wc + vc + rc
+
+class Subscription(models.Model):
+    """
+    Vendor subscription — controls public visibility and billing.
+    Single source of truth for whether a vendor's store is publicly visible.
+    """
+    STATUS_CHOICES = [
+        ('trial', 'Trial'),
+        ('active', 'Active'),
+        ('past_due', 'Past Due'),
+        ('cancelled', 'Cancelled'),
+        ('expired', 'Expired'),
+    ]
+
+    vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE, related_name='subscription')
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='trial')
+
+    # Trial window (auto-set on creation, 3 months from signup)
+    trial_ends_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="End of the free trial period."
+    )
+
+    # Active subscription window
+    period_end = models.DateTimeField(
+        null=True, blank=True,
+        help_text="When the current paid period expires."
+    )
+
+    # Grace period (7 days after expiry / failed payment)
+    grace_ends_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Grace period end — store stays visible until this date."
+    )
+
+    # Paystack recurring billing
+    paystack_customer_code = models.CharField(
+        max_length=100, blank=True, default='',
+        help_text="Paystack customer code for this vendor."
+    )
+    paystack_subscription_code = models.CharField(
+        max_length=100, blank=True, default='',
+        help_text="Paystack subscription code."
+    )
+    paystack_plan_code = models.CharField(
+        max_length=100, blank=True, default='',
+        help_text="Paystack plan code used for this subscription."
+    )
+
+    # Payment retry tracking
+    retry_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of consecutive payment retry attempts."
+    )
+    last_payment_attempt_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Timestamp of the last payment retry attempt."
+    )
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Subscription"
+        verbose_name_plural = "Subscriptions"
+
+    def __str__(self):
+        return f"Subscription for {self.vendor.full_name or self.vendor.user.email} — {self.status}"
+
+    # ------------------------------------------------------------------
+    # Core property — single source of truth for public visibility
+    # ------------------------------------------------------------------
+    @property
+    def is_publicly_active(self) -> bool:
+        """
+        True if the vendor's store should be visible to the public.
+
+        Logic:
+          - trial       → visible only while trial_ends_at is in the future
+          - active      → visible while period_end is in the future
+          - past_due    → visible during grace period (grace_ends_at in future)
+          - cancelled   → visible during grace period
+          - expired     → never visible
+        """
+        now = timezone.now()
+        if self.status == 'trial':
+            return self.trial_ends_at is not None and self.trial_ends_at > now
+        if self.status == 'active':
+            return self.period_end is not None and self.period_end > now
+        if self.status in ('past_due', 'cancelled'):
+            return self.grace_ends_at is not None and self.grace_ends_at > now
+        return False
+
+
+# ==========================================
+# SUBSCRIPTION VISIBILITY ORM HELPER
+# ==========================================
+
+def subscription_visibility_q(prefix: str) -> Q:
+    """
+    Returns a Q object matching subscriptions that are publicly active,
+    mirroring Subscription.is_publicly_active exactly. `prefix` is the
+    field-lookup path to the Subscription from whatever model you're
+    filtering, e.g. 'vendor__subscription__' when filtering Store,
+    or 'store__vendor__subscription__' when filtering Product.
+    """
+    now = timezone.now()
+    return (
+        Q(**{f'{prefix}status': 'trial', f'{prefix}trial_ends_at__gt': now}) |
+        Q(**{f'{prefix}status': 'active', f'{prefix}period_end__gt': now}) |
+        Q(**{f'{prefix}status__in': ['past_due', 'cancelled'], f'{prefix}grace_ends_at__gt': now})
+    )
+
+
+# ==========================================
+# CATEGORY CHANGE REQUEST
+# ==========================================
+
 class CategoryChangeRequest(models.Model):
     """
     Vendor requests to change locked main category
@@ -865,11 +1036,23 @@ class CategoryChangeRequest(models.Model):
 # PRODUCTS
 # ==========================================
 
+class PublicProductManager(models.Manager):
+    def publicly_visible(self):
+        return self.filter(
+            status='published',
+            store__is_published=True,
+        ).filter(
+            subscription_visibility_q('store__vendor__subscription__')
+        ).select_related('store__vendor__subscription', 'subcategory__main_category').prefetch_related('images')
+
+
 class Product(models.Model):
     """
     Vendor products with images, pricing, inventory
     Products must be in a subcategory that belongs to the vendor's main category
     """
+
+    objects = PublicProductManager()
     
     # ✅ VENDOR STATUS CHOICES (What vendors can select)
     VENDOR_STATUS_CHOICES = [
@@ -1154,6 +1337,24 @@ class Product(models.Model):
         public_id = self.video.public_id
         return f"https://res.cloudinary.com/{settings.CLOUDINARY_STORAGE['CLOUD_NAME']}/video/upload/f_jpg,so_0/{public_id}.jpg"
 
+    # ------------------------------------------------------------------
+    # Scoring (Phase 8) — reusable signal for trending / ranking
+    # ------------------------------------------------------------------
+
+    def product_score(self):
+        """
+        Lightweight popularity score: wishlist_count + views_count +
+        (average_rating * RATING_WEIGHT).
+
+        Intended for use in trending / ranking queries. For time-decayed
+        trending, see the update_trending management command which layers
+        exponential decay on top of wishlist activity.
+        """
+        wc = self.wishlisted_by.count()
+        vc = self.views_count or 0
+        rc = float(self.average_rating or 0) * RATING_WEIGHT
+        return wc + vc + rc
+
 
 class ProductImage(models.Model):
     """
@@ -1177,294 +1378,100 @@ class ProductImage(models.Model):
 
 
 # ==========================================
-# WALLET & TRANSACTIONS
-# ==========================================
-
-class Wallet(models.Model):
-    """
-    Vendor wallet for receiving payments and tracking balances
-    """
-    vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE, related_name='wallet')
-    
-    # Bank Account (Auto-filled from BVN)
-    account_number = models.CharField(max_length=20, blank=True)
-    bank_name = models.CharField(max_length=100, blank=True)
-    bank_code = models.CharField(max_length=10, blank=True)
-    paystack_recipient_code = models.CharField(max_length=100, blank=True, help_text="Paystack transfer recipient code")
-    account_holder_name = models.CharField(max_length=200, blank=True)
-    
-    # Balances
-    balance = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2, 
-        default=0,
-        help_text="Available balance (can be withdrawn)"
-    )
-    pending_balance = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2, 
-        default=0,
-        help_text="Pending balance (from incomplete orders)"
-    )
-    total_earned = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2, 
-        default=0,
-        help_text="Lifetime earnings"
-    )
-    total_withdrawn = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2, 
-        default=0,
-        help_text="Total amount withdrawn"
-    )
-    
-    # Commission Rate — currently unused/reserved for a future monetization feature.
-    # The marketplace flow credits vendors the full subtotal with no deduction today.
-    commission_rate = models.DecimalField(
-        max_digits=5, 
-        decimal_places=2, 
-        default=10.00,
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
-        help_text="Platform commission percentage (e.g., 10.00 for 10%)"
-    )
-    
-    # Settings
-    auto_payout = models.BooleanField(default=False, help_text="Auto-withdraw when balance reaches threshold")
-    payout_threshold = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
-    
-    # Verification
-    is_verified = models.BooleanField(default=False)
-    verified_at = models.DateTimeField(null=True, blank=True)
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        verbose_name = "Wallet"
-        verbose_name_plural = "Wallets"
-    
-    def __str__(self):
-        return f"{self.vendor.full_name}'s Wallet - ₦{self.balance}"
-
-
-class Transaction(models.Model):
-    """
-    All wallet transactions (credits, debits, payouts, refunds)
-    """
-    
-    TRANSACTION_TYPE_CHOICES = [
-        ('credit', 'Credit'),
-        ('debit', 'Debit'),
-        ('payout', 'Payout'),
-        ('refund', 'Refund'),
-        ('commission', 'Commission'),
-    ]
-    
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
-        ('reversed', 'Reversed'),
-    ]
-    
-    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='transactions')
-    transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    
-    # Transaction Details
-    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
-    # References
-    reference = models.CharField(max_length=100, blank=True)
-    description = models.TextField(blank=True)
-    
-    # Related Objects (optional)
-    order = models.ForeignKey('Order', on_delete=models.SET_NULL, null=True, blank=True)
-    
-    # Balances After Transaction
-    balance_before = models.DecimalField(max_digits=12, decimal_places=2)
-    balance_after = models.DecimalField(max_digits=12, decimal_places=2)
-    
-    # Metadata
-    metadata = models.JSONField(default=dict, blank=True)
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-    
-    class Meta:
-        verbose_name = "Transaction"
-        verbose_name_plural = "Transactions"
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"{self.transaction_type} - ₦{self.amount} - {self.status}"
-
-
-# ==========================================
-# ORDERS & REFUNDS
-# ==========================================
-
-class Order(models.Model):
-    """
-    Customer orders - linked to vendors
-    """
-    
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('confirmed', 'Confirmed'),
-        ('processing', 'Processing'),
-        ('shipped', 'Shipped'),
-        ('delivered', 'Delivered'),
-        ('cancelled', 'Cancelled'),
-        ('refunded', 'Refunded'),
-    ]
-    
-    order_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    vendor = models.ForeignKey(VendorProfile, on_delete=models.CASCADE, related_name='orders')
-    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vendor_orders')
-    
-    # Order Details
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    commission_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    vendor_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    
-    # Payment
-    payment_reference = models.CharField(max_length=100, blank=True)
-    payment_status = models.CharField(max_length=20, default='pending')
-    paid_at = models.DateTimeField(null=True, blank=True)
-    
-    # Shipping
-    shipping_address = models.TextField()
-    shipping_phone = models.CharField(max_length=20)
-    tracking_number = models.CharField(max_length=100, blank=True)
-    
-    # Notes
-    customer_note = models.TextField(blank=True)
-    vendor_note = models.TextField(blank=True)
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    delivered_at = models.DateTimeField(null=True, blank=True)
-    
-    class Meta:
-        verbose_name = "Order"
-        verbose_name_plural = "Orders"
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"Order #{self.order_id} - {self.status}"
-
-
-class OrderItem(models.Model):
-    """
-    Individual items in an order
-    """
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
-    
-    quantity = models.PositiveIntegerField(default=1)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    total = models.DecimalField(max_digits=10, decimal_places=2)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        verbose_name = "Order Item"
-        verbose_name_plural = "Order Items"
-    
-    def __str__(self):
-        return f"{self.product.title} x{self.quantity}"
-
-
-class RefundRequest(models.Model):
-    """
-    Customer refund requests
-    """
-    
-    STATUS_CHOICES = [
-        ('pending', 'Pending Review'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-        ('completed', 'Completed'),
-    ]
-    
-    REASON_CHOICES = [
-        ('damaged', 'Damaged Product'),
-        ('wrong_item', 'Wrong Item Sent'),
-        ('not_as_described', 'Not as Described'),
-        ('defective', 'Defective'),
-        ('other', 'Other'),
-    ]
-    
-    refund_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='refunds')
-    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE)
-    vendor = models.ForeignKey(VendorProfile, on_delete=models.CASCADE)
-    
-    # Refund Details
-    reason = models.CharField(max_length=50, choices=REASON_CHOICES)
-    description = models.TextField()
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
-    # Admin/Vendor Response
-    admin_comment = models.TextField(blank=True)
-    processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    processed_at = models.DateTimeField(null=True, blank=True)
-    
-    class Meta:
-        verbose_name = "Refund Request"
-        verbose_name_plural = "Refund Requests"
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"Refund #{self.refund_id} - {self.status}"
-
-
-# ==========================================
 # NOTIFICATIONS
 # ==========================================
 
 class Notification(models.Model):
     """
-    In-app notifications for vendors
+    Unified in-app + email notifications for vendors and buyers.
+
+    Every notification is tied to a ``user`` (the recipient).  The legacy
+    ``vendor`` FK is kept nullable for backward-compatibility with any
+    existing queries or admin filters but is no longer required for new
+    rows.
     """
-    
+
     TYPE_CHOICES = [
-        ('order', 'New Order'),
-        ('payment', 'Payment Received'),
-        ('refund', 'Refund Request'),
         ('verification', 'Verification Update'),
         ('admin_message', 'Admin Message'),
         ('system', 'System Message'),
+        ('inventory', 'Inventory Alert'),
+        ('wishlist', 'Wishlist Activity'),
+        ('subscription', 'Subscription Update'),
     ]
-    
-    vendor = models.ForeignKey(VendorProfile, on_delete=models.CASCADE, related_name='notifications')
-    
+
+    CHANNEL_CHOICES = [
+        ('in_app', 'In-App Only'),
+        ('both', 'In-App + Email'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        null=True,
+        blank=True,
+        help_text="Recipient of this notification.",
+    )
+    vendor = models.ForeignKey(
+        VendorProfile,
+        on_delete=models.CASCADE,
+        related_name='notifications_legacy',
+        null=True,
+        blank=True,
+        help_text="Legacy field — kept for backward-compat. Prefer user FK.",
+    )
+
     notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     title = models.CharField(max_length=200)
     message = models.TextField()
     link = models.CharField(max_length=500, blank=True)
-    
+
+    channel = models.CharField(
+        max_length=10,
+        choices=CHANNEL_CHOICES,
+        default='both',
+        help_text="'both' = in-app + email; 'in_app' = no email sent.",
+    )
+    is_in_app_only = models.BooleanField(
+        default=False,
+        help_text="Convenience flag: True means channel='in_app'.",
+    )
+    email_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Set when the email dispatch for this notification succeeded.",
+    )
+
     is_read = models.BooleanField(default=False)
     read_at = models.DateTimeField(null=True, blank=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         verbose_name = "Notification"
         verbose_name_plural = "Notifications"
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"{self.title} - {'Read' if self.is_read else 'Unread'}"
+
+
+class WebhookEvent(models.Model):
+    """
+    Idempotency guard for Paystack webhook events.
+    One row per processed event — prevents double-processing on redelivery.
+    """
+    event_id = models.CharField(max_length=100, unique=True, db_index=True)
+    event_type = models.CharField(max_length=100)
+    reference = models.CharField(max_length=200, blank=True, default='')
+    payload = models.JSONField(default=dict)
+    processed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Webhook Event"
+        verbose_name_plural = "Webhook Events"
+        ordering = ['-processed_at']
+
+    def __str__(self):
+        return f"{self.event_type} ({self.event_id})"

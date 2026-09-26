@@ -12,7 +12,7 @@
 </div>
 
 <h1 style="text-align: center; color: #10b981; font-size: 32px; margin-bottom: 10px;">
-    Congratulations, {{ vendor.user.first_name }}!
+    Congratulations, {{ vendor_name|default:vendor.user.email|default:"Vendor" }}!
 </h1>
 
 <p style="text-align: center; font-size: 18px; color: #6b7280; margin-bottom: 30px;">
@@ -42,7 +42,7 @@
         <tr>
             <td style="padding: 12px; background-color: #ecfdf5;">
                 <span style="font-size: 24px; margin-right: 10px;">✅</span>
-                <strong>Receive Orders</strong> - Start getting sales from customers
+                <strong>Get Discovered</strong> - Appear in search and trending lists
             </td>
         </tr>
         <tr>
@@ -54,7 +54,7 @@
         <tr>
             <td style="padding: 12px; background-color: #a7f3d0; border-radius: 0 0 8px 8px;">
                 <span style="font-size: 24px; margin-right: 10px;">✅</span>
-                <strong>Receive Payments</strong> - Earnings deposited to your wallet
+                <strong>Grow Your Brand</strong> - Build a following across the KASU community
             </td>
         </tr>
     </table>
@@ -99,7 +99,7 @@
     <div style="padding: 15px; border-left: 4px solid #10b981; background-color: #f0fdf4; border-radius: 4px;">
         <p style="margin: 0; font-weight: bold; color: #065f46;">Step 3: Start Selling!</p>
         <p style="margin: 5px 0 0 0; font-size: 14px; color: #1f2937;">
-            Share your store link and watch the orders come in
+            Share your store link and start making sales
         </p>
     </div>
 </div>

@@ -51,37 +51,37 @@
             {% endif %}
 
             <!-- Vertical action stack — top-right inside banner -->
-            <div class="absolute right-3 top-3 flex flex-col items-center gap-2.5">
+            <div class="absolute right-3 top-3 flex flex-col items-end gap-2">
                 <button type="button" id="mobile-like-btn" aria-pressed="false" aria-label="Like this store"
-                        class="grid size-9 place-items-center rounded-full bg-white/90 text-gray-600 shadow-sm backdrop-blur-sm transition-all active:scale-95">
-                    <svg id="mobile-like-icon" class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-gray-600 shadow-sm backdrop-blur-sm transition-all active:scale-95">
+                    <svg id="mobile-like-icon" class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.682a4.5 4.5 0 010-6.364z"/>
                     </svg>
                     <span class="sr-only">Like</span>
                 </button>
                 {% if store.whatsapp %}
-                <a href="https://wa.me/{{ store.whatsapp|cut:'+' }}" target="_blank" rel="noopener noreferrer"
+                <a href="https://wa.me/{{ store.whatsapp|normalize_wa }}" target="_blank" rel="noopener noreferrer"
                    aria-label="Message {{ store.store_name }} on WhatsApp"
-                   class="grid size-9 place-items-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition-all active:scale-95" style="color:#25D366">
-                    <svg class="size-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                    <span class="sr-only">WhatsApp</span>
+                   class="flex items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white shadow-sm backdrop-blur-sm transition-all active:scale-95">
+                    <svg class="size-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    WhatsApp
                 </a>
                 {% endif %}
                 {% if store.phone %}
                 <a href="tel:{{ store.phone }}" aria-label="Call {{ store.store_name }}"
-                   class="grid size-9 place-items-center rounded-full bg-white/90 text-brand shadow-sm backdrop-blur-sm transition-all active:scale-95">
-                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   class="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-brand shadow-sm backdrop-blur-sm transition-all active:scale-95">
+                    <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                     </svg>
-                    <span class="sr-only">Call</span>
+                    Call
                 </a>
                 {% endif %}
                 <button type="button" id="mobile-share-btn" aria-label="Share this store"
-                        class="grid size-9 place-items-center rounded-full bg-white/90 text-gray-600 shadow-sm backdrop-blur-sm transition-all active:scale-95">
-                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-gray-600 shadow-sm backdrop-blur-sm transition-all active:scale-95">
+                    <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342a3 3 0 100-2.684m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.658m0-9.026a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 0L8.684 10.658m6.632 6.026a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
                     </svg>
-                    <span class="sr-only">Share</span>
+                    Share
                 </button>
             </div>
         </div>
@@ -104,13 +104,13 @@
 
             <h1 class="mt-4 text-center text-[26px] font-bold leading-tight tracking-tight text-gray-900">{{ store.store_name|upper }}</h1>
 
-            {% if store.address %}
+            {% if store.short_location %}
             <div class="mt-1 flex items-center gap-1 text-xs text-gray-500">
                 <svg class="size-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
-                <span>{{ store.address }}</span>
+                <span>{{ store.short_location }}</span>
             </div>
             {% endif %}
 
@@ -122,43 +122,36 @@
             <p class="mt-1.5 text-center text-xs text-gray-500">{{ store.tagline }}</p>
             {% endif %}
 
-            <!-- Stats row — shrunk -->
-            <div class="mt-4 grid w-full grid-cols-4 gap-1.5">
-                <div class="flex flex-col items-center gap-1 rounded-xl border border-gray-200 bg-white px-1 py-2.5">
-                    <span class="grid size-6 place-items-center rounded-full bg-amber-50">
-                        <svg class="size-3.5 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <!-- Stats row — compact -->
+            <div class="mt-3 grid w-full grid-cols-3 gap-1">
+                <div class="flex flex-col items-center gap-0.5 rounded-lg border border-gray-200 bg-white px-1 py-2">
+                    <span class="grid size-5 place-items-center rounded-full bg-amber-50">
+                        <svg class="size-3 fill-amber-400 text-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
                     </span>
-                    <span class="text-base font-bold text-gray-900">{{ store.average_rating|floatformat:1|default:"0.0" }}</span>
-                    <span class="text-[10px] font-medium text-gray-500">Rating</span>
+                    <span class="text-sm font-bold text-gray-900">{{ store.average_rating|floatformat:1|default:"0.0" }}</span>
+                    <span class="text-[9px] font-medium text-gray-500">Rating</span>
                 </div>
-                <div class="flex flex-col items-center gap-1 rounded-xl border border-gray-200 bg-white px-1 py-2.5">
-                    <span class="grid size-6 place-items-center rounded-full bg-brand/10">
-                        <svg class="size-3.5 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 11H6L5 9z"/></svg>
+                <div class="flex flex-col items-center gap-0.5 rounded-lg border border-gray-200 bg-white px-1 py-2">
+                    <span class="grid size-5 place-items-center rounded-full bg-emerald-50">
+                        <svg class="size-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                     </span>
-                    <span class="text-base font-bold text-gray-900">{{ total_orders|default:0 }}</span>
-                    <span class="text-[10px] font-medium text-gray-500">Orders</span>
+                    <span class="text-sm font-bold text-gray-900">{{ total_products|default:0 }}</span>
+                    <span class="text-[9px] font-medium text-gray-500">Products</span>
                 </div>
-                <div class="flex flex-col items-center gap-1 rounded-xl border border-gray-200 bg-white px-1 py-2.5">
-                    <span class="grid size-6 place-items-center rounded-full bg-emerald-50">
-                        <svg class="size-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <div class="flex flex-col items-center gap-0.5 rounded-lg border border-gray-200 bg-white px-1 py-2">
+                    <span class="grid size-5 place-items-center rounded-full bg-blue-50">
+                        <svg class="size-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     </span>
-                    <span class="text-base font-bold text-gray-900">{{ total_products|default:0 }}</span>
-                    <span class="text-[10px] font-medium text-gray-500">Products</span>
-                </div>
-                <div class="flex flex-col items-center gap-1 rounded-xl border border-gray-200 bg-white px-1 py-2.5">
-                    <span class="grid size-6 place-items-center rounded-full bg-blue-50">
-                        <svg class="size-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    </span>
-                    <span class="text-base font-bold text-gray-900">{{ store.created_at|date:"Y" }}</span>
-                    <span class="text-[10px] font-medium leading-tight text-gray-500 text-center">Member<br>Since</span>
+                    <span class="text-sm font-bold text-gray-900">{{ store.created_at|date:"Y" }}</span>
+                    <span class="text-[9px] font-medium leading-tight text-gray-500 text-center">Member<br>Since</span>
                 </div>
             </div>
 
             {% if store.description %}
-            <div class="mt-3 w-full rounded-2xl border border-gray-200 bg-white p-4">
-                <p id="mobile-store-description" class="text-sm leading-relaxed text-gray-600 transition-all duration-300 line-clamp-2">{{ store.description|truncatewords:20 }}</p>
-                <button type="button" id="mobile-description-toggle" aria-expanded="false" class="mt-1.5 text-sm font-semibold text-brand hover:opacity-80">Read More</button>
-                <p id="mobile-store-description-full" class="hidden text-sm leading-relaxed text-gray-600">{{ store.description }}</p>
+            <div class="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5">
+                <p id="mobile-store-description" class="text-xs leading-relaxed text-gray-600 transition-all duration-300 line-clamp-2">{{ store.description|truncatewords:20 }}</p>
+                <button type="button" id="mobile-description-toggle" aria-expanded="false" class="mt-1 text-xs font-semibold text-brand hover:opacity-80">Read More</button>
+                <p id="mobile-store-description-full" class="hidden text-xs leading-relaxed text-gray-600">{{ store.description }}</p>
             </div>
             {% endif %}
             <!-- Buyer Protection callout -->
@@ -210,13 +203,13 @@
                 <div class="min-w-0 flex-1 pl-44">
                     <h1 class="truncate text-xl font-bold tracking-tight text-ink">{{ store.store_name|upper }}</h1>
                     <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-ink-soft">
-                        {% if store.address %}
+                        {% if store.short_location %}
                         <span class="flex items-center gap-1">
                             <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                             </svg>
-                            {{ store.address }}
+                            {{ store.short_location }}
                         </span>
                         {% endif %}
                         {% if store.main_category %}
@@ -229,33 +222,33 @@
                 </div>
 
                 <div class="flex shrink-0 items-center gap-2 pt-1">
-                    <button type="button" id="desktop-like-btn" aria-pressed="false" aria-label="Like this store" title="Like" class="grid size-10 place-items-center rounded-full border border-hairline bg-white text-ink-soft shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-                        <svg id="desktop-like-icon" class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button type="button" id="desktop-like-btn" aria-pressed="false" aria-label="Like this store" title="Like" class="flex items-center gap-1.5 rounded-full border border-hairline bg-white px-3 py-2 text-xs font-semibold text-ink-soft shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                        <svg id="desktop-like-icon" class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.682a4.5 4.5 0 010-6.364z"/>
                         </svg>
                         <span class="sr-only">Like</span>
                     </button>
                     {% if store.whatsapp %}
-                    <a href="https://wa.me/{{ store.whatsapp|cut:'+' }}" target="_blank" rel="noopener noreferrer" aria-label="Message on WhatsApp" title="WhatsApp" class="grid size-10 place-items-center rounded-full border border-hairline bg-white text-[#25D366] shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-                        <svg class="size-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    <a href="https://wa.me/{{ store.whatsapp|normalize_wa }}" target="_blank" rel="noopener noreferrer" aria-label="Message on WhatsApp" title="WhatsApp" class="flex items-center gap-1.5 rounded-full border border-hairline bg-[#25D366] px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:bg-[#1da851] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                        <svg class="size-3.5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                         </svg>
-                        <span class="sr-only">WhatsApp</span>
+                        WhatsApp
                     </a>
                     {% endif %}
                     {% if store.phone %}
-                    <a href="tel:{{ store.phone }}" aria-label="Call {{ store.store_name }}" title="Call" class="grid size-10 place-items-center rounded-full border border-hairline bg-white text-brand shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="tel:{{ store.phone }}" aria-label="Call {{ store.store_name }}" title="Call" class="flex items-center gap-1.5 rounded-full border border-hairline bg-white px-3 py-2 text-xs font-semibold text-brand shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                        <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                         </svg>
-                        <span class="sr-only">Call</span>
+                        Call
                     </a>
                     {% endif %}
-                    <button type="button" id="desktop-share-btn" aria-label="Share this store" title="Share" class="grid size-10 place-items-center rounded-full border border-hairline bg-white text-ink-soft shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button type="button" id="desktop-share-btn" aria-label="Share this store" title="Share" class="flex items-center gap-1.5 rounded-full border border-hairline bg-white px-3 py-2 text-xs font-semibold text-ink-soft shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:bg-brand hover:text-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                        <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342a3 3 0 100-2.684m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.658m0-9.026a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 0L8.684 10.658m6.632 6.026a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
                         </svg>
-                        <span class="sr-only">Share</span>
+                        Share
                     </button>
                 </div>
             </div>
@@ -266,10 +259,6 @@
                     <div class="flex flex-col items-center gap-0.5 px-4">
                         <span class="text-xl font-bold text-ink">{{ store.average_rating|floatformat:1|default:"0.0" }}</span>
                         <span class="text-[11px] font-medium text-ink-soft">Rating</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-0.5 px-4">
-                        <span class="text-xl font-bold text-ink">{{ total_orders|default:0 }}</span>
-                        <span class="text-[11px] font-medium text-ink-soft">Orders</span>
                     </div>
                     <div class="flex flex-col items-center gap-0.5 px-4">
                         <span class="text-xl font-bold text-ink">{{ total_products|default:0 }}</span>
@@ -296,7 +285,7 @@
     <!-- =====================================================================
          MAIN CONTENT — sidebar (desktop) + product grid.
     ===================================================================== -->
-    <section class="mx-auto max-w-[1600px] px-4 pb-4 pt-8 lg:px-10 lg:pt-8">
+    <section class="mx-auto max-w-[1600px] px-4 pb-4 pt-3 lg:px-10 lg:pt-8">
         <div class="lg:grid lg:grid-cols-[300px_1fr] lg:gap-10">
 
             <!-- ===================== LEFT SIDEBAR (desktop only, sticky) ===================== -->
@@ -366,8 +355,26 @@
 
             <!-- ===================== RIGHT CONTENT ===================== -->
             <div>
-                <!-- Search Products (unique to this section — not duplicated in header) -->
-                <div class="relative">
+                <!-- Search + Sort side by side (mobile) -->
+                <div class="mt-4 flex items-center gap-2 lg:hidden">
+                    <div class="relative flex-1">
+                        <svg class="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-ink-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
+                        </svg>
+                        <input type="search" id="product-search-mobile" placeholder="Search..." aria-label="Search products"
+                               class="h-9 w-full rounded-full border border-gray-300 bg-white pl-9 pr-3 text-xs text-gray-900 placeholder:text-gray-400 focus-visible:border-brand focus-visible:outline-none">
+                    </div>
+                    <select id="product-sort-mobile" aria-label="Sort products"
+                            class="h-9 shrink-0 rounded-full border border-gray-300 bg-white px-2.5 text-xs font-medium text-gray-900 focus-visible:border-brand focus-visible:outline-none">
+                        <option value="featured">Sort</option>
+                        <option value="price-asc">Price ↑</option>
+                        <option value="price-desc">Price ↓</option>
+                        <option value="name">A-Z</option>
+                    </select>
+                </div>
+
+                <!-- Search (desktop) -->
+                <div class="relative hidden lg:block">
                     <svg class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
                     </svg>
@@ -379,84 +386,12 @@
                     {% if products.paginator %}{{ products.paginator.count }}{% else %}{{ products|length }}{% endif %} products
                 </p>
 
-                <!-- Mobile/tablet-only sort control (sidebar with sort is desktop-only) -->
-                <div class="mt-3 lg:hidden">
-                    <select id="product-sort-mobile" aria-label="Sort products"
-                            class="h-11 w-full rounded-full border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 focus-visible:border-brand focus-visible:outline-none">
-                        <option value="featured">Sort: Featured</option>
-                        <option value="price-asc">Price: Low to High</option>
-                        <option value="price-desc">Price: High to Low</option>
-                        <option value="name">Alphabetical</option>
-                    </select>
-                </div>
+                <!-- Mobile/tablet-only sort control removed — handled above -->
 
                 {% if products %}
-                <div id="product-grid" class="mt-6 grid grid-cols-2 gap-4 min-[440px]:grid-cols-3 lg:grid-cols-4 lg:gap-6">
+                <div id="product-grid" class="mt-6 grid grid-cols-2 gap-3 items-start lg:grid-cols-4 lg:gap-4">
                     {% for product in products %}
-                    <div data-product-card
-                         data-title="{{ product.title|lower }}"
-                         data-price="{{ product.price|stringformat:'f' }}"
-                         class="group tilt-card flex flex-col overflow-hidden rounded-[24px] border border-hairline bg-white transition-all duration-300 lg:hover:-translate-y-1 lg:hover:shadow-xl lg:hover:shadow-black/5"
-                         style="transform-style: preserve-3d; transition: transform 0.25s ease;">
-                        <a href="{% url 'product_detail_public' store_slug=store.slug product_slug=product.slug %}" class="flex flex-1 flex-col">
-                            <div class="relative aspect-square overflow-hidden bg-gray-100">
-                                {% if product.images.first %}
-                                <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}" loading="lazy"
-                                     class="size-full object-cover transition-transform duration-500 lg:group-hover:scale-105">
-                                {% else %}
-                                <div class="flex size-full items-center justify-center">
-                                    <svg class="size-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                                    </svg>
-                                </div>
-                                {% endif %}
-                                {% if product.compare_at_price %}
-                                <span class="absolute left-3 top-3 rounded-md bg-brand px-2 py-1 text-xs font-bold text-brand-foreground shadow-sm">
-                                    -{{ product.discount_percentage|floatformat:0 }}%
-                                </span>
-                                {% endif %}
-                                {% if not product.is_in_stock %}
-                                <div class="absolute inset-0 grid place-items-center bg-white/60 backdrop-blur-[1px]">
-                                    <span class="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white">Out of stock</span>
-                                </div>
-                                {% endif %}
-                            </div>
-                            <div class="flex flex-1 flex-col gap-2 p-4 pb-0">
-                                <h3 class="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug text-ink">{{ product.title }}</h3>
-                                <div class="mt-auto flex items-baseline gap-2">
-                                    <span class="text-base font-bold text-ink">{{ product.price|naira }}</span>
-                                    {% if product.compare_at_price %}
-                                    <span class="text-sm text-ink-soft/70 line-through">{{ product.compare_at_price|naira }}</span>
-                                    {% endif %}
-                                </div>
-                                <div class="flex items-center justify-between text-xs text-ink-soft">
-                                    <span>{{ product.sales_count|default:0 }} sold</span>
-                                    <span class="flex items-center gap-1">
-                                        <span class="size-1.5 rounded-full {% if product.is_in_stock %}bg-emerald-500{% else %}bg-gray-400{% endif %}"></span>
-                                        {% if product.is_in_stock %}In Stock{% else %}Out of Stock{% endif %}
-                                    </span>
-                                </div>
-                            </div>
-                        </a>
-
-                        <div class="p-4 pt-3">
-                            {% if product.is_in_stock %}
-                            <button type="button"
-                                    onclick="quickAddToCart(this, {{ product.pk }})"
-                                    data-default-label="Add to cart"
-                                    class="flex h-10 w-full items-center justify-center gap-1.5 rounded-full bg-brand text-xs font-semibold text-brand-foreground transition-all hover:bg-brand/90 active:scale-[0.97]">
-                                <svg class="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                                </svg>
-                                Add to Cart
-                            </button>
-                            {% else %}
-                            <button type="button" disabled class="h-10 w-full cursor-not-allowed rounded-full bg-gray-100 text-xs font-semibold text-gray-400">
-                                Out of stock
-                            </button>
-                            {% endif %}
-                        </div>
-                    </div>
+                        {% include 'vendors/store/partials/storefront_product_card.html' with item=product %}
                     {% endfor %}
                 </div>
 
@@ -526,42 +461,40 @@
     }
     const CSRF = getCookie('csrftoken');
 
-    function quickAddToCart(btn, productId) {
-        const originalLabel = btn.innerHTML;
+    // ---- Toggle Wishlist from Product Card ----
+    function toggleCardWishlist(btn, storeSlug, productSlug) {
+        const icon = btn.querySelector('.wishlist-icon') || btn.querySelector('svg');
         btn.disabled = true;
-        btn.textContent = 'Adding…';
 
-        fetch('/cart/add/', {
+        fetch(`/shop/${storeSlug}/products/${productSlug}/wishlist/`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-            body: JSON.stringify({ product_id: productId, quantity: 1 })
+            headers: { 'X-CSRFToken': CSRF },
         })
         .then(r => r.json())
         .then(data => {
             btn.disabled = false;
+            if (!data) return;
+
             if (data.success) {
-                showToast(data.message || 'Added to cart', 'success');
-                btn.textContent = 'Added ✓';
-                setTimeout(() => { btn.innerHTML = originalLabel; }, 1500);
-                const badge = document.getElementById('cart-badge');
-                const badgeDesktop = document.getElementById('cart-badge-desktop');
-                if (data.cart_total_items > 0) {
-                    [badge, badgeDesktop].forEach(function (b) {
-                        if (!b) return;
-                        b.textContent = data.cart_total_items;
-                        b.classList.remove('hidden');
-                        b.classList.add('grid');
-                    });
+                if (icon) {
+                    if (data.wishlisted) {
+                        icon.classList.add('fill-brand', 'text-brand');
+                        icon.classList.remove('fill-none', 'text-ink-soft');
+                    } else {
+                        icon.classList.remove('fill-brand', 'text-brand');
+                        icon.classList.add('fill-none', 'text-ink-soft');
+                    }
                 }
-            } else {
-                showToast(data.message || 'Could not add to cart', 'error');
-                btn.innerHTML = originalLabel;
+                if (typeof window.showToast === 'function') {
+                    window.showToast(data.message || (data.wishlisted ? 'Saved to wishlist!' : 'Removed from wishlist.'), 'success');
+                }
+            } else if (data.message && typeof window.showToast === 'function') {
+                window.showToast(data.message, 'error');
             }
         })
-        .catch(() => {
+        .catch(err => {
             btn.disabled = false;
-            btn.innerHTML = originalLabel;
-            showToast('Something went wrong.', 'error');
+            console.error('[wishlist] error:', err);
         });
     }
 
@@ -632,27 +565,31 @@
     })();
 
     // Client-side search + sort — scoped to products rendered on this page.
-    // Two sort selects exist (desktop sidebar + mobile row); both drive the
-    // same grid and stay in sync with each other.
     (function () {
         const grid = document.getElementById('product-grid');
         if (!grid) return;
         const cards = Array.from(grid.querySelectorAll('[data-product-card]'));
-        const searchInput = document.getElementById('product-search');
+        const searchInputDesktop = document.getElementById('product-search');
+        const searchInputMobile = document.getElementById('product-search-mobile');
         const sortSelectDesktop = document.getElementById('product-sort');
         const sortSelectMobile = document.getElementById('product-sort-mobile');
         const noResults = document.getElementById('no-results');
         const noResultsQuery = document.getElementById('no-results-query');
         const visibleCount = document.getElementById('visible-count');
 
+        function currentSearch() {
+            if (searchInputDesktop && searchInputDesktop.offsetParent !== null) return searchInputDesktop;
+            return searchInputMobile;
+        }
+
         function currentSort() {
-            return (sortSelectDesktop && sortSelectDesktop.offsetParent !== null)
-                ? sortSelectDesktop.value
-                : (sortSelectMobile ? sortSelectMobile.value : 'featured');
+            if (sortSelectDesktop && sortSelectDesktop.offsetParent !== null) return sortSelectDesktop.value;
+            return sortSelectMobile ? sortSelectMobile.value : 'featured';
         }
 
         function apply() {
-            const query = searchInput.value.trim().toLowerCase();
+            const input = currentSearch();
+            const query = input ? input.value.trim().toLowerCase() : '';
             const sort = currentSort();
 
             let visible = cards.filter(card => card.dataset.title.includes(query));
@@ -673,14 +610,15 @@
             if (sorted.length === 0 && query) {
                 noResults.classList.remove('hidden');
                 noResults.classList.add('flex');
-                noResultsQuery.textContent = searchInput.value.trim();
+                noResultsQuery.textContent = input ? input.value.trim() : '';
             } else {
                 noResults.classList.add('hidden');
                 noResults.classList.remove('flex');
             }
         }
 
-        searchInput.addEventListener('input', apply);
+        if (searchInputDesktop) searchInputDesktop.addEventListener('input', apply);
+        if (searchInputMobile) searchInputMobile.addEventListener('input', apply);
         if (sortSelectDesktop) sortSelectDesktop.addEventListener('change', function () {
             if (sortSelectMobile) sortSelectMobile.value = sortSelectDesktop.value;
             apply();

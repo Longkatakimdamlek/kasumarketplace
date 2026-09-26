@@ -1,340 +1,239 @@
 {% extends 'vendors/base.html' %}
 
-{% block title %}Store Setup - KasuMarketplace{% endblock %}
+{% block title %}Create Store - KasuMarketplace{% endblock %}
 
-{% block page_title %}Store Setup{% endblock %}
+{% block page_title %}Create Store{% endblock %}
 
 {% block content %}
 
-<div class="max-w-2xl mx-auto px-3 xs:px-4 sm:px-6 py-4 xs:py-6 sm:py-8">
+<div class="max-w-lg mx-auto px-4 py-6 sm:py-10">
 
-    <!-- Back + Progress -->
-    <div class="mb-5 xs:mb-6 sm:mb-8">
-        <a href="{% url 'vendors:verification_center' %}"
-           class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 mb-4 xs:mb-5 transition-colors">
-            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-            Verification Center
-        </a>
-    </div>
-    <!-- Intro -->
-    <div class="mb-6 xs:mb-7 sm:mb-8">
-        <h1 class="text-xl xs:text-2xl sm:text-3xl font-bold text-gray-900 mb-1.5 xs:mb-2">Set up your store</h1>
-        <p class="text-sm xs:text-base text-gray-500 leading-relaxed">
-            Choose your category and tell customers what you sell. Your name and category will represent your store across the marketplace.
-        </p>
-    </div>
+    <h1 class="text-2xl font-bold text-gray-900 mb-1">Create your store</h1>
+    <p class="text-sm text-gray-500 mb-8">Enter the details below to get started.</p>
 
-    <!-- Form Card -->
-    <div class="bg-white rounded-xl xs:rounded-2xl border border-gray-200 p-4 xs:p-6 sm:p-8">
+    <form method="POST" action="{% url 'vendors:store_setup' %}"
+          x-data="{ submitting: false }"
+          @submit="submitting = true" class="space-y-6">
+        {% csrf_token %}
 
-        <form method="POST" action="{% url 'vendors:store_setup' %}" enctype="multipart/form-data"
-              x-data="{ submitting: false, categoryLocked: false }"
-              @submit="submitting = true" class="space-y-5 xs:space-y-6">
-            {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+            {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
 
-            <!-- Store Name -->
-            <div>
-                <label for="{{ form.store_name.id_for_label }}" class="field-label">
-                    Store name <span class="text-red-500">*</span>
-                </label>
-                <input type="text"
-                       name="{{ form.store_name.html_name }}"
-                       id="{{ form.store_name.id_for_label }}"
-                       value="{{ form.store_name.value|default:'' }}"
-                       placeholder="e.g. Tech Haven, Fashion Palace"
-                       class="field-input"
-                       required>
-                {% if form.store_name.errors %}
-                <p class="field-error">{{ form.store_name.errors.0 }}</p>
-                {% else %}
-                <p class="field-help">This is your store's public display name.</p>
-                {% endif %}
-            </div>
+        <!-- Store Information -->
+        <fieldset>
+            <legend class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Store Information</legend>
 
-            <!-- Main Category -->
-            <div>
-                <label for="{{ form.main_category.id_for_label }}" class="field-label">
-                    Main category <span class="text-red-500">*</span>
-                </label>
-                {{ form.main_category }}
-                {% if form.main_category.errors %}
-                <p class="field-error">{{ form.main_category.errors.0 }}</p>
-                {% endif %}
-            </div>
-
-            <!-- Store Description -->
-            <div>
-                <label for="{{ form.description.id_for_label }}" class="field-label">
-                    Store description <span class="text-red-500">*</span>
-                </label>
-                <textarea name="{{ form.description.html_name }}"
-                          id="{{ form.description.id_for_label }}"
-                          rows="4"
-                          placeholder="Tell customers about your store and what makes it special..."
-                          class="field-input resize-none"
-                          required>{{ form.description.value|default:'' }}</textarea>
-                {% if form.description.errors %}
-                <p class="field-error">{{ form.description.errors.0 }}</p>
-                {% endif %}
-            </div>
-
-            <!-- Store Banner Upload -->
-            <div>
-                <label class="field-label">Store banner <span class="text-gray-400 font-normal">(optional)</span></label>
-
-                <div class="upload-dropzone" x-data="{ fileName: '' }">
-                    <img id="setupBannerPreview" class="hidden w-full h-28 xs:h-36 object-cover rounded-lg mb-3" alt="">
-
-                    <div id="setupBannerPlaceholder" class="flex flex-col items-center py-3 xs:py-4">
-                        <svg class="w-8 h-8 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        <label for="{{ form.banner.id_for_label }}" class="cursor-pointer text-center">
-                            <span class="text-primary font-semibold text-sm">Upload a file</span>
-                            <span class="text-gray-500 text-sm"> or drag and drop</span>
-                        </label>
-                    </div>
-
-                    <input type="file"
-                           name="{{ form.banner.html_name }}"
-                           id="{{ form.banner.id_for_label }}"
-                           accept="image/*"
-                           class="hidden"
-                           @change="fileName = $event.target.files[0]?.name || ''">
-                    <p class="text-xs text-gray-400 text-center mt-1">PNG or JPG, up to 2MB &middot; 1200&times;400px recommended</p>
-                    <p x-show="fileName" x-text="fileName" class="text-xs font-medium text-primary text-center mt-1"></p>
-                </div>
-                {% if form.banner.errors %}
-                <p class="field-error">{{ form.banner.errors.0 }}</p>
-                {% endif %}
-            </div>
-
-            <!-- Contact Information -->
-            <div class="grid xs:grid-cols-2 gap-4 xs:gap-5">
+            <div class="space-y-4">
                 <div>
-                    <label for="{{ form.phone.id_for_label }}" class="field-label">
-                        Phone number <span class="text-red-500">*</span>
+                    <label for="{{ form.store_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Store Name <span class="text-red-500">*</span>
                     </label>
-                    <input type="tel"
-                           name="{{ form.phone.html_name }}"
-                           id="{{ form.phone.id_for_label }}"
-                           value="{{ form.phone.value|default:vendor.phone }}"
-                           placeholder="080XXXXXXXX"
-                           class="field-input"
+                    <input type="text"
+                           name="{{ form.store_name.html_name }}"
+                           id="{{ form.store_name.id_for_label }}"
+                           value="{{ form.store_name.value|default:'' }}"
+                           placeholder="e.g. Tech Haven, Fashion Palace"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
                            required>
-                    {% if form.phone.errors %}
-                    <p class="field-error">{{ form.phone.errors.0 }}</p>
+                    {% if form.store_name.errors %}
+                    <p class="mt-1 text-xs font-medium text-red-600">{{ form.store_name.errors.0 }}</p>
                     {% endif %}
                 </div>
 
                 <div>
-                    <label for="{{ form.business_email.id_for_label }}" class="field-label">
-                        Store email <span class="text-gray-400 font-normal">(optional)</span>
+                    <label for="{{ form.main_category.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Main Category <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.main_category }}
+                    {% if form.main_category.errors %}
+                    <p class="mt-1 text-xs font-medium text-red-600">{{ form.main_category.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Store Description <span class="text-red-500">*</span>
+                    </label>
+                    <textarea name="{{ form.description.html_name }}"
+                              id="{{ form.description.id_for_label }}"
+                              rows="3"
+                              placeholder="What do you sell?"
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm resize-none"
+                              required>{{ form.description.value|default:'' }}</textarea>
+                    {% if form.description.errors %}
+                    <p class="mt-1 text-xs font-medium text-red-600">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- Contact Information -->
+        <fieldset>
+            <legend class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Contact Information</legend>
+
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Phone Number <span class="text-red-500">*</span>
+                        </label>
+                        <input type="tel"
+                               name="{{ form.phone.html_name }}"
+                               id="{{ form.phone.id_for_label }}"
+                               value="{{ form.phone.value|default:'' }}"
+                               placeholder="08012345678"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                               required>
+                        {% if form.phone.errors %}
+                        <p class="mt-1 text-xs font-medium text-red-600">{{ form.phone.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.whatsapp.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            WhatsApp Number <span class="text-red-500">*</span>
+                        </label>
+                        <input type="tel"
+                               name="{{ form.whatsapp.html_name }}"
+                               id="{{ form.whatsapp.id_for_label }}"
+                               value="{{ form.whatsapp.value|default:'' }}"
+                               placeholder="08012345678"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                               required>
+                        {% if form.whatsapp.errors %}
+                        <p class="mt-1 text-xs font-medium text-red-600">{{ form.whatsapp.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <label for="{{ form.business_email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Business Email
                     </label>
                     <input type="email"
                            name="{{ form.business_email.html_name }}"
                            id="{{ form.business_email.id_for_label }}"
-                           value="{{ form.business_email.value|default:vendor.user.email }}"
+                           value="{{ form.business_email.value|default:'' }}"
                            placeholder="store@example.com"
-                           class="field-input">
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm">
                     {% if form.business_email.errors %}
-                    <p class="field-error">{{ form.business_email.errors.0 }}</p>
+                    <p class="mt-1 text-xs font-medium text-red-600">{{ form.business_email.errors.0 }}</p>
                     {% endif %}
                 </div>
             </div>
+        </fieldset>
 
-            <!-- Store Location -->
-            <div>
-                <label class="field-label">
-                    Store location <span class="text-gray-400 font-normal">(helps buyers see distance)</span>
-                </label>
+        <!-- Store Location -->
+        <fieldset>
+            <legend class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Store Location</legend>
+
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="{{ form.state.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            State <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               name="{{ form.state.html_name }}"
+                               id="{{ form.state.id_for_label }}"
+                               value="{{ form.state.value|default:'' }}"
+                               placeholder="e.g. Kaduna"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                               required>
+                        {% if form.state.errors %}
+                        <p class="mt-1 text-xs font-medium text-red-600">{{ form.state.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.city.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Area / City <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               name="{{ form.city.html_name }}"
+                               id="{{ form.city.id_for_label }}"
+                               value="{{ form.city.value|default:'' }}"
+                               placeholder="e.g. Kawo"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                               required>
+                        {% if form.city.errors %}
+                        <p class="mt-1 text-xs font-medium text-red-600">{{ form.city.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
 
                 {{ form.latitude }}
                 {{ form.longitude }}
 
-                <input type="text"
-                       name="{{ form.address.html_name }}"
-                       id="{{ form.address.id_for_label }}"
-                       value="{{ form.address.value|default:'' }}"
-                       placeholder="e.g. Kasu Main Gate, Kafanchan Road, Kaduna"
-                       class="field-input mb-3"
-                       id="id_address_display" />
-                {% if form.address.errors %}
-                <p class="field-error mb-3">{{ form.address.errors.0 }}</p>
-                {% endif %}
-
-                <button type="button"
-                        id="locate-btn"
-                        onclick="captureLocation()"
-                        class="inline-flex items-center gap-2 px-4 py-2.5 min-h-[44px] bg-gray-50 border border-gray-200 text-gray-700 font-medium text-sm rounded-lg hover:bg-gray-100 active:scale-[0.98] transition-all">
-                    <svg id="locate-icon" class="w-4 h-4 shrink-0 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
-                    <svg id="locate-spinner" class="w-4 h-4 animate-spin hidden text-primary" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                    </svg>
-                    <span id="locate-label">Use my current location</span>
-                </button>
-
-                <div id="location-status" class="hidden mt-3 flex items-start gap-2 text-sm rounded-lg px-3 py-2.5"></div>
-
-                <div id="map-preview" class="hidden mt-3 rounded-lg overflow-hidden border border-gray-200 h-14 bg-gray-50 relative">
-                    <div id="map-placeholder" class="w-full h-full flex items-center gap-2 px-4">
-                        <svg class="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <div>
+                    <button type="button"
+                            id="locate-btn"
+                            onclick="captureLocation()"
+                            class="inline-flex items-center gap-2 px-4 py-3 min-h-[44px] bg-gray-50 border border-gray-300 text-gray-700 font-medium text-sm rounded-lg hover:bg-gray-100 active:scale-[0.98] transition-all">
+                        <span id="locate-icon">📍</span>
+                        <svg id="locate-spinner" class="w-4 h-4 animate-spin hidden text-primary" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                         </svg>
-                        <p id="map-coords" class="text-xs text-gray-600 font-medium"></p>
-                    </div>
+                        <span id="locate-label">Capture My Location</span>
+                    </button>
+
+                    <div id="location-status" class="hidden mt-2 text-sm"></div>
+
+                    {% if form.latitude.errors or form.longitude.errors %}
+                    <p class="mt-1 text-xs font-medium text-red-600">Please capture your location</p>
+                    {% endif %}
                 </div>
-
-                <p class="field-help mt-2">Your address is shown publicly; exact coordinates are only used to calculate distance for buyers.</p>
             </div>
+        </fieldset>
 
-            <!-- Confirmation Checkbox -->
-            <div class="bg-gray-50 rounded-lg p-4">
-                <label class="flex items-start cursor-pointer">
-                    <input type="checkbox"
-                           name="confirm_category_lock"
-                           required
-                           @change="categoryLocked = $event.target.checked"
-                           class="mt-0.5 w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-offset-0 flex-shrink-0">
-                    <span class="ml-3 text-sm text-gray-600 leading-relaxed">
-                        I understand my selected category will be <strong class="text-gray-900">permanently locked</strong> after submission.
-                        <span class="text-red-500">*</span>
-                    </span>
-                </label>
-            </div>
+        <!-- Submit -->
+        <button type="submit"
+                :disabled="submitting"
+                class="w-full py-3.5 min-h-[48px] bg-primary text-white text-sm font-semibold rounded-lg hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
+            <span x-show="!submitting">Create Store</span>
+            <span x-show="submitting" class="flex items-center justify-center">
+                <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Creating store...
+            </span>
+        </button>
 
-            <!-- Submit -->
-            <button type="submit"
-                    :disabled="!categoryLocked || submitting"
-                    class="w-full py-3.5 min-h-[48px] bg-primary text-white text-sm xs:text-base font-semibold rounded-lg hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
-                <span x-show="!submitting">Complete store setup</span>
-                <span x-show="submitting" class="flex items-center justify-center">
-                    <svg class="animate-spin h-4 w-4 mr-2.5" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creating store...
-                </span>
-            </button>
-
-        </form>
-
-    </div>
+    </form>
 
 </div>
 
-<!-- Styles -->
 <style>
-    .field-label {
-        display: block;
-        font-size: 0.8125rem;
-        font-weight: 600;
-        color: #111827;
-        margin-bottom: 0.5rem;
-    }
-
-    .field-input {
+    #id_main_category {
         width: 100%;
         padding: 0.75rem 1rem;
         min-height: 44px;
-        font-size: 16px; /* prevents iOS zoom */
+        font-size: 0.875rem;
         color: #111827;
         background-color: #ffffff;
         border: 1px solid #d1d5db;
         border-radius: 0.5rem;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        appearance: auto;
     }
-
-    .field-input::placeholder { color: #9ca3af; }
-
-    .field-input:focus {
+    #id_main_category:focus {
         outline: none;
         border-color: var(--color-primary, #3b82f6);
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
     }
-
-    .field-help {
-        margin-top: 0.4rem;
-        font-size: 0.75rem;
-        color: #9ca3af;
-        line-height: 1.4;
-    }
-
-    .field-error {
-        margin-top: 0.4rem;
-        font-size: 0.75rem;
-        font-weight: 500;
-        color: #dc2626;
-    }
-
-    /* Style the Django-rendered category <select> to match .field-input */
-    #{{ form.main_category.id_for_label }} {
-        width: 100%;
-        padding: 0.75rem 1rem;
-        min-height: 44px;
-        font-size: 16px;
-        color: #111827;
-        background-color: #ffffff;
-        border: 1px solid #d1d5db;
-        border-radius: 0.5rem;
-    }
-    #{{ form.main_category.id_for_label }}:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
-    }
-
-    .upload-dropzone {
-        border: 1.5px dashed #d1d5db;
-        border-radius: 0.75rem;
-        padding: 1rem;
-        transition: border-color 0.15s ease, background-color 0.15s ease;
-    }
-
-    .upload-dropzone:hover {
-        border-color: #3b82f6;
-        background-color: rgba(59, 130, 246, 0.02);
-    }
 </style>
 
 <script>
-    // Banner preview on selection (setup page)
-    (function() {
-        const input = document.getElementById('{{ form.banner.id_for_label }}');
-        const preview = document.getElementById('setupBannerPreview');
-        const placeholder = document.getElementById('setupBannerPlaceholder');
-        if (!input || !preview || !placeholder) return;
-
-        input.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(ev) {
-                    preview.src = ev.target.result;
-                    preview.classList.remove('hidden');
-                    placeholder.classList.add('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    })();
-</script>
-
-<script>
-// ==========================================
-// STORE LOCATION PICKER
-// ==========================================
-
 function captureLocation() {
     if (!navigator.geolocation) {
-        showLocationStatus('error', 'Geolocation is not supported by your browser.');
+        showStatus('error', 'Geolocation not supported');
         return;
     }
 
@@ -342,109 +241,52 @@ function captureLocation() {
 
     navigator.geolocation.getCurrentPosition(
         function(position) {
-            const lat = position.coords.latitude.toFixed(6);
-            const lon = position.coords.longitude.toFixed(6);
+            var lat = position.coords.latitude.toFixed(6);
+            var lon = position.coords.longitude.toFixed(6);
 
-            const latEl = document.getElementById('id_latitude');
-            const lonEl = document.getElementById('id_longitude');
-            if (latEl) latEl.value = lat;
-            if (lonEl) lonEl.value = lon;
+            document.getElementById('id_latitude').value = lat;
+            document.getElementById('id_longitude').value = lon;
 
-            const mp = document.getElementById('map-preview');
-            const coords = document.getElementById('map-coords');
-            if (mp) mp.classList.remove('hidden');
-            if (coords) coords.textContent = `${lat}, ${lon}`;
-
-            reverseGeocode(lat, lon);
-
-            showLocationStatus('success', `Location captured: ${lat}, ${lon}`);
+            showStatus('success', '✓ Location captured');
             setLocating(false);
         },
         function(error) {
             setLocating(false);
-            let msg = 'Could not get your location.';
-            if (error.code === 1) msg = 'Location access denied. Please allow location in your browser.';
-            if (error.code === 2) msg = 'Location unavailable. Try again or enter address manually.';
-            if (error.code === 3) msg = 'Location request timed out. Try again.';
-            showLocationStatus('error', msg);
+            if (error.code === 1) {
+                showStatus('error', 'Location permission denied');
+            } else {
+                showStatus('error', 'Unable to capture location');
+            }
         },
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
 }
 
-function reverseGeocode(lat, lon) {
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
-        headers: { 'Accept-Language': 'en' }
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data && data.display_name) {
-            const addressField = document.getElementById('id_address_display');
-            if (addressField && !addressField.value.trim()) {
-                const parts = data.address || {};
-                const short = [
-                    parts.road || parts.pedestrian || parts.suburb,
-                    parts.city || parts.town || parts.village || parts.county,
-                    parts.state
-                ].filter(Boolean).join(', ');
-
-                addressField.value = short || data.display_name;
-            }
-        }
-    })
-    .catch(() => {});
-}
-
 function setLocating(loading) {
-    const btn = document.getElementById('locate-btn');
-    const icon = document.getElementById('locate-icon');
-    const spinner = document.getElementById('locate-spinner');
-    const label = document.getElementById('locate-label');
+    var btn = document.getElementById('locate-btn');
+    var icon = document.getElementById('locate-icon');
+    var spinner = document.getElementById('locate-spinner');
+    var label = document.getElementById('locate-label');
 
     if (loading) {
-        if (btn) btn.disabled = true;
-        if (icon) icon.classList.add('hidden');
-        if (spinner) spinner.classList.remove('hidden');
-        if (label) label.textContent = 'Getting location...';
+        btn.disabled = true;
+        icon.classList.add('hidden');
+        spinner.classList.remove('hidden');
+        label.textContent = 'Getting location...';
     } else {
-        if (btn) btn.disabled = false;
-        if (icon) icon.classList.remove('hidden');
-        if (spinner) spinner.classList.add('hidden');
-        if (label) label.textContent = 'Update location';
+        btn.disabled = false;
+        icon.classList.remove('hidden');
+        spinner.classList.add('hidden');
+        label.textContent = 'Capture My Location';
     }
 }
 
-function showLocationStatus(type, message) {
-    const el = document.getElementById('location-status');
-    if (!el) return;
-    if (type === 'success') {
-        el.className = 'mt-3 flex items-start gap-2 text-sm rounded-lg px-3 py-2.5 bg-primary/10 text-primary border border-primary/20';
-    } else {
-        el.className = 'mt-3 flex items-start gap-2 text-sm rounded-lg px-3 py-2.5 bg-red-50 text-red-700 border border-red-200';
-    }
+function showStatus(type, message) {
+    var el = document.getElementById('location-status');
     el.textContent = message;
+    el.className = 'mt-2 text-sm ' + (type === 'success' ? 'text-green-600' : 'text-red-600');
     el.classList.remove('hidden');
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    const latEl = document.getElementById('id_latitude');
-    const lonEl = document.getElementById('id_longitude');
-    const lat = latEl ? latEl.value : '';
-    const lon = lonEl ? lonEl.value : '';
-    if (lat && lon) {
-        const mp = document.getElementById('map-preview');
-        const coords = document.getElementById('map-coords');
-        if (mp) mp.classList.remove('hidden');
-        if (coords) coords.textContent = `${lat}, ${lon}`;
-        const label = document.getElementById('locate-label');
-        if (label) label.textContent = 'Update location';
-        showLocationStatus('success', `Location saved: ${lat}, ${lon}`);
-    }
-});
 </script>
 
 {% endblock %}

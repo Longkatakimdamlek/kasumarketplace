@@ -48,25 +48,18 @@
             {% endif %}
         </a>
 
-        <a href="?filter=order"
-           class="rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors
-               {% if request.GET.filter == 'order' %}bg-green-600 text-white border-green-600
-               {% else %}border-gray-300 bg-white text-gray-600 hover:border-gray-400{% endif %}">
-            Orders
-        </a>
-
-        <a href="?filter=payment"
-           class="rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors
-               {% if request.GET.filter == 'payment' %}bg-purple-600 text-white border-purple-600
-               {% else %}border-gray-300 bg-white text-gray-600 hover:border-gray-400{% endif %}">
-            Payments
-        </a>
-
         <a href="?filter=system"
            class="rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors
                {% if request.GET.filter == 'system' %}bg-gray-700 text-white border-gray-700
                {% else %}border-gray-300 bg-white text-gray-600 hover:border-gray-400{% endif %}">
             System
+        </a>
+
+        <a href="?filter=inventory"
+           class="rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors
+               {% if request.GET.filter == 'inventory' %}bg-orange-600 text-white border-orange-600
+               {% else %}border-gray-300 bg-white text-gray-600 hover:border-gray-400{% endif %}">
+            Inventory
         </a>
     </div>
 
@@ -81,20 +74,10 @@
 
                 {# Type icon — SVG only, no emoji #}
                 <span class="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl
-                    {% if notification.notification_type == 'order' %}bg-green-100 text-green-600
-                    {% elif notification.notification_type == 'payment' %}bg-purple-100 text-purple-600
-                    {% elif notification.notification_type == 'product' %}bg-blue-100 text-blue-600
+                    {% if notification.notification_type == 'product' %}bg-blue-100 text-blue-600
                     {% else %}bg-gray-100 text-gray-500{% endif %}">
 
-                    {% if notification.notification_type == 'order' %}
-                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                    </svg>
-                    {% elif notification.notification_type == 'payment' %}
-                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    {% elif notification.notification_type == 'product' %}
+                    {% if notification.notification_type == 'product' %}
                     <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                     </svg>

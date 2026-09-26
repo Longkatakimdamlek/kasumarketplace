@@ -1,0 +1,449 @@
+{% extends 'marketplace/base.html' %}
+{% load currency_filters %}
+
+{% block title %}{{ listing.title }} - Quick Sell - KasuMarketplace{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white min-h-screen md:my-8 md:rounded-2xl md:shadow-card md:border md:border-border" x-data="{ showReport: false }">
+
+    <!-- Header -->
+    <div class="sticky top-0 z-30 bg-white border-b border-border/60">
+        <div class="flex items-center px-4 h-14">
+            <a href="{% url 'marketplace:product_list' %}"
+               class="w-10 h-10 flex items-center justify-center -ml-2 rounded-full hover:bg-surface transition-colors"
+               aria-label="Back">
+                <svg class="w-5 h-5 text-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <h1 class="flex-1 text-center text-base font-bold text-dark pr-10">Product Details</h1>
+        </div>
+    </div>
+
+    <!-- Image/Video Gallery -->
+    <div class="relative">
+        {% with images=listing.images.all has_video=listing.video %}
+        {% if images or has_video %}
+        <div class="aspect-square bg-surface overflow-hidden" x-data="{ currentImage: 0 }">
+            {% for img in images %}
+            <img src="{{ img.image.url }}"
+                 alt="{{ listing.title }}"
+                 class="w-full h-full object-cover"
+                 x-show="currentImage === {{ forloop.counter0 }}"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100">
+            {% endfor %}
+            {% if has_video %}
+            <video src="{{ listing.video.url }}"
+                   controls
+                   class="w-full h-full object-cover"
+                   x-show="currentImage === {{ images|length }}"
+                   x-transition:enter="transition ease-out duration-300"
+                   x-transition:enter-start="opacity-0"
+                   x-transition:enter-end="opacity-100">
+            </video>
+            {% endif %}
+
+            {% if has_video %}
+            {% with total_count=images|length|add:"1" %}
+            {% if total_count > 1 %}
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm">
+                <span x-text="currentImage + 1"></span> / {{ total_count }}
+            </div>
+
+            <div class="absolute bottom-4 left-4 right-4 flex justify-center gap-1.5">
+                {% for img in images %}
+                <button @click="currentImage = {{ forloop.counter0 }}"
+                        :class="currentImage === {{ forloop.counter0 }} ? 'bg-white' : 'bg-white/50'"
+                        class="w-2 h-2 rounded-full transition-all"
+                        aria-label="Image {{ forloop.counter }}"></button>
+                {% endfor %}
+                <button @click="currentImage = {{ images|length }}"
+                        :class="currentImage === {{ images|length }} ? 'bg-white' : 'bg-white/50'"
+                        class="w-2 h-2 rounded-full transition-all"
+                        aria-label="Video"></button>
+            </div>
+
+            <button @click="currentImage = currentImage > 0 ? currentImage - 1 : {{ total_count|add:"-1" }}"
+                    class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 rounded-full flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/60 transition-colors"
+                    aria-label="Previous">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <button @click="currentImage = currentImage < {{ total_count|add:"-1" }} ? currentImage + 1 : 0"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 rounded-full flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/60 transition-colors"
+                    aria-label="Next">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+            {% endif %}
+            {% endwith %}
+            {% else %}
+            {% if images|length > 1 %}
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm">
+                <span x-text="currentImage + 1"></span> / {{ images|length }}
+            </div>
+
+            <div class="absolute bottom-4 left-4 right-4 flex justify-center gap-1.5">
+                {% for img in images %}
+                <button @click="currentImage = {{ forloop.counter0 }}"
+                        :class="currentImage === {{ forloop.counter0 }} ? 'bg-white' : 'bg-white/50'"
+                        class="w-2 h-2 rounded-full transition-all"
+                        aria-label="Image {{ forloop.counter }}"></button>
+                {% endfor %}
+            </div>
+
+            <button @click="currentImage = currentImage > 0 ? currentImage - 1 : {{ images|length|add:"-1" }}"
+                    class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 rounded-full flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/60 transition-colors"
+                    aria-label="Previous">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <button @click="currentImage = currentImage < {{ images|length|add:"-1" }} ? currentImage + 1 : 0"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 rounded-full flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/60 transition-colors"
+                    aria-label="Next">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+            {% endif %}
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="aspect-square bg-surface flex items-center justify-center">
+            <svg class="w-16 h-16 text-muted/30" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Quick Sell Badge -->
+        <div class="absolute top-4 left-4">
+            <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
+                QUICK SELL
+            </span>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="p-4 space-y-6">
+
+        <!-- Title & Price -->
+        <div>
+            <h1 class="text-xl font-bold text-dark leading-tight">{{ listing.title }}</h1>
+            <div class="flex items-baseline gap-3 mt-3">
+                <span class="text-2xl font-bold text-accent">{{ listing.price|naira }}</span>
+                {% if listing.compare_at_price and listing.compare_at_price > listing.price %}
+                <span class="text-base text-muted line-through">{{ listing.compare_at_price|naira }}</span>
+                <span class="text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-md">
+                    {% widthratio listing.price listing.compare_at_price 100 as pct %}{{ 100|add:pct|floatformat:0 }}% off
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Expiration -->
+        {% if listing.is_active %}
+        <div class="flex items-center gap-2 px-4 py-3 bg-surface rounded-xl">
+            <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="text-sm text-muted">
+                {% if listing.days_remaining <= 1 %}
+                <span class="font-semibold text-accent">Expires today</span>
+                {% elif listing.days_remaining <= 2 %}
+                <span class="font-semibold text-accent">Expires in {{ listing.days_remaining }} days</span>
+                {% else %}
+                {{ listing.days_remaining }} days left
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+
+        <!-- Category & Specs -->
+        <div>
+            <div class="flex items-center gap-2 mb-3">
+                <span class="text-sm font-semibold text-dark">{{ listing.main_category.name }}</span>
+                <svg class="w-3 h-3 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span class="text-sm text-muted">{{ listing.subcategory.name }}</span>
+            </div>
+
+            {% with resolved=listing.resolved_attributes %}
+            {% if resolved %}
+            <div class="space-y-2">
+                {% for attr in resolved %}
+                <div class="flex justify-between py-2 border-b border-border/50 last:border-0">
+                    <span class="text-sm text-muted">{{ attr.name }}</span>
+                    <span class="text-sm font-medium text-dark">{{ attr.value }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Description -->
+        <div>
+            <h2 class="text-base font-bold text-dark mb-2">Description</h2>
+            <p class="text-sm text-dark/80 leading-relaxed whitespace-pre-line">{{ listing.description }}</p>
+        </div>
+
+        <!-- Owner Actions -->
+        {% if is_owner %}
+        <div class="border-t border-border pt-4" x-data="{ showDelete: false }">
+            <h2 class="text-base font-bold text-dark mb-3">Manage your listing</h2>
+            <div class="flex gap-3">
+                <a href="{% url 'quicksell:edit' slug=listing.slug %}"
+                   class="flex-1 flex items-center justify-center gap-2 py-3 border border-border rounded-xl text-sm font-semibold text-dark hover:bg-surface transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Edit Product
+                </a>
+                <button @click="showDelete = true"
+                        class="flex-1 flex items-center justify-center gap-2 py-3 border border-red-200 bg-red-50 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-100 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Delete
+                </button>
+            </div>
+
+            <!-- Delete Confirmation Modal -->
+            <div x-show="showDelete" x-cloak
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0">
+                <div class="absolute inset-0 bg-black/50" @click="showDelete = false"></div>
+                <div class="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 z-10">
+                    <h3 class="text-lg font-bold text-dark mb-2">Delete this product?</h3>
+                    <p class="text-sm text-muted mb-6">Are you sure you want to delete "{{ listing.title }}"?</p>
+                    <div class="flex gap-3">
+                        <button @click="showDelete = false"
+                                class="flex-1 py-3 px-4 border border-border rounded-xl text-sm font-semibold text-dark hover:bg-surface transition-colors">
+                            Cancel
+                        </button>
+                        <form method="post" action="{% url 'quicksell:delete' slug=listing.slug %}" class="flex-1">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="w-full py-3 px-4 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Contact Actions (Sticky Bottom) -->
+    {% if not is_owner %}
+    <div class="sticky bottom-0 bg-white border-t border-border/60 p-4 pb-safe">
+        <div class="flex gap-3">
+            {% if listing.whatsapp %}
+            <a href="#"
+               data-wa-phone="{{ listing.whatsapp|normalize_wa }}"
+               data-wa-title="{{ listing.title }}"
+               data-wa-price="{{ listing.price|naira }}"
+               data-wa-url="https://{{ request.get_host }}/quick-sell/{{ listing.slug }}/"
+               onclick="event.preventDefault(); var msg='Hi, I\'m interested in buying:\n'+this.dataset.waTitle+' - '+this.dataset.waPrice+'\n'+this.dataset.waUrl; window.open('https://wa.me/'+this.dataset.waPhone+'?text='+encodeURIComponent(msg), '_blank', 'noopener,noreferrer');"
+               class="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#25D366] text-white rounded-xl font-semibold text-sm shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+               aria-label="Buy {{ listing.title }} on WhatsApp">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+                Buy
+            </a>
+            {% endif %}
+
+            {% if listing.phone %}
+            <a href="tel:{{ listing.phone }}"
+               class="flex-1 flex items-center justify-center gap-2 py-3.5 border border-primary bg-white text-primary rounded-xl font-semibold text-sm hover:bg-primary/5 transition-all active:scale-[0.98]"
+               aria-label="Call seller">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                </svg>
+                Call
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Report -->
+        {% if user.is_authenticated and user != listing.user %}
+        <button @click="showReport = true"
+                class="w-full mt-3 py-2.5 text-sm text-muted hover:text-dark transition-colors text-center">
+            Report this listing
+        </button>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Report Modal -->
+    <div x-show="showReport" x-cloak
+         class="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        <div class="absolute inset-0 bg-black/50" @click="showReport = false"></div>
+        <div class="relative bg-white rounded-t-3xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm z-10 p-6 pb-8 sm:mb-0"
+             x-data="reportForm()"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="translate-y-4 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="translate-y-0 sm:scale-100">
+            <div class="w-10 h-1 bg-border rounded-full mx-auto mb-6 sm:hidden"></div>
+            <h3 class="text-lg font-bold text-dark mb-1">Report listing</h3>
+            <p class="text-sm text-muted mb-5">Why are you reporting this?</p>
+
+            <div class="space-y-2 mb-5">
+                <label class="flex items-center gap-3 p-3 rounded-xl border border-border cursor-pointer hover:bg-surface transition-colors"
+                       :class="reason === 'counterfeit' ? 'border-primary bg-primary/5' : ''">
+                    <input type="radio" name="reason" value="counterfeit" x-model="reason"
+                           class="w-4 h-4 text-primary border-border focus:ring-primary">
+                    <span class="text-sm text-dark">Counterfeit / fake item</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-xl border border-border cursor-pointer hover:bg-surface transition-colors"
+                       :class="reason === 'prohibited' ? 'border-primary bg-primary/5' : ''">
+                    <input type="radio" name="reason" value="prohibited" x-model="reason"
+                           class="w-4 h-4 text-primary border-border focus:ring-primary">
+                    <span class="text-sm text-dark">Prohibited or illegal item</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-xl border border-border cursor-pointer hover:bg-surface transition-colors"
+                       :class="reason === 'misleading' ? 'border-primary bg-primary/5' : ''">
+                    <input type="radio" name="reason" value="misleading" x-model="reason"
+                           class="w-4 h-4 text-primary border-border focus:ring-primary">
+                    <span class="text-sm text-dark">Misleading listing or description</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-xl border border-border cursor-pointer hover:bg-surface transition-colors"
+                       :class="reason === 'other' ? 'border-primary bg-primary/5' : ''">
+                    <input type="radio" name="reason" value="other" x-model="reason"
+                           class="w-4 h-4 text-primary border-border focus:ring-primary">
+                    <span class="text-sm text-dark">Other</span>
+                </label>
+            </div>
+
+            <div x-show="reason === 'other' || reason === 'misleading'" x-transition class="mb-5">
+                <textarea x-model="details"
+                          placeholder="Tell us more (optional)"
+                          rows="3"
+                          class="w-full px-4 py-3 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"></textarea>
+            </div>
+
+            <div x-show="error" class="mb-4 text-sm text-red-600" x-text="error"></div>
+
+            <div class="flex gap-3">
+                <button @click="showReport = false"
+                        class="flex-1 py-3 px-4 border border-border rounded-xl text-sm font-semibold text-dark hover:bg-surface transition-colors">
+                    Cancel
+                </button>
+                <button @click="submitReport()"
+                        :disabled="!reason || submitting"
+                        class="flex-1 py-3 px-4 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50">
+                    <span x-show="!submitting">Submit</span>
+                    <span x-show="submitting">Submitting...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+</style>
+
+<script>
+function reportForm() {
+    return {
+        reason: '',
+        details: '',
+        error: '',
+        submitting: false,
+
+        async submitReport() {
+            if (!this.reason) {
+                this.error = 'Please select a reason';
+                return;
+            }
+            this.submitting = true;
+            this.error = '';
+
+            try {
+                const formData = new FormData();
+                formData.append('reason', this.reason);
+                formData.append('details', this.details);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                const response = await fetch('{% url "quicksell:report" id=listing.id %}', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.showReport = false;
+                    if (window.showToast) {
+                        window.showToast(data.message, 'success');
+                    }
+                } else {
+                    this.error = data.error || 'Something went wrong';
+                }
+            } catch (e) {
+                this.error = 'Network error. Please try again.';
+            } finally {
+                this.submitting = false;
+            }
+        }
+    }
+}
+</script>
+
+<script>
+// Touch swipe for image gallery
+document.addEventListener('DOMContentLoaded', () => {
+    const gallery = document.querySelector('[x-data="{ currentImage: 0 }"]');
+    if (!gallery) return;
+
+    let startX = 0;
+    let isDragging = false;
+
+    gallery.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        isDragging = true;
+    }, { passive: true });
+
+    gallery.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        const diff = startX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) < 50) return;
+
+        const alpineData = Alpine.$data(gallery);
+        const totalMedia = gallery.querySelectorAll('img, video').length;
+        if (totalMedia <= 1) return;
+
+        if (diff > 0) {
+            alpineData.currentImage = alpineData.currentImage < totalMedia - 1 ? alpineData.currentImage + 1 : 0;
+        } else {
+            alpineData.currentImage = alpineData.currentImage > 0 ? alpineData.currentImage - 1 : totalMedia - 1;
+        }
+    }, { passive: true });
+});
+</script>
+{% endblock %}

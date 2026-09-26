@@ -1,6 +1,7 @@
 
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic.base import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
@@ -10,6 +11,17 @@ from apps.users import views as user_views
 from apps.vendors import views as vendor_views
 
 urlpatterns = [
+    # Browsers request this conventional root path even when HTML declares
+    # additional favicon variants under the static files namespace.
+    path(
+        'favicon.ico',
+        RedirectView.as_view(
+            url=f'{settings.STATIC_URL}images/favicon/favicon.ico',
+            permanent=False,
+        ),
+        name='favicon',
+    ),
+
     # Admin
     path('admin/', admin.site.urls),
 
@@ -18,6 +30,12 @@ urlpatterns = [
 
     # Users URLs
     path('', include(('apps.users.urls', 'users'), namespace='users')),
+
+    # Quick Sell URLs
+    path(
+        'quick-sell/',
+        include('apps.quicksell.urls', namespace='quicksell'),
+    ),
 
     # Vendors URLs
     path('vendors/', include(('apps.vendors.urls', 'vendors'), namespace='vendors')),

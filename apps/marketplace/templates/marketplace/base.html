@@ -124,6 +124,7 @@
   <style>
     * { -webkit-tap-highlight-color: transparent; }
     body { font-family: 'Manrope', 'DM Sans', sans-serif; background: #F5F7FA; }
+    [x-cloak] { display: none !important; }
 
     /* Smooth scrolling */
     html { scroll-behavior: smooth; }
@@ -135,7 +136,7 @@
     .scroll-hidden::-webkit-scrollbar { display: none; }
     .scroll-hidden { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Cart badge pulse */
+    /* Badge pulse */
     @keyframes badge-pulse {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.2); }
@@ -229,21 +230,104 @@
         <a href="{% url 'marketplace:new_arrivals' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">New</a>
         <a href="{% url 'marketplace:trending' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">Trending</a>
         <a href="{% url 'marketplace:sponsored_products' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">Sponsored</a>
+        {% if is_vendor %}
+        <a href="{% url 'vendors:product_create' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">Quick Sell</a>
+        {% else %}
+        <a href="{% url 'marketplace:quicksell_listing' %}" class="px-3 py-2 rounded-lg text-sm font-medium text-muted hover:text-primary hover:bg-primary/5 transition">Quick Sell</a>
+        {% endif %}
       </nav>
 
-      <!-- Cart + Profile -->
+      <!-- Profile -->
       <div class="flex items-center gap-3 ml-auto">
-        <a href="{% url 'marketplace:cart' %}" class="relative p-2 rounded-xl hover:bg-surface transition" aria-label="Cart">
-          <svg class="w-6 h-6 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-          </svg>
-          <span id="desktop-cart-badge" class="cart-badge {% if not cart_count %}hidden{% endif %} absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold">{{ cart_count|default:0 }}</span>
-        </a>
-
         {% if user.is_authenticated %}
+        <!-- Notification Bell (Desktop) -->
+        <div class="relative" x-data="{ notifOpen: false }">
+          <a href="{% url 'marketplace:buyer_notifications_list' %}"
+             @click.prevent="notifOpen = !notifOpen"
+             aria-label="Notifications"
+             class="relative p-2 text-muted hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            {% if buyer_unread_count %}
+            <span class="absolute top-0.5 right-0.5 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-emerald-600 rounded-full">
+              {{ buyer_unread_count|slice:":2" }}
+            </span>
+            {% endif %}
+          </a>
+          <!-- Dropdown -->
+          <div x-show="notifOpen"
+               @click.away="notifOpen = false"
+               x-transition:enter="transition ease-out duration-200"
+               x-transition:enter-start="opacity-0 transform scale-95"
+               x-transition:enter-end="opacity-100 transform scale-100"
+               x-transition:leave="transition ease-in duration-150"
+               x-transition:leave-start="opacity-100 transform scale-100"
+               x-transition:leave-end="opacity-0 transform scale-95"
+               class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
+               style="display: none;">
+            <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-900">Notifications</h3>
+                {% if buyer_unread_count %}
+                <span class="text-xs font-medium text-emerald-600">{{ buyer_unread_count }} new</span>
+                {% endif %}
+              </div>
+            </div>
+            <div class="max-h-96 overflow-y-auto">
+              {% if buyer_recent_notifications %}
+                {% for notif in buyer_recent_notifications|slice:":5" %}
+                <a href="{% url 'marketplace:buyer_notification_detail' notif.id %}"
+                   class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 transition-colors {% if not notif.is_read %}bg-emerald-50{% endif %}">
+                  <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                      <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="ml-3 flex-1">
+                      <p class="text-sm font-medium text-gray-900">{{ notif.title }}</p>
+                      <p class="text-xs text-gray-600 mt-0.5">{{ notif.message|truncatewords:12 }}</p>
+                      <p class="text-xs text-gray-400 mt-1">{{ notif.created_at|timesince }} ago</p>
+                    </div>
+                    {% if not notif.is_read %}
+                    <div class="flex-shrink-0">
+                      <span class="w-2 h-2 bg-emerald-500 rounded-full inline-block"></span>
+                    </div>
+                    {% endif %}
+                  </div>
+                </a>
+                {% endfor %}
+              {% else %}
+              <div class="px-4 py-8 text-center">
+                <svg class="w-12 h-12 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                </svg>
+                <p class="text-sm text-gray-500 mt-2">No notifications yet</p>
+              </div>
+              {% endif %}
+            </div>
+            <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+              <a href="{% url 'marketplace:buyer_notifications_list' %}"
+                 class="text-sm font-medium text-emerald-600 hover:text-emerald-700">
+                View all notifications →
+              </a>
+            </div>
+          </div>
+        </div>
+        {% if is_vendor %}
+        <a href="{% url 'vendors:dashboard' %}" class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-bold" title="Vendor Dashboard">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z"/>
+          </svg>
+        </a>
+        {% else %}
         <a href="{% url 'marketplace:profile' %}" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
           {{ user.email|first|upper }}
         </a>
+        {% endif %}
         {% else %}
         <div class="flex items-center gap-2">
           <a href="{% url 'users:vendor_signup' %}"
@@ -298,19 +382,30 @@
         </div>
       </form>
 
-      <!-- Cart icon -->
-      <a href="{% url 'marketplace:cart' %}" class="relative p-1.5 shrink-0" aria-label="Cart">
-        <svg class="w-6 h-6 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-        </svg>
-        <span id="mobile-cart-badge" class="cart-badge {% if not cart_count %}hidden{% endif %} absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">{{ cart_count|default:0 }}</span>
-      </a>
-
       <!-- Profile icon (mobile) -->
       {% if user.is_authenticated %}
+      <!-- Notification Bell (Mobile) -->
+      <a href="{% url 'marketplace:buyer_notifications_list' %}" class="relative shrink-0" aria-label="Notifications">
+        <svg class="w-5 h-5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+        {% if buyer_unread_count %}
+        <span class="absolute -top-1 -right-1 inline-flex items-center justify-center w-3.5 h-3.5 text-[9px] font-bold text-white bg-emerald-600 rounded-full">
+          {{ buyer_unread_count|slice:":2" }}
+        </span>
+        {% endif %}
+      </a>
+      {% if is_vendor %}
+      <a href="{% url 'vendors:dashboard' %}" class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-bold shrink-0" aria-label="Vendor Dashboard" title="Vendor Dashboard">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z"/>
+        </svg>
+      </a>
+      {% else %}
       <a href="{% url 'marketplace:profile' %}" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0" aria-label="Profile">
         {{ user.email|first|upper }}
       </a>
+      {% endif %}
       {% else %}
       <button onclick="toggleAuthModal()" class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-sm font-bold shrink-0" aria-label="Account">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -342,6 +437,17 @@
          class="shrink-0 transition-colors duration-150 py-0.5 {% if request.resolver_match.url_name == 'sponsored_products' %}text-primary font-bold border-b-2 border-primary{% else %}text-muted hover:text-primary{% endif %}">
         Sponsored
       </a>
+      {% if is_vendor %}
+      <a href="{% url 'vendors:product_create' %}"
+         class="shrink-0 transition-colors duration-150 py-0.5 text-muted hover:text-primary">
+        Quick Sell
+      </a>
+      {% else %}
+      <a href="{% url 'marketplace:quicksell_listing' %}"
+         class="shrink-0 transition-colors duration-150 py-0.5 {% if request.resolver_match.url_name == 'quicksell_listing' %}text-primary font-bold border-b-2 border-primary{% else %}text-muted hover:text-primary{% endif %}">
+        Quick Sell
+      </a>
+      {% endif %}
     </nav>
   </header>
 
@@ -350,43 +456,7 @@
 
   {% include 'components/marketplace_ui.html' %}
 
-  <!-- ===================== AUTHENTICATION MODAL (MOBILE) ===================== -->
-  <div id="auth-modal" class="fixed inset-0 z-50 hidden">
-    <!-- Backdrop -->
-    <div class="absolute inset-0 bg-black/50" onclick="toggleAuthModal()"></div>
-
-    <!-- Modal Content -->
-    <div id="auth-modal-content" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl transform translate-y-full transition-transform duration-300 ease-out">
-      <div class="p-6">
-        <!-- Handle -->
-        <div class="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6"></div>
-
-        <!-- Title -->
-        <h3 class="text-lg font-semibold text-center text-dark mb-6">Welcome to KasuMarketplace</h3>
-
-        <!-- Options -->
-        <div class="space-y-3">
-          <a href="{% url 'users:login' %}?next={{ request.get_full_path }}"
-             class="block w-full py-4 px-6 bg-primary text-white text-center font-medium rounded-xl hover:bg-primary-dark transition">
-            Login
-          </a>
-          <a href="{% url 'users:buyer_signup' %}"
-             class="block w-full py-4 px-6 bg-purple-600 text-white text-center font-medium rounded-xl hover:bg-purple-700 transition">
-            Sign Up as Buyer
-          </a>
-          <a href="{% url 'users:vendor_signup' %}"
-             class="block w-full py-4 px-6 bg-primary text-white text-center font-medium rounded-xl hover:bg-primary-dark transition">
-            Become a Vendor
-          </a>
-        </div>
-
-        <!-- Close button -->
-        <button onclick="toggleAuthModal()" class="w-full mt-4 py-3 px-6 text-gray-500 text-center font-medium rounded-xl hover:bg-gray-50 transition">
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
+  <!-- ===================== AUTHENTICATION MODAL (MOBILE) — REMOVED ===================== -->
 
   <!-- ===================== MAIN CONTENT ===================== -->
   <main class="page-enter pb-24 md:pb-8">
@@ -440,24 +510,6 @@
     const IS_AUTHENTICATED = {{ user.is_authenticated|yesno:"true,false" }};
     const LOGIN_URL = "{% url 'users:login' %}?next=" + encodeURIComponent(window.location.pathname + window.location.search);
 
-    // ---- Update cart badge in real-time across desktop and mobile navs ----
-    function updateCartBadge(count) {
-      const num = Number(count) || 0;
-      const badges = document.querySelectorAll('.cart-badge, #mobile-cart-badge, #desktop-cart-badge, #bottom-cart-badge');
-      badges.forEach(b => {
-        b.textContent = num;
-        b.classList.remove('badge-pulse');
-        void b.offsetWidth; // trigger reflow
-        b.classList.add('badge-pulse');
-        if (num > 0) {
-          b.classList.remove('hidden');
-        } else {
-          b.classList.add('hidden');
-        }
-        setTimeout(() => b.classList.remove('badge-pulse'), 350);
-      });
-    }
-
     // ---- Update wishlist badge in real-time across desktop and mobile navs ----
     function updateWishlistBadge(count) {
       const num = Number(count) || 0;
@@ -484,37 +536,13 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
           body: JSON.stringify({ lat: pos.coords.latitude, lon: pos.coords.longitude })
-        });
+        }).then(() => { location.reload(); });
       });
     }
     // Request on first visit
     if (!sessionStorage.getItem('loc_requested')) {
       sessionStorage.setItem('loc_requested', '1');
       setTimeout(requestLocation, 2000);
-    }
-
-    // ---- Authentication Modal ----
-    function toggleAuthModal() {
-      const modal = document.getElementById('auth-modal');
-      const modalContent = document.getElementById('auth-modal-content');
-
-      if (modal.classList.contains('hidden')) {
-        // Show modal
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        // Trigger animation
-        setTimeout(() => {
-          modalContent.classList.remove('translate-y-full');
-        }, 10);
-      } else {
-        // Hide modal
-        modalContent.classList.add('translate-y-full');
-        document.body.style.overflow = '';
-        // Wait for animation to complete before hiding
-        setTimeout(() => {
-          modal.classList.add('hidden');
-        }, 300);
-      }
     }
 
     // ---- Tilt cards ----
@@ -543,17 +571,6 @@
 
     // ---- Toggle Wishlist from Product Card ----
     function toggleCardWishlist(btn, storeSlug, productSlug) {
-      if (!IS_AUTHENTICATED) {
-        // If not logged in, take the user directly to login on desktop and mobile
-        if (window.showToast) {
-          window.showToast('Please log in to save items to your wishlist.', 'info');
-        }
-        setTimeout(() => {
-          window.location.href = LOGIN_URL;
-        }, 300);
-        return;
-      }
-
       const icon = btn.querySelector('.wishlist-icon') || btn.querySelector('svg');
       btn.disabled = true;
 
@@ -561,21 +578,10 @@
         method: 'POST',
         headers: { 'X-CSRFToken': getCookie('csrftoken') },
       })
-      .then(r => {
-        if (r.status === 401 || r.status === 403) {
-          window.location.href = LOGIN_URL;
-          return null;
-        }
-        return r.json();
-      })
+      .then(r => r.json())
       .then(data => {
         btn.disabled = false;
         if (!data) return;
-
-        if (data.authenticated === false) {
-          window.location.href = LOGIN_URL;
-          return;
-        }
 
         if (data.success) {
           if (icon) {
@@ -600,58 +606,6 @@
       .catch(err => {
         btn.disabled = false;
         console.error('[wishlist] error:', err);
-      });
-    }
-
-    // ---- Add to Cart from Product Card ----
-    function addToCartCard(productId, btn) {
-      if (!productId) return;
-
-      const originalSvg = btn.innerHTML;
-      btn.disabled = true;
-      btn.classList.add('scale-90', 'opacity-75');
-
-      fetch('{% url "marketplace:cart_add" %}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-        body: JSON.stringify({ product_id: productId, quantity: 1 })
-      })
-      .then(r => r.json())
-      .then(data => {
-        btn.disabled = false;
-        btn.classList.remove('opacity-75');
-
-        if (data.success) {
-          btn.innerHTML = `<svg class="size-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>`;
-          btn.classList.add('bg-emerald-600');
-          btn.classList.remove('bg-primary');
-
-          if (typeof data.cart_total_items !== 'undefined') {
-            updateCartBadge(data.cart_total_items);
-          }
-          if (window.showToast) {
-            window.showToast(data.message || 'Added to cart!', 'success');
-          }
-
-          setTimeout(() => {
-            btn.innerHTML = originalSvg;
-            btn.classList.remove('bg-emerald-600', 'scale-90');
-            btn.classList.add('bg-primary');
-          }, 1200);
-        } else {
-          btn.classList.remove('scale-90');
-          if (window.showToast) {
-            window.showToast(data.message || 'Could not add to cart.', 'error');
-          }
-        }
-      })
-      .catch(err => {
-        btn.disabled = false;
-        btn.classList.remove('scale-90', 'opacity-75');
-        console.error('[cart] network error:', err);
-        if (window.showToast) {
-          window.showToast('Network error while adding to cart.', 'error');
-        }
       });
     }
 
@@ -910,6 +864,9 @@
   })();
   </script>
   {% endif %}
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
   {% block extra_js %}{% endblock %}
 </body>

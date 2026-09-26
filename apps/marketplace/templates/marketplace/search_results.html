@@ -8,12 +8,12 @@
     {% if query %}Results for "{{ query }}"{% else %}Search{% endif %}
   </h1>
   {% if query %}
-  <p class="text-sm text-muted mb-6">{{ store_count }} store{{ store_count|pluralize }} - {{ organic_count }} product{{ organic_count|pluralize }}</p>
+  <p class="text-sm text-muted mb-6">{{ store_count }} store{{ store_count|pluralize }} - {{ organic_count }} product{{ organic_count|pluralize }}{% if quicksell_count %} - {{ quicksell_count }} quick sell listing{{ quicksell_count|pluralize }}{% endif %}</p>
   {% endif %}
 
   {% if not query %}
   <p class="text-sm text-muted">Type something in the search bar above to get started.</p>
-  {% elif not stores and not products %}
+  {% elif not stores and not products and not quicksell_items %}
   <div class="flex flex-col items-center justify-center py-16 text-center">
     <div class="w-16 h-16 rounded-2xl bg-surface flex items-center justify-center mb-4">
       <svg class="w-8 h-8 text-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,11 +50,22 @@
     {% endif %}
 
     {% if products %}
-    <div>
+    <div class="mb-8">
       <h2 class="font-display font-bold text-base text-dark mb-3">Products</h2>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 items-start">
         {% for item in products %}
           {% include 'marketplace/partials/product_card.html' with item=item %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if quicksell_items %}
+    <div>
+      <h2 class="font-display font-bold text-base text-dark mb-3">Quick Sell Listings</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 items-start">
+        {% for item in quicksell_items %}
+          {% include 'marketplace/partials/quicksell_card.html' with item=item %}
         {% endfor %}
       </div>
     </div>

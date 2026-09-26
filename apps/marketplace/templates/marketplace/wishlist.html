@@ -1,11 +1,12 @@
 {% extends 'marketplace/base.html' %}
+{% load currency_filters %}
 {% block title %}My Wishlist - KasuMarketplace{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 md:px-6 py-4 md:py-8">
 
   <div class="flex items-center gap-3 mb-5">
-    <a href="{% url 'marketplace:profile' %}" class="shrink-0" aria-label="Back to profile">
+    <a href="{% url 'marketplace:product_list' %}" class="shrink-0" aria-label="Back to products">
       <svg class="w-5 h-5 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
@@ -14,10 +15,61 @@
   </div>
 
   {% if wishlist_products %}
-  <div class="grid grid-cols-2 gap-3">
-    {% for item in wishlist_products %}
-      {% include 'marketplace/partials/product_card.html' with item=item %}
+  <div class="space-y-3" id="wishlist-items">
+    {% for product in wishlist_products %}
+    <div id="wishlist-item-{{ product.pk }}" class="bg-card rounded-2xl overflow-hidden shadow-card flex gap-3 p-4" data-unit-price="{{ product.price }}">
+      <!-- Product image -->
+      <a href="{% url 'product_detail_public' store_slug=product.store.slug product_slug=product.slug %}" class="w-20 h-20 rounded-xl overflow-hidden bg-surface shrink-0">
+        {% with img=product.images.all|first %}
+        {% if img %}
+          <img src="{{ img.image.url }}" class="w-full h-full object-cover" alt="{{ product.title }}" />
+        {% else %}
+          <div class="w-full h-full flex items-center justify-center">
+            <svg class="w-6 h-6 text-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01"/>
+            </svg>
+          </div>
+        {% endif %}
+        {% endwith %}
+      </a>
+
+      <!-- Info -->
+      <div class="flex-1 min-w-0">
+        <a href="{% url 'product_detail_public' store_slug=product.store.slug product_slug=product.slug %}">
+          <p class="text-sm font-semibold text-dark line-clamp-2 leading-snug mb-1">{{ product.title }}</p>
+        </a>
+        <p class="text-base font-bold text-primary">{{ product.price|naira }}</p>
+        <p id="item-total-{{ product.pk }}" class="text-sm font-semibold text-dark">
+          {% if product.wishlist_quantity > 1 %}{{ product.price|floatformat:2 }} × {{ product.wishlist_quantity }} = {{ product.total_price|naira }}{% endif %}
+        </p>
+
+        <!-- Quantity stepper -->
+        <div class="flex items-center gap-2 mt-2">
+          <div class="flex items-center border border-border rounded-lg overflow-hidden">
+            <button onclick="updateWishlistQty({{ product.pk }}, {{ product.wishlist_quantity }} - 1)"
+                    class="w-7 h-7 flex items-center justify-center text-muted hover:text-dark active:bg-surface text-sm">−</button>
+            <span id="qty-{{ product.pk }}" class="w-7 text-center text-sm font-bold">{{ product.wishlist_quantity }}</span>
+            <button onclick="updateWishlistQty({{ product.pk }}, {{ product.wishlist_quantity }} + 1)"
+                    class="w-7 h-7 flex items-center justify-center text-muted hover:text-dark active:bg-surface text-sm">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Remove button -->
+      <button onclick="removeWishlistItem({{ product.pk }})"
+              class="text-muted hover:text-red-500 transition p-1 shrink-0 self-start">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
     {% endfor %}
+  </div>
+
+  <!-- Grand Total -->
+  <div class="mt-4 flex items-center justify-between bg-card rounded-2xl shadow-card px-4 py-3">
+    <span class="text-sm font-semibold text-dark">Total</span>
+    <span id="wishlist-grand-total" class="text-lg font-bold text-primary"></span>
   </div>
   {% else %}
   <div class="flex flex-col items-center justify-center py-16 text-center">
@@ -36,7 +88,7 @@
   <!-- You Might Also Like -->
   <div class="mt-10">
     <h2 class="font-display font-bold text-base text-dark mb-4">You Might Also Like</h2>
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-2 gap-3 items-start">
       {% for item in recommended_products %}
         {% include 'marketplace/partials/product_card.html' with item=item %}
       {% endfor %}
@@ -45,4 +97,88 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function formatNaira(amount) {
+    return '₦' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  function updateItemTotal(productId) {
+    const card = document.getElementById('wishlist-item-' + productId);
+    const qtyEl = document.getElementById('qty-' + productId);
+    const totalEl = document.getElementById('item-total-' + productId);
+    if (!card || !qtyEl || !totalEl) return;
+
+    const unitPrice = parseFloat(card.dataset.unitPrice);
+    const qty = parseInt(qtyEl.textContent, 10);
+    const total = unitPrice * qty;
+
+    if (qty > 1) {
+      totalEl.textContent = formatNaira(unitPrice) + ' × ' + qty + ' = ' + formatNaira(total);
+      totalEl.classList.remove('hidden');
+    } else {
+      totalEl.textContent = '';
+      totalEl.classList.add('hidden');
+    }
+    recalcGrandTotal();
+  }
+
+  function recalcGrandTotal() {
+    const cards = document.querySelectorAll('#wishlist-items [data-unit-price]');
+    let grand = 0;
+    cards.forEach(function(card) {
+      const qtyEl = document.getElementById('qty-' + card.id.replace('wishlist-item-', ''));
+      if (qtyEl) {
+        grand += parseFloat(card.dataset.unitPrice) * parseInt(qtyEl.textContent, 10);
+      }
+    });
+    const el = document.getElementById('wishlist-grand-total');
+    if (el) el.textContent = formatNaira(grand);
+  }
+
+  function updateWishlistQty(productId, newQty) {
+    if (newQty < 1) { removeWishlistItem(productId); return; }
+    fetch("{% url 'marketplace:wishlist_update_qty' %}", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ product_id: productId, quantity: newQty })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        const el = document.getElementById('qty-' + productId);
+        if (el) el.textContent = newQty;
+        updateItemTotal(productId);
+        if (window.showToast) showToast('Quantity updated', 'success');
+      } else {
+        if (window.showToast) showToast(data.message, 'error');
+      }
+    });
+  }
+
+  function removeWishlistItem(productId) {
+    fetch("{% url 'marketplace:wishlist_remove' %}", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ product_id: productId })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        const el = document.getElementById('wishlist-item-' + productId);
+        if (el) el.remove();
+        recalcGrandTotal();
+        if (typeof data.wishlist_count !== 'undefined') {
+          updateWishlistBadge(data.wishlist_count);
+        }
+        if (window.showToast) showToast('Item removed', 'success');
+        if (data.wishlist_count === 0) location.reload();
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', recalcGrandTotal);
+</script>
 {% endblock %}

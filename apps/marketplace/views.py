@@ -5,18 +5,12 @@ All buyer-facing views for KasuMarketplace.
 Views:
 - Product listing (with search, category filter, distance)
 - Product detail
-- Cart (view, add, update, remove)
-- Checkout
-- Payment verify + Webhook
-- Order list
-- Order detail
-- Confirm receipt
-- Report issue (dispute)
 - Update buyer location (AJAX)
 """
 
 import json
 import logging
+import random
 from datetime import timedelta
 from types import SimpleNamespace
 
@@ -30,39 +24,35 @@ from django.conf import settings
 from django.utils import timezone
 from django.db.models import Q
 from django.db.models import Sum, Count
+from django.core.paginator import Paginator
 
 from apps.vendors.models import Product, Store, MainCategory, SubCategory
 from apps.marketplace.models import (
-    Cart, CartItem,
-    MainOrder, SubOrder,
-    PaymentTransaction,
     Promotion,
     Wishlist,
-)
-from apps.marketplace.services.cart_service import (
-    get_or_create_cart,
-    add_to_cart,
-    update_cart_item,
-    remove_from_cart,
-    get_cart_summary,
-)
-from apps.marketplace.services.payment_service import (
-    generate_payment_reference,
-    verify_payment,
-    verify_webhook_signature,
-    process_webhook,
-)
-from apps.marketplace.services.order_service import (
-    create_orders_from_cart,
-    confirm_suborder,
-    open_dispute,
 )
 from apps.marketplace.services.distance_service import (
     get_distance_to_store,
     annotate_products_with_distance,
 )
+from apps.quicksell.models import QuickSell
+from apps.quicksell.adapter import adapt_quicksell_queryset
 
 logger = logging.getLogger(__name__)
+
+
+def get_wishlisted_ids(request):
+    """Return set of product IDs wishlisted by the current user (auth or guest)."""
+    if request.user.is_authenticated:
+        return set(
+            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+        )
+    session_key = request.session.session_key
+    if session_key:
+        return set(
+            Wishlist.objects.filter(session_key=session_key).values_list('product_id', flat=True)
+        )
+    return set()
 
 
 # ==========================================
@@ -178,7 +168,6 @@ def vendor_forbidden(view_func):
 # PRODUCT LIST
 # ==========================================
 
-@vendor_forbidden
 def product_list(request):
     """
     Main marketplace listing page.
@@ -191,16 +180,9 @@ def product_list(request):
     """
     
 
-    products = Product.objects.filter(
-        status='published',
-        store__is_published=True,
-    ).select_related('store', 'subcategory__main_category').prefetch_related('images')
+    products = Product.objects.publicly_visible()
 
-    wishlisted_ids = set()
-    if request.user.is_authenticated:
-        wishlisted_ids = set(
-            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
-        )
+    wishlisted_ids = get_wishlisted_ids(request)
 
     # Search
     query = request.GET.get('q', '').strip()
@@ -235,17 +217,18 @@ def product_list(request):
         product.distance = distance
         annotated.append(product)
 
+    # Shuffle products on each page load for fresh browsing experience
+    random.shuffle(annotated)
+
     # Categories for filter sidebar
     categories = MainCategory.objects.filter(is_active=True).prefetch_related('subcategories')
 
     # Featured products for Flash Deals section — only products with actual discounts
     from django.db.models import F, ExpressionWrapper, DecimalField
-    featured_qs = Product.objects.filter(
-        status='published',
-        store__is_published=True,
+    featured_qs = Product.objects.publicly_visible().filter(
         compare_at_price__isnull=False,
         compare_at_price__gt=F('price'),
-    ).select_related('store').prefetch_related('images')
+    )
 
     featured_qs = featured_qs.annotate(
         discount_amount=ExpressionWrapper(
@@ -260,47 +243,58 @@ def product_list(request):
         distance = get_distance_to_store(buyer_lat, buyer_lon, product.store)
         product.distance = distance
         featured.append(product)
+
+    # Shuffle featured products for freshness
+    random.shuffle(featured)
+
+    # ── Quick Sell listings — active only ──
+    quicksell_qs = QuickSell.objects.active().select_related('subcategory__main_category')
+    if query:
+        quicksell_qs = quicksell_qs.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+        )
+    if main_category_slug:
+        quicksell_qs = quicksell_qs.filter(
+            subcategory__main_category__slug=main_category_slug
+        )
+    if subcategory_slug:
+        quicksell_qs = quicksell_qs.filter(
+            subcategory__slug=subcategory_slug
+        )
+    quicksell_items = adapt_quicksell_queryset(quicksell_qs[:60])
     
     # ---- Weekly top seller (single store) — used by mobile hero's dedicated slide ----
-    # Minimum threshold: 3 successful orders in trailing 7 days to qualify
-    week_ago = timezone.now() - timedelta(days=7)
-    TOP_SELLER_MIN_ORDERS = 3
+    # Phase 8: rank by store_score (wishlist_count + views_count + rating*20)
+    # across all published products, picking the highest-scoring store.
+    from django.db.models import Sum as DjSum, Count as DjCount
+    top_seller_candidates = Store.objects.publicly_visible().annotate(
+        score=DjSum('products__wishlisted_by__id', filter=Q(products__status='published'), distinct=True)
+             + DjSum('products__views_count', filter=Q(products__status='published'))
+    ).order_by('-score')
 
-    top_seller_candidates = Store.objects.filter(
-        is_published=True,
-        suborders__payment_status='SUCCESS',
-        suborders__created_at__gte=week_ago,
-    ).annotate(
-        weekly_units_sold=Sum('suborders__items__quantity'),
-        weekly_order_count=Count('suborders', filter=Q(
-            suborders__payment_status='SUCCESS',
-            suborders__created_at__gte=week_ago,
-        )),
-    ).filter(
-        weekly_order_count__gte=TOP_SELLER_MIN_ORDERS
-    ).order_by('-weekly_units_sold')
+    top_seller_store = top_seller_candidates.first() if top_seller_candidates.exists() else None
+    # If the top-scoring store has score 0 (no activity), don't show it
+    if top_seller_store and not hasattr(top_seller_store, 'score'):
+        top_seller_store = None
 
-    top_seller_store = top_seller_candidates.first()
-
-    # Sponsored stores first, fallback to top sellers by WEEKLY units sold
-    # (previously ranked by all-time cumulative sales_count — see audit notes)
+    # Sponsored stores first, fallback to top stores by store_score
     sponsored_stores = list(
-        Store.objects.filter(
-            is_published=True, is_sponsored=True
+        Store.objects.publicly_visible().filter(
+            is_sponsored=True
         ).exclude(sponsored_until__lt=timezone.now())[:6]
     )
 
     if len(sponsored_stores) < 6:
-        top_stores = Store.objects.filter(
-            is_published=True,
-            suborders__payment_status='SUCCESS',
-            suborders__created_at__gte=week_ago,
+        # Fill remaining slots with top stores by score (excluding already-sponsored)
+        sponsored_ids = [s.pk for s in sponsored_stores]
+        fallback_needed = 6 - len(sponsored_stores)
+        top_by_score = Store.objects.publicly_visible().exclude(
+            pk__in=sponsored_ids
         ).annotate(
-            weekly_units_sold=Sum('suborders__items__quantity')
-        ).order_by('-weekly_units_sold').exclude(
-            id__in=[s.id for s in sponsored_stores]
-        )[:6 - len(sponsored_stores)]
-        spotlight_stores = sponsored_stores + list(top_stores)
+            score=DjSum('products__wishlisted_by__id', filter=Q(products__status='published'), distinct=True)
+                 + DjSum('products__views_count', filter=Q(products__status='published'))
+        ).order_by('-score')[:fallback_needed]
+        spotlight_stores = sponsored_stores + list(top_by_score)
     else:
         spotlight_stores = sponsored_stores
 
@@ -371,32 +365,22 @@ def product_list(request):
         'wishlisted_ids': wishlisted_ids,
         'store_promotion_contact_email': 'support@kasumarketplace.com.ng',
         'paystack_public_key': settings.PAYSTACK_PUBLIC_KEY,
+        'quicksell_items': quicksell_items,
     }
 
     return render(request, 'marketplace/product_list.html', context)
 
 
-@vendor_forbidden
 def new_arrivals(request):
-    """Show the newest published products first (14-day rolling window)."""
+    """Show the newest published products and active Quick Sell listings first (14-day rolling window)."""
     two_weeks_ago = timezone.now() - timedelta(days=14)
-    products = Product.objects.filter(
-        status='published',
-        store__is_published=True,
+    products = Product.objects.publicly_visible().filter(
         created_at__gte=two_weeks_ago,
-    ).select_related(
-        'store', 'subcategory__main_category'
-    ).prefetch_related('images').order_by('-created_at')[:60]
+    ).order_by('-created_at')[:60]
 
     buyer_lat, buyer_lon = get_buyer_location(request)
 
-    wishlisted_ids = set()
-    if request.user.is_authenticated:
-        wishlisted_ids = set(
-            Wishlist.objects.filter(user=request.user).values_list(
-                'product_id', flat=True
-            )
-        )
+    wishlisted_ids = get_wishlisted_ids(request)
 
     annotated = []
     for product in products:
@@ -405,16 +389,25 @@ def new_arrivals(request):
         )
         annotated.append(product)
 
+    # Shuffle for fresh browsing experience on each visit
+    random.shuffle(annotated)
+
+    # Quick Sell new arrivals — active only, created in last 14 days
+    quicksell_qs = QuickSell.objects.active().filter(
+        created_at__gte=two_weeks_ago,
+    ).select_related('subcategory__main_category').order_by('-created_at')[:60]
+    quicksell_items = adapt_quicksell_queryset(quicksell_qs)
+
     context = {
         'annotated_products': annotated,
+        'quicksell_items': quicksell_items,
         'wishlisted_ids': wishlisted_ids,
         'page_title': 'New Arrivals',
-        'page_subtitle': f'{len(annotated)} newly listed products',
+        'page_subtitle': f'{len(annotated)} newly listed products + {len(quicksell_items)} quick sell listings',
     }
     return render(request, 'marketplace/new_arrivals.html', context)
 
 
-@vendor_forbidden
 def deals(request):
     """
     Products currently discounted — compare_at_price set and greater than price.
@@ -422,12 +415,10 @@ def deals(request):
     """
     from django.db.models import F, ExpressionWrapper, DecimalField
 
-    products = Product.objects.filter(
-        status='published',
-        store__is_published=True,
+    products = Product.objects.publicly_visible().filter(
         compare_at_price__isnull=False,
         compare_at_price__gt=F('price'),
-    ).select_related('store', 'subcategory__main_category').prefetch_related('images')
+    )
 
     products = products.annotate(
         discount_amount=ExpressionWrapper(
@@ -438,17 +429,15 @@ def deals(request):
 
     buyer_lat, buyer_lon = get_buyer_location(request)
 
-    wishlisted_ids = set()
-    if request.user.is_authenticated:
-        from apps.marketplace.models import Wishlist
-        wishlisted_ids = set(
-            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
-        )
+    wishlisted_ids = get_wishlisted_ids(request)
 
     annotated = []
     for product in products:
         product.distance = get_distance_to_store(buyer_lat, buyer_lon, product.store)
         annotated.append(product)
+
+    # Shuffle for fresh browsing experience on each visit
+    random.shuffle(annotated)
 
     context = {
         'annotated_products': annotated,
@@ -459,12 +448,25 @@ def deals(request):
     return render(request, 'marketplace/deals.html', context)
 
 
-@vendor_forbidden
+def quicksell_listing(request):
+    """Dedicated Quick Sell listings page — active Quick Sell items only."""
+    quicksell_qs = QuickSell.objects.active().select_related('subcategory__main_category').order_by('-created_at')[:120]
+    quicksell_items = adapt_quicksell_queryset(quicksell_qs)
+
+    # Shuffle for fresh browsing experience on each visit
+    random.shuffle(quicksell_items)
+
+    context = {
+        'quicksell_items': quicksell_items,
+        'page_title': 'Quick Sell',
+        'page_subtitle': f'{len(quicksell_items)} active listings from campus sellers',
+    }
+    return render(request, 'marketplace/quicksell_listing.html', context)
+
+
 def store_directory(request):
     """Browse all published stores, optionally filtered by category."""
-    stores = Store.objects.filter(
-        is_published=True,
-    ).select_related('main_category').order_by('-average_rating')
+    stores = Store.objects.publicly_visible().select_related('main_category').order_by('-average_rating')
 
     category_slug = request.GET.get('category', '')
     if category_slug:
@@ -477,11 +479,10 @@ def store_directory(request):
     return render(request, 'marketplace/store_directory.html', context)
 
 
-@vendor_forbidden
 def category_landing(request, slug):
     """
     Dedicated landing page for a product category.
-    Shows subcategory filters, top store, and all products in the category.
+    Shows subcategory filters, top store, products, and active Quick Sell listings in the category.
     """
     from django.shortcuts import get_object_or_404
 
@@ -493,11 +494,9 @@ def category_landing(request, slug):
 
     subcategories = category.subcategories.filter(is_active=True)
 
-    products = Product.objects.filter(
-        status='published',
-        store__is_published=True,
+    products = Product.objects.publicly_visible().filter(
         subcategory__main_category=category,
-    ).select_related('store', 'subcategory__main_category').prefetch_related('images')
+    )
 
     subcategory_slug = request.GET.get('subcategory', '')
     if subcategory_slug:
@@ -527,9 +526,7 @@ def category_landing(request, slug):
 
     if max_sponsored > 0:
         extra_sponsored = list(
-            Product.objects.filter(
-                status='published',
-                store__is_published=True,
+            Product.objects.publicly_visible().filter(
                 subcategory__main_category=category,
                 is_sponsored=True,
             ).exclude(
@@ -553,17 +550,26 @@ def category_landing(request, slug):
         if not hasattr(p, 'distance'):
             p.distance = get_distance_to_store(buyer_lat, buyer_lon, p.store)
 
+    # Shuffle regular products for fresh browsing experience on each visit
+    random.shuffle(organic_regular)
+
     merged_products = top_sponsored + organic_regular
 
-    wishlisted_ids = set()
-    if request.user.is_authenticated:
-        wishlisted_ids = set(
-            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
-        )
+    # ── Quick Sell listings in this category ──
+    quicksell_qs = QuickSell.objects.active().filter(
+        subcategory__main_category=category,
+    ).select_related('subcategory__main_category')
+    if subcategory_slug:
+        quicksell_qs = quicksell_qs.filter(subcategory__slug=subcategory_slug)
+    quicksell_items = adapt_quicksell_queryset(quicksell_qs)
 
-    top_store = Store.objects.filter(
+    # Shuffle for fresh browsing experience on each visit
+    random.shuffle(quicksell_items)
+
+    wishlisted_ids = get_wishlisted_ids(request)
+
+    top_store = Store.objects.publicly_visible().filter(
         main_category=category,
-        is_published=True,
     ).order_by('-average_rating').first()
 
     context = {
@@ -571,6 +577,7 @@ def category_landing(request, slug):
         'subcategories': subcategories,
         'selected_subcategory': subcategory_slug,
         'annotated_products': merged_products,
+        'quicksell_items': quicksell_items,
         'wishlisted_ids': wishlisted_ids,
         'top_store': top_store,
         'sponsored_ids': sponsored_ids,
@@ -578,22 +585,15 @@ def category_landing(request, slug):
     return render(request, 'marketplace/category_landing.html', context)
 
 
-@vendor_forbidden
 def trending(request):
     """Weekly best-selling products ranked by cached trending_score."""
-    products = Product.objects.filter(
-        status='published',
-        store__is_published=True,
+    products = Product.objects.publicly_visible().filter(
         trending_score__gt=0,
-    ).select_related('store', 'subcategory__main_category').prefetch_related('images').order_by('-trending_score')[:60]
+    ).order_by('-trending_score')[:60]
 
     buyer_lat, buyer_lon = get_buyer_location(request)
 
-    wishlisted_ids = set()
-    if request.user.is_authenticated:
-        wishlisted_ids = set(
-            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
-        )
+    wishlisted_ids = get_wishlisted_ids(request)
 
     annotated = []
     for product in products:
@@ -609,26 +609,19 @@ def trending(request):
     return render(request, 'marketplace/trending.html', context)
 
 
-@vendor_forbidden
 def sponsored_products(request):
     """Dedicated page showing all currently active sponsored products, ordered by priority."""
-    products = Product.objects.filter(
+    products = Product.objects.publicly_visible().filter(
         is_sponsored=True,
-        status='published',
-        store__is_published=True,
     ).exclude(
         sponsored_until__lt=timezone.now()
     ).order_by(
         '-sponsored_priority'
-    ).select_related('store', 'subcategory__main_category').prefetch_related('images')
+    )
 
     buyer_lat, buyer_lon = get_buyer_location(request)
 
-    wishlisted_ids = set()
-    if request.user.is_authenticated:
-        wishlisted_ids = set(
-            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
-        )
+    wishlisted_ids = get_wishlisted_ids(request)
 
     annotated = []
     sponsored_ids = set()
@@ -636,6 +629,9 @@ def sponsored_products(request):
         product.distance = get_distance_to_store(buyer_lat, buyer_lon, product.store)
         annotated.append(product)
         sponsored_ids.add(product.pk)
+
+    # Shuffle for fresh browsing experience on each visit
+    random.shuffle(annotated)
 
     context = {
         'annotated_products': annotated,
@@ -647,7 +643,6 @@ def sponsored_products(request):
     return render(request, 'marketplace/sponsored_products.html', context)
 
 
-@vendor_forbidden
 def contact_us(request):
     """Contact form with subject-based email routing."""
     from apps.marketplace.forms import ContactForm
@@ -667,7 +662,6 @@ def contact_us(request):
             )
 
             recipient_map = {
-                'order_issue': 'support@kasumarketplace.com.ng',
                 'vendor_application': ADMIN_EMAIL or 'support@kasumarketplace.com.ng',
                 'report_problem': ADMIN_EMAIL or 'support@kasumarketplace.com.ng',
                 'general': 'info@kasumarketplace.com.ng',
@@ -689,18 +683,29 @@ def contact_us(request):
     return render(request, 'marketplace/contact.html', context)
 
 
-@buyer_required
 def wishlist_view(request):
-    """Buyer's saved products, using the same card partial as listing pages."""
+    """Buyer's saved products, using the same card partial as listing pages.
+    Supports both authenticated users and anonymous guests via session key."""
     from apps.marketplace.services.distance_service import get_distance_to_store
 
     buyer_lat, buyer_lon = get_buyer_location(request)
 
-    wishlist_items = Wishlist.objects.filter(
-        user=request.user
-    ).select_related('product__store').prefetch_related(
-        'product__images'
-    ).order_by('-created_at')
+    if request.user.is_authenticated:
+        wishlist_items = Wishlist.objects.filter(
+            user=request.user
+        ).select_related('product__store').prefetch_related(
+            'product__images'
+        ).order_by('-created_at')
+    else:
+        session_key = request.session.session_key
+        if not session_key:
+            wishlist_items = Wishlist.objects.none()
+        else:
+            wishlist_items = Wishlist.objects.filter(
+                session_key=session_key
+            ).select_related('product__store').prefetch_related(
+                'product__images'
+            ).order_by('-created_at')
 
     products = []
     for wishlist_item in wishlist_items:
@@ -708,6 +713,8 @@ def wishlist_view(request):
         product.distance = get_distance_to_store(
             buyer_lat, buyer_lon, product.store
         )
+        product.wishlist_quantity = wishlist_item.quantity
+        product.total_price = product.price * wishlist_item.quantity
         products.append(product)
 
     wishlisted_pks = {w.product_id for w in wishlist_items}
@@ -734,24 +741,80 @@ def wishlist_view(request):
     return render(request, 'marketplace/wishlist.html', context)
 
 
+@require_POST
+def wishlist_update_qty(request):
+    """AJAX: Update quantity of a wishlist item. Works for both auth and guest."""
+    try:
+        data = json.loads(request.body)
+        product_id = int(data.get('product_id'))
+        quantity = int(data.get('quantity', 1))
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
+
+    if quantity < 1:
+        quantity = 1
+
+    if request.user.is_authenticated:
+        item = Wishlist.objects.filter(user=request.user, product_id=product_id).first()
+    else:
+        session_key = request.session.session_key
+        if not session_key:
+            return JsonResponse({'success': False, 'message': 'No session.'}, status=400)
+        item = Wishlist.objects.filter(session_key=session_key, product_id=product_id).first()
+
+    if not item:
+        return JsonResponse({'success': False, 'message': 'Item not found in wishlist.'}, status=404)
+
+    item.quantity = quantity
+    item.save(update_fields=['quantity'])
+    return JsonResponse({'success': True, 'message': 'Quantity updated.'})
+
+
+@require_POST
+def wishlist_remove(request):
+    """AJAX: Remove a product from the wishlist entirely. Works for both auth and guest."""
+    try:
+        data = json.loads(request.body)
+        product_id = int(data.get('product_id'))
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
+
+    if request.user.is_authenticated:
+        deleted, _ = Wishlist.objects.filter(user=request.user, product_id=product_id).delete()
+        count = Wishlist.objects.filter(user=request.user).count()
+    else:
+        session_key = request.session.session_key
+        if not session_key:
+            return JsonResponse({'success': False, 'message': 'No session.'}, status=400)
+        deleted, _ = Wishlist.objects.filter(session_key=session_key, product_id=product_id).delete()
+        count = Wishlist.objects.filter(session_key=session_key).count()
+
+    if deleted:
+        return JsonResponse({'success': True, 'message': 'Item removed.', 'wishlist_count': count})
+    return JsonResponse({'success': False, 'message': 'Item not found.'}, status=404)
+
+
 def search_results(request):
-    """Unified search results for matching stores and published products."""
+    """Unified search results for matching stores, published products, and active Quick Sell listings."""
     query = request.GET.get('q', '').strip()
 
     products = Product.objects.none()
     stores = Store.objects.none()
+    quicksell_listings = QuickSell.objects.none()
 
     if query:
-        products = Product.objects.filter(
+        products = Product.objects.publicly_visible().filter(
             Q(title__icontains=query) | Q(description__icontains=query),
-            status='published',
-            store__is_published=True,
-        ).select_related('store').prefetch_related('images')
+        )
 
-        stores = Store.objects.filter(
+        stores = Store.objects.publicly_visible().filter(
             Q(store_name__icontains=query) | Q(tagline__icontains=query),
-            is_published=True,
         ).select_related('main_category')
+
+        # Quick Sell search — only active (non-expired) listings
+        quicksell_listings = QuickSell.objects.active().filter(
+            Q(title__icontains=query) | Q(description__icontains=query),
+        ).select_related('subcategory__main_category')
 
     buyer_lat, buyer_lon = get_buyer_location(request)
     organic_products = []
@@ -780,10 +843,8 @@ def search_results(request):
 
     if max_sponsored > 0 and query:
         extra_sponsored = list(
-            Product.objects.filter(
+            Product.objects.publicly_visible().filter(
                 Q(title__icontains=query) | Q(description__icontains=query),
-                status='published',
-                store__is_published=True,
                 is_sponsored=True,
             ).exclude(
                 pk__in=organic_ids
@@ -809,19 +870,18 @@ def search_results(request):
 
     merged_products = top_sponsored + organic_regular
 
-    wishlisted_ids = set()
-    if request.user.is_authenticated:
-        wishlisted_ids = set(
-            Wishlist.objects.filter(user=request.user).values_list(
-                'product_id', flat=True
-            )
-        )
+    # Adapt Quick Sell listings for template compatibility
+    quicksell_items = adapt_quicksell_queryset(quicksell_listings)
+
+    wishlisted_ids = get_wishlisted_ids(request)
 
     context = {
         'query': query,
         'products': merged_products,
         'stores': stores,
+        'quicksell_items': quicksell_items,
         'product_count': len(merged_products),
+        'quicksell_count': len(quicksell_items),
         'organic_count': organic_count,
         'store_count': stores.count(),
         'wishlisted_ids': wishlisted_ids,
@@ -842,470 +902,10 @@ def product_detail(request, slug):
     look up the product and redirect to the new URL pattern.
     """
     product = get_object_or_404(
-        Product.objects.select_related('store'),
+        Product.objects.publicly_visible(),
         slug=slug,
-        status='published',
-        store__is_published=True,
     )
     return redirect('product_detail_public', store_slug=product.store.slug, product_slug=product.slug)
-
-
-# ==========================================
-# CART VIEWS
-# ==========================================
-
-@vendor_forbidden
-def cart_view(request):
-    """
-    Display the cart page.
-    Shows items grouped by store with subtotals and grand total.
-    """
-    summary = get_cart_summary(request)
-
-    # "You Might Also Like" — trending products not already in cart
-    from apps.vendors.models import Product
-    from apps.marketplace.services.distance_service import get_distance_to_store
-    cart_product_ids = set()
-    for items in summary.get('items_by_store', {}).values():
-        for ci in items:
-            cart_product_ids.add(ci.product_id)
-
-    buyer_lat, buyer_lon = get_buyer_location(request)
-    recommended = Product.objects.filter(
-        status='published',
-        store__is_published=True,
-    ).exclude(
-        pk__in=cart_product_ids
-    ).select_related('store').prefetch_related('images').order_by(
-        '-trending_score', '-created_at'
-    )[:8]
-
-    for p in recommended:
-        p.distance = get_distance_to_store(buyer_lat, buyer_lon, p.store)
-
-    context = {
-        **summary,
-        'paystack_public_key': settings.PAYSTACK_PUBLIC_KEY,
-        'recommended_products': list(recommended),
-    }
-    return render(request, 'marketplace/cart.html', context)
-
-
-@vendor_forbidden
-@require_POST
-def cart_add(request):
-    """
-    AJAX: Add a product to the cart.
-    Expects POST: product_id, quantity (optional, default 1)
-    Returns JSON.
-    """
-    logger = logging.getLogger('marketplace.cart')
-    user_label = (
-        f"user={request.user.pk}"
-        if request.user.is_authenticated
-        else f"anon session={request.session.session_key}"
-    )
-
-    try:
-        data = json.loads(request.body)
-        product_id = int(data.get('product_id'))
-        quantity = int(data.get('quantity', 1))
-    except (ValueError, TypeError, json.JSONDecodeError) as exc:
-        logger.warning(
-            "cart_add bad_request %s product_id=%s error=%s",
-            user_label, data.get('product_id') if isinstance(data, dict) else '?', exc,
-        )
-        return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
-
-    try:
-        result = add_to_cart(request, product_id, quantity)
-    except Exception as exc:
-        import traceback
-        logger.error(
-            "cart_add exception %s product_id=%s error_type=%s error=%s\n%s",
-            user_label, product_id, type(exc).__name__, exc, traceback.format_exc(),
-        )
-        return JsonResponse({
-            'success': False,
-            'message': 'Something went wrong. Please try again.',
-            '_debug_error': f"{type(exc).__name__}: {exc}",
-        }, status=500)
-
-    if not result.get('success'):
-        logger.info("cart_add declined %s product_id=%s message=%s", user_label, product_id, result.get('message'))
-
-    logger.info("cart_add ok %s product_id=%s qty=%s cart_items=%s", user_label, product_id, quantity, result.get('cart_total_items'))
-    return JsonResponse(result)
-
-
-@vendor_forbidden
-@require_POST
-def cart_update(request):
-    """
-    AJAX: Update quantity of a cart item.
-    Expects POST: product_id, quantity
-    If quantity is 0 — removes item.
-    Returns JSON.
-    """
-    try:
-        data = json.loads(request.body)
-        product_id = int(data.get('product_id'))
-        quantity = int(data.get('quantity', 1))
-    except (ValueError, TypeError, json.JSONDecodeError):
-        return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
-
-    result = update_cart_item(request, product_id, quantity)
-    return JsonResponse(result)
-
-
-@vendor_forbidden
-@require_POST
-def cart_remove(request):
-    """
-    AJAX: Remove a product from the cart entirely.
-    Expects POST: product_id
-    Returns JSON.
-    """
-    try:
-        data = json.loads(request.body)
-        product_id = int(data.get('product_id'))
-    except (ValueError, TypeError, json.JSONDecodeError):
-        return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
-
-    result = remove_from_cart(request, product_id)
-    return JsonResponse(result)
-
-
-# ==========================================
-# CHECKOUT
-# ==========================================
-
-@buyer_required
-def checkout(request):
-    """
-    Checkout page.
-    - Pre-fills delivery address from BuyerProfile
-    - Buyer can edit before paying
-    - Generates Paystack reference server-side
-    - Displays Paystack inline payment button
-    """
-    summary = get_cart_summary(request)
-
-    if summary['is_empty']:
-        messages.warning(request, 'Your cart is empty.')
-        return redirect('marketplace:cart')
-
-    # Pre-fill from buyer profile
-    try:
-        profile = request.user.buyer_profile
-    except Exception:
-        profile = None
-
-    # Generate fresh Paystack reference for this session
-    reference = generate_payment_reference()
-    request.session['payment_reference'] = reference
-    request.session['checkout_total'] = str(summary['grand_total'])
-
-    context = {
-        **summary,
-        'reference': reference,
-        'paystack_public_key': settings.PAYSTACK_PUBLIC_KEY,
-        'profile': profile,
-        # Pre-fill values for template
-        'prefill_address': profile.default_address if profile else '',
-        'prefill_city': profile.city if profile else '',
-        'prefill_state': profile.state if profile else '',
-        'prefill_phone': profile.phone if profile else '',
-        'prefill_name': profile.display_name if profile else '',
-    }
-    return render(request, 'marketplace/checkout.html', context)
-
-
-# ==========================================
-# PAYMENT VERIFY
-# ==========================================
-
-@buyer_required
-def payment_verify(request):
-    """
-    Server-side payment verification after Paystack callback.
-    Called with GET: ?reference=KSM-XXXXXXXX
-
-    Flow:
-    1. Get reference from query params
-    2. Get expected amount from session
-    3. Verify with Paystack API
-    4. If success: create orders, clear cart, redirect to order detail
-    5. If fail: redirect to checkout with error
-    """
-    reference = request.GET.get('reference', '').strip()
-
-    if not reference:
-        messages.error(request, 'No payment reference found.')
-        return redirect('marketplace:checkout')
-
-    # Get expected amount from session
-    expected_amount = request.session.get('checkout_total')
-    if not expected_amount:
-        messages.error(request, 'Session expired. Please try again.')
-        return redirect('marketplace:checkout')
-
-    # Get delivery data from POST (submitted with payment form)
-    delivery_data = {
-        'delivery_address': request.session.get('delivery_address', ''),
-        'delivery_city': request.session.get('delivery_city', ''),
-        'delivery_state': request.session.get('delivery_state', ''),
-        'delivery_phone': request.session.get('delivery_phone', ''),
-    }
-
-    # Verify with Paystack
-    verify_result = verify_payment(
-        reference=reference,
-        expected_amount_naira=expected_amount,
-    )
-
-    if not verify_result['success']:
-        messages.error(request, f"Payment failed: {verify_result['message']}")
-        return redirect('marketplace:checkout')
-
-    transaction = verify_result['transaction']
-
-    # Link transaction to logged-in user
-    if not transaction.user:
-        transaction.user = request.user
-        transaction.save(update_fields=['user'])
-
-    # If already processed — redirect to existing order
-    if verify_result['already_processed']:
-        try:
-            existing_order = MainOrder.objects.get(reference=reference)
-            messages.info(request, 'This payment was already processed.')
-            return redirect('marketplace:order_detail', order_number=existing_order.order_number)
-        except MainOrder.DoesNotExist:
-            pass
-
-    # Create orders
-    cart = get_or_create_cart(request)
-    order_result = create_orders_from_cart(
-        cart=cart,
-        payment_transaction=transaction,
-        delivery_data=delivery_data,
-    )
-
-    if not order_result['success']:
-        logger.error(f"Order creation failed for ref {reference}: {order_result['message']}")
-        messages.error(request, 'Order creation failed. Please contact support.')
-        return redirect('marketplace:checkout')
-
-    # Clear session checkout data
-    for key in ['payment_reference', 'checkout_total', 'delivery_address',
-                'delivery_city', 'delivery_state', 'delivery_phone']:
-        request.session.pop(key, None)
-
-    main_order = order_result['main_order']
-    messages.success(request, f'Order {main_order.order_number} placed successfully!')
-    return redirect('marketplace:order_detail', order_number=main_order.order_number)
-
-
-@require_POST
-def checkout_save_delivery(request):
-    """
-    AJAX: Save delivery details to session before Paystack popup opens.
-    Called when buyer clicks Pay — saves their delivery form data
-    so it's available after Paystack redirects back.
-    Expects POST JSON: address, city, state, phone
-    """
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'message': 'Invalid data.'}, status=400)
-
-    request.session['delivery_address'] = data.get('address', '')
-    request.session['delivery_city'] = data.get('city', '')
-    request.session['delivery_state'] = data.get('state', '')
-    request.session['delivery_phone'] = data.get('phone', '')
-
-    return JsonResponse({'success': True})
-
-
-# ==========================================
-# PAYSTACK WEBHOOK
-# ==========================================
-
-@csrf_exempt
-@require_POST
-def paystack_webhook(request):
-    """
-    Paystack webhook endpoint.
-    Receives payment events from Paystack servers.
-
-    Security: Validates X-Paystack-Signature header.
-    Idempotency: Skips already-processed events.
-    Always returns 200 OK to Paystack (even on errors)
-    to prevent Paystack from retrying.
-    """
-    signature = request.headers.get('X-Paystack-Signature', '')
-
-    # Verify signature
-    if not verify_webhook_signature(request.body, signature):
-        logger.warning('Invalid Paystack webhook signature received.')
-        return HttpResponse(status=400)
-
-    try:
-        event = json.loads(request.body)
-    except json.JSONDecodeError:
-        return HttpResponse(status=400)
-
-    # Process event
-    result = process_webhook(event)
-    logger.info(f"Webhook processed: {result['message']}")
-
-    # Always return 200 to Paystack
-    return HttpResponse(status=200)
-
-
-# ==========================================
-# ORDER LIST
-# ==========================================
-
-@buyer_required
-def order_list(request):
-    """
-    Buyer's order history — flat list of SubOrders.
-    """
-    from apps.marketplace.models import SubOrder
-    status_filter = request.GET.get('status', '')
-
-    suborders = SubOrder.objects.filter(
-        main_order__buyer=request.user
-    ).select_related(
-        'main_order', 'store'
-    ).prefetch_related(
-        'items__product'
-    ).order_by('-created_at')
-
-    if status_filter:
-        suborders = suborders.filter(status=status_filter)
-
-    # Lazy timeout check
-    for sub in suborders:
-        sub.check_and_apply_timeout()
-
-    context = {
-        'suborders': suborders,
-        'status_filter': status_filter,
-    }
-    return render(request, 'marketplace/order_list.html', context)
-
-# ==========================================
-# ORDER DETAIL
-# ==========================================
-
-@buyer_required
-def order_detail(request, order_number):
-    """
-    Detailed view of a single order.
-    Shows:
-    - All SubOrders with items
-    - Vendor contact (phone, WhatsApp) if payment_status == SUCCESS
-    - Confirm / Report Issue buttons if SubOrder is ACCEPTED
-    - Checks + applies 48h timeout lazily
-    """
-    main_order = get_object_or_404(
-        MainOrder.objects.prefetch_related(
-            'suborders__store__vendor__user',
-            'suborders__items__product',
-            'suborders__wallet_transactions',
-            'suborders__dispute',
-        ),
-        order_number=order_number,
-        buyer=request.user,
-    )
-
-    # Lazy timeout check for each suborder
-    for sub in main_order.suborders.all():
-        sub.check_and_apply_timeout()
-
-    context = {
-        'main_order': main_order,
-        'order': main_order,  # ← add this line
-        'suborders': main_order.suborders.all(),
-    }
-    return render(request, 'marketplace/order_detail.html', context)
-
-
-# ==========================================
-# CONFIRM RECEIPT
-# ==========================================
-
-@buyer_required
-@require_POST
-def confirm_receipt(request, suborder_id):
-    """
-    Buyer clicks YES — Release Payment.
-    Marks SubOrder as CONFIRMED.
-    Triggers 24h hold before vendor can withdraw.
-    """
-    sub_order = get_object_or_404(
-        SubOrder.objects.select_related('main_order', 'store'),
-        pk=suborder_id,
-        main_order__buyer=request.user,
-    )
-
-    result = confirm_suborder(sub_order=sub_order, buyer=request.user)
-
-    if result['success']:
-        messages.success(request, result['message'])
-    else:
-        messages.error(request, result['message'])
-
-    return redirect(
-        'marketplace:order_detail',
-        order_number=sub_order.main_order.order_number
-    )
-
-
-# ==========================================
-# REPORT ISSUE (DISPUTE)
-# ==========================================
-
-@buyer_required
-@require_POST
-def report_issue(request, suborder_id):
-    """
-    Buyer clicks REPORT ISSUE.
-    Creates a Dispute record and locks vendor funds.
-    Requires POST field: reason (text)
-    """
-    sub_order = get_object_or_404(
-        SubOrder.objects.select_related('main_order', 'store'),
-        pk=suborder_id,
-        main_order__buyer=request.user,
-    )
-
-    reason = request.POST.get('reason', '').strip()
-    if not reason:
-        messages.error(request, 'Please describe the issue.')
-        return redirect(
-            'marketplace:order_detail',
-            order_number=sub_order.main_order.order_number
-        )
-
-    result = open_dispute(
-        sub_order=sub_order,
-        buyer=request.user,
-        reason=reason,
-    )
-
-    if result['success']:
-        messages.success(request, result['message'])
-    else:
-        messages.error(request, result['message'])
-
-    return redirect(
-        'marketplace:order_detail',
-        order_number=sub_order.main_order.order_number
-    )
 
 
 # ==========================================
@@ -1368,19 +968,59 @@ def profile(request):
     except Exception:
         profile = None
 
+    # QuickSell counts for current user
+    from apps.quicksell.models import QuickSell
+    user_qs = QuickSell.objects.filter(user=request.user)
+    active_count = user_qs.active().count()
+    expired_count = user_qs.expired().count()
+
+    context = {
+        'profile': profile,
+        'active_listings_count': active_count,
+        'expired_listings_count': expired_count,
+    }
+    return render(request, 'marketplace/profile.html', context)
+
+
+def _validate_nigerian_phone(phone):
+    """
+    Validate a Nigerian phone number.
+    Accepts: 0XXXXXXXXXX (11 digits) or +234XXXXXXXXXX (13 digits)
+    Returns cleaned phone or raises ValueError.
+    """
+    import re
+    if not phone:
+        return phone
+    phone = re.sub(r'[\s\-\(\)]', '', phone.strip())
+    if not re.match(r'^(0|\+234)[7-9][0-1]\d{8}$', phone):
+        raise ValueError('Enter a valid Nigerian phone number (e.g. 080XXXXXXXX or +234XXXXXXXXXX)')
+    return phone
+
+
+@buyer_required
+def personal_information(request):
+    """Personal Information page — dedicated profile editing."""
+    try:
+        profile = request.user.buyer_profile
+    except Exception:
+        profile = None
+
     if request.method == 'POST':
         from apps.users.models import BuyerProfile
         profile, _ = BuyerProfile.objects.get_or_create(user=request.user)
         profile.full_name = request.POST.get('full_name', '')
-        profile.phone = request.POST.get('phone', '')
-        profile.default_address = request.POST.get('default_address', '')
-        profile.city = request.POST.get('city', '')
-        profile.state = request.POST.get('state', '')
+        phone = request.POST.get('phone', '')
+        try:
+            phone = _validate_nigerian_phone(phone)
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect('marketplace:personal_information')
+        profile.phone = phone
         profile.save()
         messages.success(request, 'Profile updated.')
-        return redirect('marketplace:profile')
+        return redirect('marketplace:personal_information')
 
-    return render(request, 'marketplace/profile.html', {'profile': profile})
+    return render(request, 'marketplace/personal_information.html', {'profile': profile})
 
 
 def about_page(request):
@@ -1428,7 +1068,7 @@ def report_product(request, product_id):
     from apps.marketplace.models import ProductReport
     from apps.marketplace.forms import ProductReportForm
 
-    product = get_object_or_404(Product, id=product_id, status='published', store__is_published=True)
+    product = get_object_or_404(Product.objects.publicly_visible(), id=product_id)
 
     # Prevent vendor from reporting their own product (only check if logged in)
     if request.user.is_authenticated and hasattr(request.user, 'vendorprofile') and request.user.vendorprofile == product.store.vendor:
@@ -1500,3 +1140,99 @@ def request_account_deletion(request):
         'You will be notified via email once the request is handled.'
     )
     return redirect('marketplace:profile')
+
+
+# ==========================================
+# BUYER NOTIFICATIONS
+# ==========================================
+
+@login_required
+def buyer_notifications_list(request):
+    """List all notifications for the logged-in buyer."""
+    from apps.vendors.models import Notification
+
+    notifications = Notification.objects.filter(
+        user=request.user
+    ).order_by('-created_at')
+
+    filter_value = request.GET.get('filter', '')
+    if filter_value == 'unread':
+        notifications = notifications.filter(is_read=False)
+    elif filter_value in ['system', 'verification', 'admin_message', 'inventory', 'wishlist']:
+        notifications = notifications.filter(notification_type=filter_value)
+
+    paginator = Paginator(notifications, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    unread_count = Notification.objects.filter(
+        user=request.user, is_read=False
+    ).count()
+
+    return render(request, 'marketplace/notifications/list.html', {
+        'page_obj': page_obj,
+        'notifications': page_obj,
+        'unread_count': unread_count,
+    })
+
+
+@login_required
+def buyer_notification_detail(request, notification_id):
+    """View a single notification for the logged-in buyer."""
+    from apps.vendors.models import Notification
+    from django.utils import timezone as tz
+
+    notification = get_object_or_404(
+        Notification, id=notification_id, user=request.user
+    )
+
+    if not notification.is_read:
+        notification.is_read = True
+        notification.read_at = tz.now()
+        notification.save()
+
+    return render(request, 'marketplace/notifications/detail.html', {
+        'notification': notification,
+    })
+
+
+@login_required
+@require_POST
+def buyer_notification_mark_read(request, notification_id):
+    """Mark a single notification as read."""
+    from apps.vendors.models import Notification
+    from django.utils import timezone as tz
+
+    notification = get_object_or_404(
+        Notification, id=notification_id, user=request.user
+    )
+    if not notification.is_read:
+        notification.is_read = True
+        notification.read_at = tz.now()
+        notification.save()
+    return redirect('marketplace:buyer_notification_detail', notification_id=notification.id)
+
+
+@login_required
+@require_POST
+def buyer_notification_delete(request, notification_id):
+    """Delete a single notification."""
+    from apps.vendors.models import Notification
+
+    notification = get_object_or_404(
+        Notification, id=notification_id, user=request.user
+    )
+    notification.delete()
+    return redirect('marketplace:buyer_notifications_list')
+
+
+@login_required
+@require_POST
+def buyer_notifications_mark_all_read(request):
+    """Mark all unread notifications as read."""
+    from apps.vendors.models import Notification
+    from django.utils import timezone as tz
+
+    qs = Notification.objects.filter(user=request.user, is_read=False)
+    qs.update(is_read=True, read_at=tz.now())
+    return redirect('marketplace:buyer_notifications_list')

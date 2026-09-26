@@ -73,11 +73,11 @@ def vendor_verified_required(view_func):
         
         vendor = request.user.vendorprofile
         
-        # Check if vendor can sell (identity + BVN verified)
+        # Check if vendor can sell (store setup + active subscription)
         if not vendor.can_sell:
             messages.warning(
-                request, 
-                'Please complete identity and banking (BVN) verification to access this feature.'
+                request,
+                'Please complete store setup and activate your subscription to access this feature.'
             )
             return redirect('vendors:verification_center')
         
@@ -209,41 +209,6 @@ def vendor_owns_product(view_func):
         
         # Add product to request for easy access in view
         request.product = product
-        
-        return view_func(request, *args, **kwargs)
-    
-    return wrapper
-
-
-def vendor_owns_order(view_func):
-    """
-    Decorator to ensure vendor owns the order they're trying to access
-    Expects 'order_id' in URL kwargs
-    
-    Usage:
-        @vendor_owns_order
-        def order_detail(request, order_id):
-            ...
-    """
-    @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
-        from .models import Order
-        
-        # Get order by order_id (UUID)
-        order_id = kwargs.get('order_id')
-        try:
-            order = Order.objects.get(order_id=order_id)
-        except Order.DoesNotExist:
-            messages.error(request, 'Order not found.')
-            return redirect('vendors:orders_list')
-        
-        # Check ownership
-        if order.vendor != request.user.vendorprofile:
-            messages.error(request, 'You do not have permission to access this order.')
-            return redirect('vendors:orders_list')
-        
-        # Add order to request
-        request.order = order
         
         return view_func(request, *args, **kwargs)
     
@@ -426,12 +391,12 @@ class VendorVerifiedRequiredMixin:
             messages.error(request, 'You need to be a registered vendor.')
             return redirect('/')
         
-        # Check verification
+        # Check verification (store setup + active subscription)
         vendor = request.user.vendorprofile
         if not vendor.can_sell:
             messages.warning(
                 request,
-                'Please complete verification to access this feature.'
+                'Please complete store setup and activate your subscription to access this feature.'
             )
             return redirect('vendors:verification_center')
         

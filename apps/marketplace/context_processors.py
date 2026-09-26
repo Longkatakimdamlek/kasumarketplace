@@ -1,17 +1,8 @@
 from django.db import models
-from apps.marketplace.services.cart_service import get_or_create_cart
 from apps.vendors.models import MainCategory
 import logging
 
 logger = logging.getLogger(__name__)
-
-def cart_context(request):
-    try:
-        cart = get_or_create_cart(request)
-        return {'cart_count': cart.total_items}
-    except Exception as e:
-        logger.error(f"Error in cart_context: {str(e)}", exc_info=True)
-        return {'cart_count': 0}
 
 
 def categories_processor(request):
@@ -28,12 +19,16 @@ def categories_processor(request):
 
 
 def wishlist_count_processor(request):
-    """Inject wishlist item count for authenticated buyers."""
-    if not request.user.is_authenticated:
-        return {'wishlist_count': 0}
+    """Inject wishlist item count for authenticated buyers and session-based guests."""
     try:
         from apps.marketplace.models import Wishlist
-        return {'wishlist_count': Wishlist.objects.filter(user=request.user).count()}
+        if request.user.is_authenticated:
+            return {'wishlist_count': Wishlist.objects.filter(user=request.user).count()}
+        # For anonymous users, count session-based wishlist items
+        session_key = request.session.session_key
+        if session_key:
+            return {'wishlist_count': Wishlist.objects.filter(session_key=session_key).count()}
+        return {'wishlist_count': 0}
     except Exception:
         return {'wishlist_count': 0}
 
@@ -59,3 +54,29 @@ def event_popup_processor(request):
     except Exception as e:
         logger.error(f"Error in event_popup_processor: {str(e)}", exc_info=True)
         return {'active_event_popups': []}
+
+
+def buyer_notification_processor(request):
+    """
+    Inject buyer notification counts into every marketplace template.
+    Only fires for authenticated users with the 'buyer' role.
+    """
+    if not request.user.is_authenticated:
+        return {}
+    try:
+        if not request.user.is_buyer:
+            return {}
+    except Exception:
+        return {}
+
+    from apps.vendors.models import Notification
+    unread = Notification.objects.filter(
+        user=request.user, is_read=False
+    ).count()
+    recent = Notification.objects.filter(
+        user=request.user
+    ).order_by('-created_at')[:5]
+    return {
+        'buyer_unread_count': unread,
+        'buyer_recent_notifications': recent,
+    }

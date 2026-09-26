@@ -105,29 +105,6 @@
                 {% endif %}
             </div>
 
-            <!-- Bank -->
-            <div class="mb-5">
-                <label for="{{ form.bank_name.id_for_label }}"
-                       class="block text-sm font-semibold text-gray-900 mb-1.5">
-                    Primary Bank <span class="text-red-500">*</span>
-                </label>
-                <select id="{{ form.bank_name.id_for_label }}"
-                        name="{{ form.bank_name.html_name }}"
-                        data-saved-bank="{{ form.bank_name.value|default:'' }}"
-                        required
-                        x-model="bankName"
-                        @change="bankCode = $event.target.selectedOptions[0]?.dataset.code || ''; document.getElementById('bvn_bank_code').value = bankCode"
-                        class="w-full px-4 py-3 text-base border-2 rounded-lg transition-all
-                               {% if form.bank_name.errors %}border-red-400 bg-red-50
-                               {% else %}border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20{% endif %}">
-                    <option value="">Loading banks...</option>
-                </select>
-                <input type="hidden" name="bank_code" id="bvn_bank_code">
-                {% if form.bank_name.errors %}
-                <p class="mt-1.5 text-xs text-red-600">{{ form.bank_name.errors.0 }}</p>
-                {% endif %}
-            </div>
-
             <!-- Info boxes removed -->
 
             <!-- Consent -->
@@ -178,47 +155,17 @@
 
 {% block extra_js %}
 <script>
-async function loadBanksForBvn() {
-    const select = document.querySelector('select[name="bank_name"]');
-    if (!select) return;
-    const savedBank = select.getAttribute('data-saved-bank') || '';
-    try {
-        const res  = await fetch('{% url "vendors:api_get_banks" %}');
-        const data = await res.json();
-        select.innerHTML = '<option value="">-- Select your bank --</option>';
-        data.banks.forEach(bank => {
-            const opt = document.createElement('option');
-            opt.value = bank.name;
-            opt.dataset.code = bank.code;
-            opt.textContent = bank.name;
-            if (savedBank && bank.name === savedBank) opt.selected = true;
-            select.appendChild(opt);
-        });
-        if (savedBank && select.value) {
-            const code = select.selectedOptions[0]?.dataset.code || '';
-            document.getElementById('bvn_bank_code').value = code;
-            select.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-    } catch {
-        select.innerHTML = '<option value="">Failed to load banks — refresh</option>';
-    }
-}
-loadBanksForBvn();
-
 function bvnEntryForm() {
     return {
         bvnNumber:    '{{ form.bvn_number.value|default:""|escapejs }}',
-        bankName:     '{{ form.bank_name.value|default:""|escapejs }}',
-        bankCode:     '',
         consentGiven: false,
 
         get canSubmit() {
-            return this.bvnNumber.length === 11 && !!this.bankName && this.consentGiven;
+            return this.bvnNumber.length === 11 && this.consentGiven;
         },
 
         get submitHint() {
             if (this.bvnNumber.length !== 11) return 'Enter your 11-digit BVN to continue';
-            if (!this.bankName) return 'Select your primary bank to continue';
             if (!this.consentGiven) return 'Check the consent box to continue';
             return '';
         },

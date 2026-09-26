@@ -1,0 +1,23 @@
+{% extends 'vendors/emails/base_email.html' %}
+
+{% block title %}{{ title }} — KasuMarketplace{% endblock %}
+{% block email_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<p style="font-size:15px; color:#374151; line-height:1.6; margin:0 0 16px 0;">
+    Hi {{ user.get_full_name|default:user.email }},
+</p>
+
+<p style="font-size:15px; color:#374151; line-height:1.6; margin:0 0 20px 0;">
+    {{ message }}
+</p>
+
+{% if link %}
+<div style="text-align:center; margin:30px 0;">
+    <a href="{{ link }}"
+       style="display:inline-block; padding:14px 28px; background:linear-gradient(135deg,#6a3df5 0%,#4b8bff 100%); color:#ffffff; text-decoration:none; border-radius:8px; font-weight:bold; font-size:16px;">
+        View Details
+    </a>
+</div>
+{% endif %}
+{% endblock %}

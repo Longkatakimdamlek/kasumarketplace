@@ -11,7 +11,7 @@
     </p>
 </div>
 
-<p>Hello {{ vendor.user.first_name|default:"Vendor" }},</p>
+<p>Hello {{ vendor_name|default:vendor.user.email|default:"Vendor" }},</p>
 
 <p>
     We're pleased to inform you that your identity verification is complete and your vendor account
@@ -22,10 +22,7 @@
 <p>Continue with these remaining steps to start selling:</p>
 
 <ol style="padding-left: 20px; color: #374151;">
-    <li style="margin-bottom: 10px;"><strong>Verify Your Bank Account (BVN)</strong> - Link your bank for secure payouts</li>
     <li style="margin-bottom: 10px;"><strong>Set Up Your Store</strong> - Choose your category and customize your storefront</li>
-    <li style="margin-bottom: 10px;"><strong>Student Verification</strong> (Optional) - Get special benefits if you're a student</li>
-    <li style="margin-bottom: 10px;"><strong>Admin Review</strong> - We'll review your application within 24 hours</li>
 </ol>
 
 <div style="text-align: center;">

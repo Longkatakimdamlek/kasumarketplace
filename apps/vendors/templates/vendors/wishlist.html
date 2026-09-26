@@ -1,0 +1,119 @@
+{% extends 'vendors/base.html' %}
+{% load currency_filters %}
+
+{% block title %}Wishlist - KasuMarketplace{% endblock %}
+{% block page_title %}Wishlist{% endblock %}
+
+{% block content %}
+
+{# ============================================================ #}
+{# Page Header                                                   #}
+{# ============================================================ #}
+<div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-4 sm:mb-5">
+    <div>
+        <h1 class="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">Wishlisted Products</h1>
+        <p class="mt-0.5 text-[13px] text-gray-500 sm:text-sm">
+            Products from your store that buyers have saved to their wishlists
+        </p>
+    </div>
+    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm">
+        <span class="flex size-8 items-center justify-center rounded-full bg-pink-accent/10 text-pink-accent">
+            <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.682a4.5 4.5 0 010-6.364z"/>
+            </svg>
+        </span>
+        <div>
+            <p class="text-lg font-bold leading-none text-gray-900">{{ total_wishlists }}</p>
+            <p class="text-[11px] font-medium text-gray-500">Total Wishlists</p>
+        </div>
+    </div>
+</div>
+
+{# ============================================================ #}
+{# Products list                                                 #}
+{# ============================================================ #}
+{% if products %}
+<div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <ul class="divide-y divide-gray-200">
+        {% for product in products %}
+        <li>
+            <a href="{% url 'vendors:product_detail' product.slug %}"
+               class="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 sm:px-6 sm:py-4">
+
+                {# Product image #}
+                {% if product.images.first %}
+                <img src="{{ product.images.first.image.url }}"
+                     alt="{{ product.title }}"
+                     class="size-12 shrink-0 rounded-lg border border-gray-200 object-cover sm:size-14">
+                {% else %}
+                <div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-400 sm:size-14">
+                    <svg class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                {% endif %}
+
+                {# Product info #}
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-[13px] font-bold text-gray-900 sm:text-sm">{{ product.title }}</p>
+                    <p class="mt-0.5 text-sm font-bold text-primary sm:text-base">{{ product.price|naira }}</p>
+                </div>
+
+                {# Stock status #}
+                <div class="hidden shrink-0 sm:block">
+                    {% if product.track_inventory %}
+                        {% if product.stock_quantity > product.low_stock_threshold %}
+                        <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                            In Stock
+                        </span>
+                        {% elif product.stock_quantity > 0 %}
+                        <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                            Low Stock
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-700">
+                            Out of Stock
+                        </span>
+                        {% endif %}
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                        Unlimited
+                    </span>
+                    {% endif %}
+                </div>
+
+                {# Wishlist count #}
+                <div class="flex shrink-0 items-center gap-1.5 rounded-full bg-pink-accent/10 px-3 py-1.5">
+                    <svg class="size-3.5 text-pink-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.682a4.5 4.5 0 010-6.364z"/>
+                    </svg>
+                    <span class="text-[12px] font-bold text-pink-accent sm:text-xs">{{ product.wishlist_count }}</span>
+                </div>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% else %}
+{# ============================================================ #}
+{# Empty State                                                   #}
+{# ============================================================ #}
+<div class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
+    <span class="flex size-14 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+        <svg class="size-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.682a4.5 4.5 0 010-6.364z"/>
+        </svg>
+    </span>
+    <h2 class="text-base font-bold text-gray-900">No wishlisted products yet</h2>
+    <p class="max-w-sm text-sm text-gray-500">
+        When buyers save your products to their wishlists, they'll appear here.
+    </p>
+    <a href="{% url 'vendors:products_list' %}"
+       class="mt-1 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-soft-blue px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md">
+        View Your Products
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}

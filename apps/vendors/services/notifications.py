@@ -31,6 +31,15 @@ from django.utils.html import strip_tags
 logger = logging.getLogger(__name__)
 
 
+def email_name(vendor) -> str:
+    """
+    Name shown to a vendor: the part of their email address before '@'.
+    Never reads profile/BVN fields.
+    """
+    email = (getattr(getattr(vendor, 'user', None), 'email', '') or '').strip()
+    return email.split('@')[0] if email else 'Vendor'
+
+
 class NotificationError(Exception):
     """Custom exception for notification errors"""
     pass
@@ -245,8 +254,8 @@ class NotificationService:
             template_name='vendors/emails/bvn_verified.html',
             context={
                 'vendor': vendor,
-                'vendor_name': vendor.full_name,
-                'bank_name': vendor.wallet.bank_name if hasattr(vendor, 'wallet') else '',
+                'vendor_name': email_name(vendor),
+                'bank_name': '',
                 'next_step': 'Store Setup'
             }
         )
@@ -264,7 +273,7 @@ class NotificationService:
             template_name='vendors/emails/verification_approved.html',
             context={
                 'vendor': vendor,
-                'vendor_name': vendor.full_name,
+                'vendor_name': email_name(vendor),
                 'dashboard_url': f'{settings.SITE_URL}/vendors/dashboard/'
             }
         )
@@ -273,7 +282,7 @@ class NotificationService:
         if vendor.phone:
             self.sms.send_sms(
                 vendor.phone,
-                f'Congratulations {vendor.full_name}! Your KasuMarketplace vendor account is now approved. Start selling today!'
+                f'Congratulations {email_name(vendor)}! Your KasuMarketplace vendor account is now approved. Start selling today!'
             )
         
         return success
@@ -286,137 +295,11 @@ class NotificationService:
             template_name='vendors/emails/verification_rejected.html',
             context={
                 'vendor': vendor,
-                'vendor_name': vendor.full_name,
+                'vendor_name': email_name(vendor),
                 'reason': reason or vendor.admin_comment,
                 'support_email': 'support@kasumarketplace.com.ng'
             }
         )
-    
-    # ==========================================
-    # ORDER NOTIFICATIONS
-    # ==========================================
-    
-    def send_new_order(self, order) -> bool:
-        """
-        Send email and SMS when vendor receives new order
-        
-        Args:
-            order: Order instance
-        """
-        vendor = order.vendor
-        
-        # Send email
-        email_success = self.email.send_template_email(
-            to_email=vendor.user.email,
-            subject=f'New Order Received - #{str(order.order_id)[:8]}',
-            template_name='vendors/emails/new_order.html',
-            context={
-                'vendor': vendor,
-                'order': order,
-                'order_url': f'{settings.SITE_URL}/vendors/orders/{order.order_id}/'
-            }
-        )
-        
-        # Send SMS
-        if vendor.phone:
-            self.sms.send_sms(
-                vendor.phone,
-                f'New order received! Order #{str(order.order_id)[:8]} - ₦{order.total_amount}. Check your dashboard.'
-            )
-        
-        return email_success
-    
-    def send_order_status_update(self, order, customer_email: str) -> bool:
-        """
-        Send email to customer when order status changes
-        
-        Args:
-            order: Order instance
-            customer_email: Customer's email
-        """
-        status_messages = {
-            'confirmed': 'Your order has been confirmed and is being prepared.',
-            'processing': 'Your order is being processed.',
-            'shipped': f'Your order has been shipped. Tracking: {order.tracking_number}',
-            'delivered': 'Your order has been delivered. Enjoy your purchase!',
-        }
-        
-        message = status_messages.get(order.status, f'Your order status: {order.get_status_display()}')
-        
-        return self.email.send_email(
-            to_email=customer_email,
-            subject=f'Order Update - #{str(order.order_id)[:8]}',
-            message=f"""
-Hello,
-
-{message}
-
-Order ID: #{str(order.order_id)[:8]}
-Total: ₦{order.total_amount}
-
-Thank you for shopping on KasuMarketplace!
-
-Best regards,
-KasuMarketplace Team
-            """,
-        )
-    
-    # ==========================================
-    # WALLET/PAYOUT NOTIFICATIONS
-    # ==========================================
-    
-    def send_payout_successful(self, vendor, amount, bank_name: str) -> bool:
-        """
-        Send email when payout is successful
-        
-        Args:
-            vendor: VendorProfile instance
-            amount: Payout amount
-            bank_name: Bank name
-        """
-        email_success = self.email.send_template_email(
-            to_email=vendor.user.email,
-            subject=f'Payout Successful - ₦{amount}',
-            template_name='vendors/emails/payout_successful.html',
-            context={
-                'vendor': vendor,
-                'amount': amount,
-                'bank_name': bank_name,
-                'wallet_url': f'{settings.SITE_URL}/vendors/wallet/'
-            }
-        )
-        
-        # Send SMS
-        if vendor.phone:
-            self.sms.send_sms(
-                vendor.phone,
-                f'Payout successful! ₦{amount} has been sent to your {bank_name} account.'
-            )
-        
-        return email_success
-    
-    def send_payment_received(self, vendor, amount, order_id: str) -> bool:
-        """Send notification when vendor receives payment"""
-        
-        # Send email
-        email_success = self.email.send_email(
-            to_email=vendor.user.email,
-            subject=f'Payment Received - ₦{amount}',
-            message=f"""
-Hello {vendor.full_name},
-
-You've received a payment of ₦{amount} for order #{order_id}.
-
-This amount is now in your pending balance and will be available for withdrawal once the order is delivered.
-
-View details: {settings.SITE_URL}/vendors/wallet/
-
-Best regards,
-KasuMarketplace Team
-            """
-        )
-        
-        return email_success
     
     # ==========================================
     # OTP NOTIFICATIONS

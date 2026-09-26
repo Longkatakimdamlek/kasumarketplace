@@ -22,7 +22,7 @@ from django.forms import inlineformset_factory, BaseInlineFormSet
 from .models import (
     VendorProfile, Store, Product, ProductImage,
     MainCategory, SubCategory, SubCategoryAttribute,
-    CategoryChangeRequest, Order
+    CategoryChangeRequest
 )
 import re
 import logging
@@ -32,12 +32,12 @@ logger = logging.getLogger(__name__)
 
 # ==========================================
 # BVN VERIFICATION FORMS (2-step flow)
-# Step 1: BVN + bank + consent
+# Step 1: BVN + consent
 # Step 2: live selfie capture (auto-submitted)
 # ==========================================
 
 class BVNEntryForm(forms.Form):
-    """Page 1 — BVN number, bank, and consent only."""
+    """Page 1 — BVN number and consent only."""
 
     bvn_number = forms.CharField(
         max_length=11,
@@ -55,12 +55,6 @@ class BVNEntryForm(forms.Form):
         ]
     )
 
-    bank_name = forms.CharField(
-        max_length=100,
-        label='Select Your Bank',
-        widget=forms.TextInput(attrs={'class': 'form-select'})
-    )
-
     consent = forms.BooleanField(
         required=True,
         label='I consent to KasuMarketplace collecting and submitting my BVN to Dojah for identity verification purposes.',
@@ -71,15 +65,8 @@ class BVNEntryForm(forms.Form):
         bvn = self.cleaned_data.get('bvn_number')
         return re.sub(r'[\s\-]', '', bvn)
 
-    def clean_bank_name(self):
-        bank_name = self.cleaned_data.get('bank_name', '').strip()
-        if not bank_name:
-            raise ValidationError('Please select a bank')
-        return bank_name
-
-
 class BVNSelfieForm(forms.Form):
-    """Page 2 — selfie only; BVN/bank come from session."""
+    """Page 2 — selfie only; BVN comes from session."""
 
     selfie_image = forms.CharField(
         widget=forms.HiddenInput(),
@@ -116,14 +103,6 @@ class BVNVerificationForm(forms.Form):
         ]
     )
 
-    bank_name = forms.CharField(
-        max_length=100,
-        label='Select Your Bank',
-        widget=forms.TextInput(attrs={
-            'class': 'form-select'
-        })
-    )
-
     selfie_image = forms.CharField(
         widget=forms.HiddenInput(),
         label='Selfie capture',
@@ -134,12 +113,6 @@ class BVNVerificationForm(forms.Form):
         bvn = self.cleaned_data.get('bvn_number')
         bvn = re.sub(r'[\s\-]', '', bvn)
         return bvn
-
-    def clean_bank_name(self):
-        bank_name = self.cleaned_data.get('bank_name', '').strip()
-        if not bank_name:
-            raise ValidationError('Please select a bank')
-        return bank_name
 
     def clean_selfie_image(self):
         data = self.cleaned_data.get('selfie_image', '')
@@ -153,303 +126,134 @@ class BVNVerificationForm(forms.Form):
 
 
 # ==========================================
-# STUDENT VERIFICATION FORM (UNCHANGED)
-# ==========================================
-
-class StudentVerificationForm(forms.ModelForm):
-    """
-    Optional: Student verification for badge/perks
-    """
-
-    LEVEL_CHOICES = [
-        ('', '-- Select Level --'),
-        ('100', '100 Level'),
-        ('200', '200 Level'),
-        ('300', '300 Level'),
-        ('400', '400 Level'),
-        ('500', '500 Level'),
-        ('PG', 'Postgraduate'),
-    ]
-
-    level = forms.ChoiceField(
-        choices=LEVEL_CHOICES,
-        required=True,
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-
-    class Meta:
-        model = VendorProfile
-        fields = ['matric_number', 'department', 'level', 'student_id_image', 'selfie']
-        widgets = {
-            'matric_number': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'e.g., KASU/CSC/2020/1234'
-            }),
-            'department': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'e.g., Computer Science'
-            }),
-            'student_id_image': forms.FileInput(attrs={
-                'class': 'form-file',
-                'accept': 'image/*'
-            }),
-            'selfie': forms.FileInput(attrs={
-                'class': 'form-file',
-                'accept': 'image/*',
-                'capture': 'user'  # Opens front camera on mobile
-            })
-        }
-
-    def clean_matric_number(self):
-        matric = self.cleaned_data.get('matric_number')
-
-        # Basic format validation (adjust to your institution's format)
-        if not re.match(r'^[A-Z]{3}/\d{4}/\d{3,4}$', matric.upper()):
-            raise ValidationError('Invalid matric number format. Expected format: KASU/ABC/2020/1234')
-
-        return matric.upper()
-
-    def clean_student_id_image(self):
-        image = self.cleaned_data.get('student_id_image')
-
-        if image:
-            # Check file size (max 5MB)
-            if image.size > 5 * 1024 * 1024:
-                raise ValidationError('Student ID image must be less than 5MB')
-
-            # Check file type
-            if not image.content_type in ['image/jpeg', 'image/jpg', 'image/png']:
-                raise ValidationError('Only JPG and PNG images are allowed')
-
-        return image
-
-    def clean_selfie(self):
-        image = self.cleaned_data.get('selfie')
-
-        if image:
-            # Check file size (max 5MB)
-            if image.size > 5 * 1024 * 1024:
-                raise ValidationError('Selfie must be less than 5MB')
-
-            # Check file type
-            if not image.content_type in ['image/jpeg', 'image/jpg', 'image/png']:
-                raise ValidationError('Only JPG and PNG images are allowed')
-
-        return image
-
-
-# ==========================================
 # STORE SETUP FORM (UNCHANGED)
 # ==========================================
 
 class StoreSetupForm(forms.ModelForm):
     """
-    Multi-step store setup form
-    Includes category lock warning
+    Store creation form — minimal fields for quick store setup.
     """
 
     main_category = forms.ModelChoiceField(
-        queryset=None,  # Will be set in __init__
+        queryset=None,
         empty_label='-- Select Main Category --',
         widget=forms.Select(attrs={
-            'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all',
+            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all text-sm',
             'id': 'id_main_category'
         }),
-        help_text='⚠️ This will be locked after confirmation and cannot be changed without admin approval'
-    )
-
-    confirm_category_lock = forms.BooleanField(
-        required=True,
-        label='I understand that my main category will be locked after confirmation',
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox'
-        })
     )
 
     class Meta:
         model = Store
         fields = [
-            'store_name', 'tagline', 'description', 'main_category',
-            'logo', 'banner', 'primary_color',
-            'business_email', 'phone', 'whatsapp', 'address',
+            'store_name', 'description', 'main_category',
+            'business_email', 'phone', 'whatsapp', 'state', 'city',
             'latitude', 'longitude',
-            'instagram', 'facebook', 'twitter',
-            'shipping_policy', 'return_policy'
         ]
         widgets = {
             'store_name': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-                'placeholder': "e.g., John's Fashion Hub",
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm',
+                'placeholder': "e.g. Tech Haven, Fashion Palace",
                 'maxlength': '100'
             }),
-            'tagline': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-                'placeholder': 'Short description of your store',
-                'maxlength': '150'
-            }),
             'description': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-                'rows': 4,
-                'placeholder': 'Tell customers about your store...',
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm resize-none',
+                'rows': 3,
+                'placeholder': 'What do you sell?',
                 'maxlength': '1000'
             }),
-            'logo': forms.FileInput(attrs={
-                'class': 'hidden',
-                'accept': 'image/*'
-            }),
-            'banner': forms.FileInput(attrs={
-                'class': 'hidden',
-                'accept': 'image/*'
-            }),
-            'primary_color': forms.TextInput(attrs={
-                'type': 'color',
-                'class': 'w-20 h-10 border-2 border-gray-300 rounded cursor-pointer'
-            }),
             'business_email': forms.EmailInput(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm',
                 'placeholder': 'store@example.com'
             }),
             'phone': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm',
                 'placeholder': '08012345678'
             }),
             'whatsapp': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm',
                 'placeholder': '08012345678'
             }),
-            'address': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-                'rows': 3,
-                'placeholder': 'Store address or pickup location'
+            'state': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm',
+                'placeholder': 'e.g. Kaduna',
+                'maxlength': '100'
             }),
-            'instagram': forms.URLInput(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-                'placeholder': 'https://instagram.com/yourstore'
+            'city': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm',
+                'placeholder': 'e.g. Kawo',
+                'maxlength': '100'
             }),
-            'facebook': forms.URLInput(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-                'placeholder': 'https://facebook.com/yourstore'
-            }),
-            'twitter': forms.URLInput(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-                'placeholder': 'https://twitter.com/yourstore'
-            }),
-            'shipping_policy': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-                'rows': 4,
-                'placeholder': 'Describe your shipping/delivery policy...'
-            }),
-            'return_policy': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-                'rows': 4,
-                'placeholder': 'Describe your return/refund policy...'
-            }),
+            'latitude': forms.HiddenInput(),
+            'longitude': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
-        # Accept custom kwarg from views (e.g. StoreSetupForm(..., vendor=vendor))
         self.vendor = kwargs.pop('vendor', None)
         super().__init__(*args, **kwargs)
-        # Hidden fields — filled by JS geolocation picker
-        self.fields['latitude'].widget = forms.HiddenInput()
-        self.fields['longitude'].widget = forms.HiddenInput()
-        self.fields['latitude'].required = False
-        self.fields['longitude'].required = False
 
-        # SET QUERYSET HERE - when form is instantiated
-        self.fields['main_category'].queryset = MainCategory.objects.filter(is_active=True).order_by('sort_order', 'name')
+        self.fields['main_category'].queryset = MainCategory.objects.filter(
+            is_active=True
+        ).order_by('sort_order', 'name')
 
-        # If editing existing store, enforce store name 1-year lock
-        if self.instance and self.instance.pk:
-            # Check store name lock
-            if not self.instance.can_change_store_name():
-                days_left = self.instance.days_until_next_name_change()
-                last_changed = self.instance.store_name_last_changed_at.strftime('%B %d, %Y')
-                can_change_date = (self.instance.store_name_last_changed_at + timezone.timedelta(days=365)).strftime('%B %d, %Y')
+        self.fields['business_email'].required = False
+        self.fields['latitude'].required = True
+        self.fields['longitude'].required = True
 
-                self.fields['store_name'].disabled = True
-                self.fields['store_name'].help_text = (
-                    f'🔒 Locked for {days_left} more days. '
-                    f'Last changed: {last_changed}. '
-                    f'Can change again on: {can_change_date}'
-                )
-
-            # Check category lock
-            if self.instance.main_category_locked:
-                self.fields['main_category'].disabled = True
-                self.fields['main_category'].help_text = '🔒 Locked - Submit a change request to modify'
-                del self.fields['confirm_category_lock']
+    def _clean_nigerian_phone(self, value, field_name):
+        if not value:
+            raise ValidationError('This field is required.')
+        value = re.sub(r'[\s\-\(\)]', '', value)
+        if not re.match(r'^0[7-9][0-1]\d{8}$', value):
+            raise ValidationError('Invalid phone number')
+        return value
 
     def clean_store_name(self):
         store_name = self.cleaned_data.get('store_name')
-
-        # Check if trying to change store name
-        if self.instance and self.instance.pk:
-            old_store_name = Store.objects.get(pk=self.instance.pk).store_name
-            if old_store_name != store_name:
-                # Attempting to change store name - enforce 1-year lock
-                if not self.instance.can_change_store_name():
-                    days_left = self.instance.days_until_next_name_change()
-                    last_changed = self.instance.store_name_last_changed_at.strftime('%B %d, %Y')
-                    can_change_date = (self.instance.store_name_last_changed_at + timezone.timedelta(days=365)).strftime('%B %d, %Y')
-
-                    raise ValidationError(
-                        f'Store name is locked for another {days_left} days. '
-                        f'Last changed: {last_changed}. '
-                        f'You can change it again on {can_change_date}. '
-                        f'Contact support if you need to change it urgently.'
-                    )
-
-        # Check uniqueness (exclude current instance if editing)
-        qs = Store.objects.filter(store_name__iexact=store_name)
+        if not store_name or not store_name.strip():
+            raise ValidationError('This field is required.')
+        qs = Store.objects.filter(store_name__iexact=store_name.strip())
         if self.instance and self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
-
         if qs.exists():
-            raise ValidationError('This store name is already taken. Please choose another.')
+            raise ValidationError('This store name is already taken.')
+        return store_name.strip()
 
-        return store_name
-
-    def clean_logo(self):
-        logo = self.cleaned_data.get('logo')
-
-        if logo and hasattr(logo, 'size'):
-            # Check file size (max 5MB)
-            if logo.size > 5 * 1024 * 1024:
-                raise ValidationError('Logo must be less than 5MB')
-
-            # Check file type
-            content_type = getattr(logo, 'content_type', None)
-            if content_type and content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
-                raise ValidationError('Only JPG and PNG images are allowed for logo')
-
-        return logo
-
-    def clean_banner(self):
-        banner = self.cleaned_data.get('banner')
-
-        if banner and hasattr(banner, 'size'):
-            # Check file size (max 8MB)
-            if banner.size > 8 * 1024 * 1024:
-                raise ValidationError('Banner must be less than 8MB')
-
-            # Check file type
-            content_type = getattr(banner, 'content_type', None)
-            if content_type and content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
-                raise ValidationError('Only JPG and PNG images are allowed for banner')
-
-        return banner
+    def clean_description(self):
+        description = self.cleaned_data.get('description')
+        if not description or not description.strip():
+            raise ValidationError('This field is required.')
+        return description.strip()
 
     def clean_phone(self):
-        phone = self.cleaned_data.get('phone')
+        return self._clean_nigerian_phone(self.cleaned_data.get('phone'), 'phone')
 
-        # Basic Nigerian phone validation
-        if phone:
-            phone = re.sub(r'[\s\-\(\)]', '', phone)
-            if not re.match(r'^(0|\+234)[7-9][0-1]\d{8}$', phone):
-                raise ValidationError('Invalid Nigerian phone number format')
+    def clean_whatsapp(self):
+        return self._clean_nigerian_phone(self.cleaned_data.get('whatsapp'), 'whatsapp')
 
-        return phone
+    def clean_state(self):
+        state = self.cleaned_data.get('state')
+        if not state or not state.strip():
+            raise ValidationError('This field is required.')
+        return state.strip()
+
+    def clean_city(self):
+        city = self.cleaned_data.get('city')
+        if not city or not city.strip():
+            raise ValidationError('This field is required.')
+        return city.strip()
+
+    def clean_latitude(self):
+        lat = self.cleaned_data.get('latitude')
+        if lat is None or lat == '':
+            raise ValidationError('Please capture your location')
+        return lat
+
+    def clean_longitude(self):
+        lon = self.cleaned_data.get('longitude')
+        if lon is None or lon == '':
+            raise ValidationError('Please capture your location')
+        return lon
 
     def save(self, commit=True):
         store = super().save(commit=False)
@@ -457,29 +261,15 @@ class StoreSetupForm(forms.ModelForm):
         if self.vendor:
             store.vendor = self.vendor
 
-        # Track store name changes
-        if self.instance and self.instance.pk:
-            old_store_name = Store.objects.get(pk=self.instance.pk).store_name
-            new_store_name = store.store_name
+        if not store.store_name_last_changed_at:
+            store.store_name_last_changed_at = timezone.now()
 
-            if old_store_name != new_store_name:
-                # Update store name change tracking
-                store.store_name_last_changed_at = timezone.now()
-                store.store_name_change_count += 1
-        else:
-            # First time creation - set initial timestamp
-            if not store.store_name_last_changed_at:
-                store.store_name_last_changed_at = timezone.now()
-
-        # Auto-generate slug from store name
         if not store.slug:
             store.slug = slugify(store.store_name)
 
         if commit:
             store.save()
-
-            # Lock category if this is first save and checkbox confirmed
-            if self.cleaned_data.get('confirm_category_lock') and not store.main_category_locked:
+            if not store.main_category_locked:
                 store.lock_main_category()
 
         return store
@@ -517,6 +307,10 @@ class StoreSettingsForm(forms.ModelForm):
             'business_email',
             'phone',
             'whatsapp',
+            'state',
+            'city',
+            'latitude',
+            'longitude',
             'address',
             'instagram',
             'facebook',
@@ -562,6 +356,18 @@ class StoreSettingsForm(forms.ModelForm):
                 'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
                 'placeholder': '08012345678'
             }),
+            'state': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
+                'placeholder': 'e.g. Kaduna',
+                'maxlength': '100'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
+                'placeholder': 'e.g. Kawo',
+                'maxlength': '100'
+            }),
+            'latitude': forms.HiddenInput(),
+            'longitude': forms.HiddenInput(),
             'instagram': forms.URLInput(attrs={
                 'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
                 'placeholder': 'https://instagram.com/yourstore'
@@ -576,17 +382,18 @@ class StoreSettingsForm(forms.ModelForm):
             }),
             'shipping_policy': forms.Textarea(attrs={
                 'rows': 4,
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-                'placeholder': 'Describe your shipping/delivery policy...'
+                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary'
             }),
             'return_policy': forms.Textarea(attrs={
                 'rows': 4,
-                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary',
-                'placeholder': 'Describe your return/refund policy...'
+                'class': 'w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary'
             }),
             'primary_color': forms.TextInput(attrs={
                 'type': 'color',
                 'class': 'w-20 h-10 border-2 border-gray-300 rounded cursor-pointer'
+            }),
+            'is_published': forms.CheckboxInput(attrs={
+                'class': 'peer sr-only'
             }),
             'logo': forms.FileInput(attrs={
                 'class': 'hidden',
@@ -781,6 +588,30 @@ class StoreSettingsForm(forms.ModelForm):
 
         return whatsapp
 
+    def clean_state(self):
+        state = self.cleaned_data.get('state')
+        if not state or not state.strip():
+            raise ValidationError('This field is required.')
+        return state.strip()
+
+    def clean_city(self):
+        city = self.cleaned_data.get('city')
+        if not city or not city.strip():
+            raise ValidationError('This field is required.')
+        return city.strip()
+
+    def clean_latitude(self):
+        lat = self.cleaned_data.get('latitude')
+        if lat is None or lat == '':
+            raise ValidationError('Please capture your location')
+        return lat
+
+    def clean_longitude(self):
+        lon = self.cleaned_data.get('longitude')
+        if lon is None or lon == '':
+            raise ValidationError('Please capture your location')
+        return lon
+
     def save(self, commit=True):
         """Save and track store name & category changes"""
         store = super().save(commit=False)
@@ -833,6 +664,143 @@ class StoreSettingsForm(forms.ModelForm):
             store.save()
 
         return store
+
+
+# ==========================================
+# SETTINGS PAGE FORMS (LIGHTWEIGHT)
+# ==========================================
+
+
+class StoreVisibilityForm(forms.ModelForm):
+    """Toggle store published/unpublished status."""
+
+    class Meta:
+        model = Store
+        fields = ['is_published']
+        widgets = {
+            'is_published': forms.CheckboxInput(attrs={
+                'class': 'sr-only peer',
+                'id': 'visibility-toggle',
+            }),
+        }
+
+    def save(self, commit=True):
+        store = super().save(commit=False)
+        if commit:
+            store.save(update_fields=['is_published', 'updated_at'])
+        return store
+
+
+class StoreReviewsForm(forms.ModelForm):
+    """Toggle allow_reviews on/off."""
+
+    class Meta:
+        model = Store
+        fields = ['allow_reviews']
+        widgets = {
+            'allow_reviews': forms.CheckboxInput(attrs={
+                'class': 'sr-only peer',
+                'id': 'reviews-toggle',
+            }),
+        }
+
+    def save(self, commit=True):
+        store = super().save(commit=False)
+        if commit:
+            store.save(update_fields=['allow_reviews', 'updated_at'])
+        return store
+
+
+class StoreContactLocationForm(forms.ModelForm):
+    """Edit contact details and location after store setup."""
+
+    class Meta:
+        model = Store
+        fields = [
+            'phone', 'whatsapp', 'business_email',
+            'state', 'city', 'latitude', 'longitude',
+        ]
+        widgets = {
+            'phone': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm',
+                'placeholder': '08012345678',
+                'type': 'tel',
+            }),
+            'whatsapp': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm',
+                'placeholder': '08012345678',
+                'type': 'tel',
+            }),
+            'business_email': forms.EmailInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm',
+                'placeholder': 'store@example.com',
+            }),
+            'state': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm',
+                'placeholder': 'e.g. Kaduna',
+                'maxlength': '100',
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm',
+                'placeholder': 'e.g. Kawo',
+                'maxlength': '100',
+            }),
+            'latitude': forms.HiddenInput(),
+            'longitude': forms.HiddenInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['business_email'].required = False
+
+    def _clean_nigerian_phone(self, value):
+        if not value:
+            raise ValidationError('This field is required.')
+        value = re.sub(r'[\s\-\(\)]', '', value)
+        if not re.match(r'^(0|\+234)[7-9][0-1]\d{8}$', value):
+            raise ValidationError('Invalid phone number')
+        return value
+
+    def clean_phone(self):
+        return self._clean_nigerian_phone(self.cleaned_data.get('phone'))
+
+    def clean_whatsapp(self):
+        return self._clean_nigerian_phone(self.cleaned_data.get('whatsapp'))
+
+    def clean_state(self):
+        state = self.cleaned_data.get('state')
+        if not state or not state.strip():
+            raise ValidationError('This field is required.')
+        return state.strip()
+
+    def clean_city(self):
+        city = self.cleaned_data.get('city')
+        if not city or not city.strip():
+            raise ValidationError('This field is required.')
+        return city.strip()
+
+    def clean_latitude(self):
+        lat = self.cleaned_data.get('latitude')
+        if lat is None or lat == '':
+            raise ValidationError('Please capture your location')
+        return lat
+
+    def clean_longitude(self):
+        lon = self.cleaned_data.get('longitude')
+        if lon is None or lon == '':
+            raise ValidationError('Please capture your location')
+        return lon
+
+    def save(self, commit=True):
+        store = super().save(commit=False)
+        if commit:
+            store.save(update_fields=[
+                'phone', 'whatsapp', 'business_email',
+                'state', 'city', 'latitude', 'longitude',
+                'updated_at',
+            ])
+        return store
+
 
 # ==========================================
 # CATEGORY CHANGE REQUEST FORM (UNCHANGED, 1-YEAR LIMIT)
@@ -1462,57 +1430,3 @@ ProductImageFormSet = inlineformset_factory(
     max_num=4,
     validate_max=True,
 )
-
-
-# ==========================================
-# ORDER UPDATE FORM (UNCHANGED)
-# ==========================================
-
-class OrderStatusUpdateForm(forms.ModelForm):
-    """Vendor updates order status"""
-
-    class Meta:
-        model = Order
-        fields = ['status', 'tracking_number', 'vendor_note']
-        widgets = {
-            'status': forms.Select(attrs={'class': 'form-select'}),
-            'tracking_number': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Enter tracking number'
-            }),
-            'vendor_note': forms.Textarea(attrs={
-                'class': 'form-textarea',
-                'rows': 3,
-                'placeholder': 'Add notes for customer (optional)'
-            })
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        current_status = self.instance.status if self.instance else 'pending'
-
-        if current_status == 'pending':
-            allowed_statuses = [('confirmed', 'Confirmed'), ('cancelled', 'Cancelled')]
-        elif current_status == 'confirmed':
-            allowed_statuses = [('processing', 'Processing'), ('cancelled', 'Cancelled')]
-        elif current_status == 'processing':
-            allowed_statuses = [('shipped', 'Shipped')]
-        elif current_status == 'shipped':
-            allowed_statuses = [('delivered', 'Delivered')]
-        else:
-            allowed_statuses = [(current_status, self.instance.get_status_display())]
-
-        self.fields['status'].choices = allowed_statuses
-
-    def clean(self):
-        cleaned_data = super().clean()
-        status = cleaned_data.get('status')
-        tracking_number = cleaned_data.get('tracking_number')
-
-        if status == 'shipped' and not tracking_number:
-            raise ValidationError({
-                'tracking_number': 'Tracking number is required when marking order as shipped'
-            })
-
-        return cleaned_data

@@ -53,6 +53,11 @@ urlpatterns = [
         name='deals'
     ),
     path(
+        'quick-sell/',
+        views.quicksell_listing,
+        name='quicksell_listing'
+    ),
+    path(
         'trending/',
         views.trending,
         name='trending'
@@ -85,79 +90,21 @@ urlpatterns = [
         name='store_detail'
     ),
 
-    # ---- CART ----
-    path(
-        'cart/',
-        views.cart_view,
-        name='cart'
-    ),
+    # ---- WISHLIST ----
     path(
         'wishlist/',
         views.wishlist_view,
         name='wishlist'
     ),
     path(
-        'cart/add/',
-        views.cart_add,
-        name='cart_add'
+        'wishlist/update-qty/',
+        views.wishlist_update_qty,
+        name='wishlist_update_qty'
     ),
     path(
-        'cart/update/',
-        views.cart_update,
-        name='cart_update'
-    ),
-    path(
-        'cart/remove/',
-        views.cart_remove,
-        name='cart_remove'
-    ),
-
-    # ---- CHECKOUT ----
-    path(
-        'checkout/',
-        views.checkout,
-        name='checkout'
-    ),
-    path(
-        'checkout/save-delivery/',
-        views.checkout_save_delivery,
-        name='checkout_save_delivery'
-    ),
-
-    # ---- PAYMENT ----
-    path(
-        'payment/verify/',
-        views.payment_verify,
-        name='payment_verify'
-    ),
-    path(
-        'payment/webhook/',
-        views.paystack_webhook,
-        name='paystack_webhook'
-    ),
-
-    # ---- ORDERS ----
-    path(
-        'orders/',
-        views.order_list,
-        name='order_list'
-    ),
-    path(
-        'orders/<str:order_number>/',
-        views.order_detail,
-        name='order_detail'
-    ),
-
-    # ---- ORDER ACTIONS ----
-    path(
-        'orders/suborder/<int:suborder_id>/confirm/',
-        views.confirm_receipt,
-        name='confirm_receipt'
-    ),
-    path(
-        'orders/suborder/<int:suborder_id>/dispute/',
-        views.report_issue,
-        name='report_issue'
+        'wishlist/remove/',
+        views.wishlist_remove,
+        name='wishlist_remove'
     ),
 
     # ---- BUYER LOCATION ----
@@ -167,10 +114,18 @@ urlpatterns = [
         name='update_buyer_location'
     ),
     path('profile/', views.profile, name='profile'),
+    path('profile/personal-information/', views.personal_information, name='personal_information'),
     path('contact/', views.contact_us, name='contact'),
     path('help/', views.help_center, name='help'),
     path('buyer-protection/', views.buyer_protection, name='buyer_protection'),
     path('community-guidelines/', views.community_guidelines, name='community_guidelines'),
     path('request-account-deletion/', views.request_account_deletion, name='request_account_deletion'),
     path('product/<int:product_id>/report/', views.report_product, name='report_product'),
+
+    # ---- BUYER NOTIFICATIONS ----
+    path('notifications/', views.buyer_notifications_list, name='buyer_notifications_list'),
+    path('notifications/mark-all-read/', views.buyer_notifications_mark_all_read, name='buyer_notifications_mark_all_read'),
+    path('notifications/<int:notification_id>/mark-read/', views.buyer_notification_mark_read, name='buyer_notification_mark_read'),
+    path('notifications/<int:notification_id>/delete/', views.buyer_notification_delete, name='buyer_notification_delete'),
+    path('notifications/<int:notification_id>/', views.buyer_notification_detail, name='buyer_notification_detail'),
 ]

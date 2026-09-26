@@ -1,31 +1,28 @@
 from .models import Notification
+from .services import email_name
 
 def vendor_context(request):
     """
-    Injects vendor notification and order counts into every vendor template.
+    Injects vendor notification counts into every vendor template.
     """
     if not request.user.is_authenticated:
         return {}
 
     try:
+        # Verify the user is a vendor (has a vendorprofile)
         vendor = request.user.vendorprofile
     except Exception:
         return {}
 
-    try:
-        from apps.marketplace.models import SubOrder
-        pending_orders = SubOrder.objects.filter(
-            store=vendor.store,
-            status='PENDING_VENDOR'
-        ).count()
-    except Exception:
-        pending_orders = 0
-
-    unread_notifications = vendor.notifications.filter(is_read=False).count()
-    recent_notifications = vendor.notifications.order_by('-created_at')[:5]
+    unread_notifications = Notification.objects.filter(
+        user=request.user, is_read=False
+    ).count()
+    recent_notifications = Notification.objects.filter(
+        user=request.user
+    ).order_by('-created_at')[:5]
 
     return {
-        'pending_orders': pending_orders,
         'unread_notifications': unread_notifications,
         'recent_notifications': recent_notifications,
+        'vendor_display_name': email_name(vendor),
     }

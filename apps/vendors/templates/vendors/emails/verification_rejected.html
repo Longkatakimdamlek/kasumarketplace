@@ -11,7 +11,7 @@
     </p>
 </div>
 
-<p>Hello {{ vendor.user.first_name|default:"Vendor" }},</p>
+<p>Hello {{ vendor_name|default:vendor.user.email|default:"Vendor" }},</p>
 
 <p>
     Thank you for your interest in selling on KasuMarketplace. After reviewing your 

@@ -28,7 +28,7 @@ class ProductSitemap(Sitemap):
     priority = 0.9
 
     def items(self):
-        return Product.objects.filter(status="published")
+        return Product.objects.publicly_visible()
 
     def lastmod(self, obj):
         return obj.updated_at
@@ -46,7 +46,7 @@ class VendorSitemap(Sitemap):
     priority = 0.8
 
     def items(self):
-        return Store.objects.filter(vendor__verification_status="approved")
+        return Store.objects.publicly_visible()
 
     def location(self, obj):
         # Public store page

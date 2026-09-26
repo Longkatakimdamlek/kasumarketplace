@@ -4,7 +4,6 @@ from . import views
 app_name = 'vendors'
 
 urlpatterns = [
-        path('api/banks/', views.api_get_banks, name='api_get_banks'),
     # Dashboard
     path('', views.dashboard, name='dashboard'),
 
@@ -18,36 +17,19 @@ urlpatterns = [
     path('verification/bvn/selfie/', views.bvn_selfie_capture, name='bvn_selfie_capture'),
     path('verification/success/', views.verification_success, name='verification_success'),
 
-    # Store Setup & Student
+    # Store Setup
     path('verification/store/', views.store_setup, name='store_setup'),
-    path('verification/student/', views.student_verification, name='student_verification'),
-    path('verification/pending-review/', views.pending_review, name='pending_review'),
 
     # ==========================================
     # PRODUCTS (VENDOR DASHBOARD - PRIVATE)
     # ==========================================
     path('products/', views.products_list, name='products_list'),
+    path('wishlist/', views.vendor_wishlist, name='vendor_wishlist'),
+    path('reviews/', views.vendor_reviews, name='vendor_reviews'),
     path('products/create/', views.product_create, name='product_create'),
     path('products/<slug:slug>/', views.product_detail, name='product_detail'),
     path('products/<slug:slug>/edit/', views.product_edit, name='product_edit'),
     path('products/<slug:slug>/delete/', views.product_delete, name='product_delete'),
-
-    # ==========================================
-    # ORDERS
-    # ==========================================
-    path('orders/', views.orders_list, name='orders_list'),
-    path('orders/order/<uuid:order_id>/', views.order_detail, name='order_detail'),
-    path('orders/<int:suborder_id>/', views.vendor_order_detail, name='vendor_order_detail'),
-    path('orders/<int:suborder_id>/accept/', views.vendor_order_accept, name='vendor_order_accept'),
-    path('orders/<int:suborder_id>/reject/', views.vendor_order_reject, name='vendor_order_reject'),
-
-    # ==========================================
-    # WALLET
-    # ==========================================
-    path('wallet/', views.wallet_overview, name='wallet_overview'),
-    path('wallet/transactions/', views.wallet_transactions, name='wallet_transactions'),
-    path('wallet/payout/', views.request_payout, name='request_payout'),
-    path('wallet/payment-method/', views.payment_method, name='payment_method'),
 
     # ==========================================
     # STORE MANAGEMENT
@@ -83,4 +65,19 @@ urlpatterns = [
     # ==========================================
     path('ajax/subcategories/', views.ajax_get_subcategories, name='ajax_subcategories'),
     path('ajax/attributes/', views.ajax_get_attributes, name='ajax_attributes'),
+
+    # ==========================================
+    # SUBSCRIPTION WEBHOOK
+    # ==========================================
+    path('subscription/webhook/', views.subscription_webhook, name='subscription_webhook'),
+
+    # ==========================================
+    # CONTACT INTENT (fire-and-forget)
+    # ==========================================
+    path('products/<int:product_id>/contact-intent/', views.contact_intent, name='contact_intent'),
+
+    # ==========================================
+    # VENDOR REVIEW REPLY
+    # ==========================================
+    path('ajax/reviews/<int:review_id>/reply/', views.vendor_reply_to_review, name='vendor_reply_to_review'),
 ]
