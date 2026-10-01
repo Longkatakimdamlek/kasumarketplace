@@ -4,7 +4,6 @@ Complete database schema for vendor verification, store management, products, et
 """
 
 from django.db import models
-from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from cloudinary.models import CloudinaryField
@@ -12,7 +11,15 @@ from django.core.validators import MinValueValidator, MaxValueValidator, RegexVa
 from django.utils.text import slugify
 from django.urls import reverse
 from django.utils import timezone
+from datetime import timedelta
 from decimal import Decimal
+
+from .qualification import (
+    QUALIFICATION_DAYS,
+    QUALIFICATION_GRACE_DAYS,
+    QUALIFICATION_REQUIRED_PRODUCTS,
+    effective_state,
+)
 
 # ------------------------------------------------------------------
 # Scoring weights (Phase 8) — shared by Product and Store scoring
@@ -902,11 +909,21 @@ class Subscription(models.Model):
     Single source of truth for whether a vendor's store is publicly visible.
     """
     STATUS_CHOICES = [
+        ('qualifying', 'Qualifying (Free Plan)'),
         ('trial', 'Trial'),
         ('active', 'Active'),
         ('past_due', 'Past Due'),
         ('cancelled', 'Cancelled'),
         ('expired', 'Expired'),
+    ]
+
+    QUALIFICATION_STATUS_CHOICES = [
+        ('not_started', 'Not started'),
+        ('in_progress', 'In progress'),
+        ('grace', 'Grace period'),
+        ('qualified', 'Qualified'),
+        ('failed', 'Failed'),
+        ('skipped', 'Skipped (paid plan)'),
     ]
 
     PLAN_CHOICES = [
@@ -917,7 +934,25 @@ class Subscription(models.Model):
 
     vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE, related_name='subscription')
 
+    # Phase 5: free-plan vendors start at 'qualifying'; they become 'trial'
+    # only after the first-product qualification passes (or immediately if a
+    # paid plan is activated).
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='trial')
+
+    first_product_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="When the vendor created their first product (starts the 7-day countdown)."
+    )
+    qualification_status = models.CharField(
+        max_length=20,
+        choices=QUALIFICATION_STATUS_CHOICES,
+        default='not_started',
+        help_text="Free-plan first-product qualification state."
+    )
+    qualified_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="When the vendor passed qualification (3 published products)."
+    )
 
     plan = models.CharField(
         max_length=10,
@@ -926,7 +961,7 @@ class Subscription(models.Model):
         help_text="Current subscription tier."
     )
 
-    # Trial window (auto-set on creation, 3 months from signup)
+    # Free trial window (set when qualification passes or a paid trial starts)
     trial_ends_at = models.DateTimeField(
         null=True, blank=True,
         help_text="End of the free trial period."
@@ -1001,6 +1036,8 @@ class Subscription(models.Model):
         True if the vendor's store should be visible to the public.
 
         Logic:
+          - qualifying  → True while first_product_at is None or inside the
+                          14-day window (Phase 5); False once it has failed
           - trial       → visible only while trial_ends_at is in the future
           - active      → visible while period_end is in the future
           - past_due    → visible during grace period (grace_ends_at in future)
@@ -1008,6 +1045,12 @@ class Subscription(models.Model):
           - expired     → never visible
         """
         now = timezone.now()
+        if self.status == 'qualifying':
+            if self.first_product_at is None:
+                return True
+            return now <= self.first_product_at + timedelta(
+                days=QUALIFICATION_DAYS + QUALIFICATION_GRACE_DAYS
+            )
         if self.status == 'trial':
             return self.trial_ends_at is not None and self.trial_ends_at > now
         if self.status == 'active':
@@ -1034,25 +1077,75 @@ class Subscription(models.Model):
                 'trial_ends_at': 'Trial subscriptions must have a trial_ends_at date.'
             })
 
+    # ------------------------------------------------------------------
+    # Phase 5 — free-plan first-product qualification helpers
+    # (computed from timestamps only, no writes; Phase 6 displays these)
+    # ------------------------------------------------------------------
+    @property
+    def qualification_deadline(self):
+        """Day-7 deadline: first_product_at + 7 days, or None."""
+        if self.first_product_at is None:
+            return None
+        return self.first_product_at + timedelta(days=QUALIFICATION_DAYS)
 
-# ==========================================
-# SUBSCRIPTION VISIBILITY ORM HELPER
-# ==========================================
+    @property
+    def qualification_grace_deadline(self):
+        """Day-14 deadline: first_product_at + 14 days, or None."""
+        if self.first_product_at is None:
+            return None
+        return self.first_product_at + timedelta(
+            days=QUALIFICATION_DAYS + QUALIFICATION_GRACE_DAYS
+        )
 
-def subscription_visibility_q(prefix: str) -> Q:
-    """
-    Returns a Q object matching subscriptions that are publicly active,
-    mirroring Subscription.is_publicly_active exactly. `prefix` is the
-    field-lookup path to the Subscription from whatever model you're
-    filtering, e.g. 'vendor__subscription__' when filtering Store,
-    or 'store__vendor__subscription__' when filtering Product.
-    """
-    now = timezone.now()
-    return (
-        Q(**{f'{prefix}status': 'trial', f'{prefix}trial_ends_at__gt': now}) |
-        Q(**{f'{prefix}status': 'active', f'{prefix}period_end__gt': now}) |
-        Q(**{f'{prefix}status__in': ['past_due', 'cancelled'], f'{prefix}grace_ends_at__gt': now})
-    )
+    @property
+    def effective_qualification_status(self) -> str:
+        """
+        Live qualification state at `now`: not_started / in_progress / grace /
+        failed while status is 'qualifying', otherwise the stored label.
+        """
+        return effective_state(self, timezone.now())
+
+    @property
+    def qualified_products_count(self) -> int:
+        """Published products that count toward the 3-product target."""
+        if not self.vendor_id:
+            return 0
+        return self.vendor.products.filter(status='published').count()
+
+    @property
+    def qualification_products_needed(self) -> int:
+        """How many more published products the vendor must add."""
+        if self.status != 'qualifying':
+            return 0
+        remaining = QUALIFICATION_REQUIRED_PRODUCTS - self.qualified_products_count
+        return remaining if remaining > 0 else 0
+
+    @property
+    def qualification_days_left(self):
+        """
+        Whole days left until the CURRENT deadline: the day-7 window while
+        in_progress, the day-14 window while in grace.  None unless the
+        vendor is qualifying with a first product already created.
+        """
+        if self.status != 'qualifying' or self.first_product_at is None:
+            return None
+        state = effective_state(self, timezone.now())
+        if state == 'not_started':
+            return None
+        if state == 'failed':
+            return 0
+        deadline = (
+            self.qualification_deadline
+            if state == 'in_progress'
+            else self.qualification_grace_deadline
+        )
+        seconds = (deadline - timezone.now()).total_seconds()
+        if seconds <= 0:
+            return 0
+        days = int(seconds // 86400)
+        if seconds % 86400:
+            days += 1
+        return days
 
 
 # ==========================================

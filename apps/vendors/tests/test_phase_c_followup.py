@@ -36,9 +36,10 @@ class Fix1VendorSelfViewExclusionTest(TestCase):
                 'trial_ends_at': timezone.now() + timedelta(days=90),
             },
         )
-        if sub.trial_ends_at < timezone.now():
+        if sub.trial_ends_at is None or sub.trial_ends_at < timezone.now():
+            sub.status = 'trial'
             sub.trial_ends_at = timezone.now() + timedelta(days=90)
-            sub.save(update_fields=['trial_ends_at'])
+            sub.save(update_fields=['status', 'trial_ends_at'])
 
         # Create category/subcategory
         self.category = MainCategory.objects.create(name='Fashion', slug='fashion')
@@ -167,9 +168,10 @@ class Fix2ContactIntentAuthenticatedBuyerTest(TestCase):
                 'trial_ends_at': timezone.now() + timedelta(days=90),
             },
         )
-        if sub.trial_ends_at < timezone.now():
+        if sub.trial_ends_at is None or sub.trial_ends_at < timezone.now():
+            sub.status = 'trial'
             sub.trial_ends_at = timezone.now() + timedelta(days=90)
-            sub.save(update_fields=['trial_ends_at'])
+            sub.save(update_fields=['status', 'trial_ends_at'])
 
         self.category = MainCategory.objects.create(name='Tech', slug='tech-ci')
         self.subcategory = SubCategory.objects.create(
@@ -270,9 +272,10 @@ class Fix3DeduplicationTest(TestCase):
                 'trial_ends_at': timezone.now() + timedelta(days=90),
             },
         )
-        if sub_x.trial_ends_at < timezone.now():
+        if sub_x.trial_ends_at is None or sub_x.trial_ends_at < timezone.now():
+            sub_x.status = 'trial'
             sub_x.trial_ends_at = timezone.now() + timedelta(days=90)
-            sub_x.save(update_fields=['trial_ends_at'])
+            sub_x.save(update_fields=['status', 'trial_ends_at'])
 
         self.store_x = Store.objects.create(
             vendor=self.vendor_x,
@@ -297,9 +300,10 @@ class Fix3DeduplicationTest(TestCase):
                 'trial_ends_at': timezone.now() + timedelta(days=90),
             },
         )
-        if sub_z.trial_ends_at < timezone.now():
+        if sub_z.trial_ends_at is None or sub_z.trial_ends_at < timezone.now():
+            sub_z.status = 'trial'
             sub_z.trial_ends_at = timezone.now() + timedelta(days=90)
-            sub_z.save(update_fields=['trial_ends_at'])
+            sub_z.save(update_fields=['status', 'trial_ends_at'])
 
         self.store_z = Store.objects.create(
             vendor=self.vendor_z,

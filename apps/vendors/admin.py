@@ -463,20 +463,75 @@ class VerificationAttemptAdmin(admin.ModelAdmin):
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
-    list_display  = ['vendor', 'plan', 'status', 'cancel_at_period_end', 'trial_ends_at', 'period_end', 'grace_ends_at', 'paystack_plan_code']
-    list_filter   = ['status', 'plan', 'cancel_at_period_end']
+    list_display  = ['vendor', 'plan', 'status', 'qualification_status', 'cancel_at_period_end', 'trial_ends_at', 'period_end', 'grace_ends_at', 'paystack_plan_code']
+    list_filter   = ['status', 'plan', 'qualification_status', 'cancel_at_period_end']
     search_fields = ['vendor__full_name', 'vendor__user__email', 'vendor__user__username']
+    # qualification_status / first_product_at / qualified_at are deliberately
+    # left out of readonly_fields so staff can edit them (Phase 5).
     readonly_fields = [
         'vendor', 'created_at', 'updated_at',
         'paystack_customer_code', 'paystack_subscription_code', 'paystack_plan_code',
         'retry_count', 'last_payment_attempt_at',
     ]
+    actions = ['restart_qualification_window']
 
     def has_add_permission(self, request):
         return False
 
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return bool(
+            request.user.is_superuser
+            or (
+                request.user.is_staff
+                and request.user.has_perm('vendors.change_subscription')
+            )
+        )
+
+    @admin.action(description='Restart qualification window for selected subscriptions')
+    def restart_qualification_window(self, request, queryset):
+        """
+        Give a free-plan vendor a fresh 14-day window: status 'qualifying',
+        clock restarted at now.  Only rows with plan 'free', no Paystack
+        subscription code and a status other than 'active' are eligible.
+        """
+        now = timezone.now()
+        restart_pks = []
+        reasons = []
+
+        for sub in queryset.select_related('vendor__user'):
+            if sub.plan != 'free':
+                reasons.append('paid plan')
+            elif sub.paystack_subscription_code:
+                reasons.append('has paystack subscription')
+            elif sub.status == 'active':
+                reasons.append('status active')
+            else:
+                restart_pks.append(sub.pk)
+
+        if restart_pks:
+            Subscription.objects.filter(pk__in=restart_pks).update(
+                status='qualifying',
+                qualification_status='in_progress',
+                first_product_at=now,
+                qualified_at=None,
+                trial_ends_at=None,
+                grace_ends_at=None,
+            )
+
+        summary = (
+            f'Restarted {len(restart_pks)} qualification window(s); '
+            f'skipped {len(reasons)}'
+        )
+        if reasons:
+            counts = {}
+            for reason in reasons:
+                counts[reason] = counts.get(reason, 0) + 1
+            detail = ', '.join(f'{n} {r}' for r, n in counts.items())
+            summary += f' ({detail})'
+        self.message_user(request, summary, messages.SUCCESS)
 
 
 # ==========================================

@@ -272,6 +272,8 @@ class SubscriptionService:
         was_cancelling = bool(sub.cancel_at_period_end)
 
         now = timezone.now()
+        # Phase 5: a row that was still qualifying when it started paying skips qualification.
+        sub.qualification_status = 'skipped' if sub.status == 'qualifying' else sub.qualification_status
         sub.status = 'active'
         sub.plan = plan
         sub.period_end = now + timedelta(days=30)
@@ -285,6 +287,7 @@ class SubscriptionService:
         sub.last_payment_attempt_at = now
         sub.save(update_fields=[
             'status', 'plan', 'period_end', 'grace_ends_at',
+            'qualification_status',
             'paystack_customer_code', 'paystack_subscription_code',
             'paystack_plan_code', 'cancel_at_period_end', 'pending_plan',
             'retry_count', 'last_payment_attempt_at',

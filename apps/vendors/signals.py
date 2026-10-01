@@ -46,18 +46,24 @@ def create_vendor_profile_for_vendor_users(sender, instance, created, **kwargs):
 @receiver(post_save, sender=VendorProfile)
 def create_vendor_subscription(sender, instance, created, **kwargs):
     """
-    Automatically create a trial Subscription when VendorProfile is created.
+    Automatically create a Subscription when VendorProfile is created.
+
+    Phase 5: free-plan vendors start in status 'qualifying'.  Signup and store
+    setup start NOTHING - the 7-day countdown only begins when the vendor
+    creates their first product (see sync_vendor_qualification below).
     """
     try:
         if created:
-            from datetime import timedelta
-            trial_duration = timedelta(days=90)  # 3 months free trial
-            Subscription.objects.create(
+            Subscription.objects.get_or_create(
                 vendor=instance,
-                status='trial',
-                trial_ends_at=timezone.now() + trial_duration,
+                defaults={
+                    'status': 'qualifying',
+                    'plan': 'free',
+                    'qualification_status': 'not_started',
+                    'trial_ends_at': None,
+                },
             )
-            logger.info("Trial subscription created for vendor: %s", instance.user.email)
+            logger.info("Qualifying subscription created for vendor: %s", instance.user.email)
     except Exception as e:
         logger.error(f"Error creating Subscription for vendor {instance.user.email}: {str(e)}", exc_info=True)
 
@@ -338,6 +344,28 @@ def notify_vendor_stock_status(sender, instance, created, **kwargs):
                     )
         except Exception:
             logger.exception("Failed to send back-in-stock buyer notifications")
+
+
+# ==========================================
+# FREE-PLAN QUALIFICATION SIGNAL (Phase 5)
+# ==========================================
+
+@receiver(post_save, sender=Product)
+def sync_vendor_qualification(sender, instance, created, **kwargs):
+    """
+    A product being created or updated may advance the vendor's free-plan
+    first-product qualification: the FIRST product (any status) starts the
+    7-day countdown, the 3rd published product passes it immediately, and a
+    row that is still 'qualifying' after 14 days is marked failed.
+    """
+    try:
+        from .qualification import on_product_saved
+        on_product_saved(instance)
+    except Exception as e:
+        logger.error(
+            f"Error syncing qualification for vendor {instance.vendor_id}: {str(e)}",
+            exc_info=True,
+        )
 
 
 # ==========================================
