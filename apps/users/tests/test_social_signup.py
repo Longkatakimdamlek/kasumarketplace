@@ -1,6 +1,7 @@
 from django.test import TestCase, RequestFactory
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 from allauth.socialaccount.models import SocialLogin, SocialAccount
 from apps.users.adapters import SocialAccountAdapter
 
@@ -59,12 +60,12 @@ class SocialSignupTests(TestCase):
         vendor = User.objects.create(email='v@example.com', role='vendor')
         request.user = vendor
         url = self.adapter.get_login_redirect_url(request)
-        self.assertIn('vendors:dashboard', url)
+        self.assertEqual(url, reverse('vendors:dashboard'))
 
         buyer = User.objects.create(email='b@example.com', role='buyer')
         request.user = buyer
         url = self.adapter.get_login_redirect_url(request)
-        self.assertIn('users:buyer_dashboard', url)
+        self.assertEqual(url, reverse('users:buyer_dashboard'))
 
         # fallback when role unknown
         other = User.objects.create(email='o@example.com', role='')
@@ -152,7 +153,7 @@ class LoginRoleTests(TestCase):
         )
         # after login we should be redirected to vendor dashboard
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response['Location'].endswith('/vendors/dashboard/'))
+        self.assertEqual(response['Location'], reverse('vendors:dashboard'))
 
         # refresh from db and confirm role still vendor
         user.refresh_from_db()

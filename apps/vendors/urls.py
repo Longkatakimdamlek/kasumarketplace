@@ -67,6 +67,15 @@ urlpatterns = [
     path('ajax/attributes/', views.ajax_get_attributes, name='ajax_attributes'),
 
     # ==========================================
+    # SUBSCRIPTION PLANS & MANAGEMENT
+    # ==========================================
+    path('subscription/', views.subscription_plans, name='subscription_plans'),
+    path('subscription/subscribe/', views.subscription_subscribe, name='subscription_subscribe'),
+    path('subscription/callback/', views.subscription_callback, name='subscription_callback'),
+    path('subscription/cancel/', views.subscription_cancel, name='subscription_cancel'),
+    path('subscription/downgrade/', views.subscription_downgrade, name='subscription_downgrade'),
+
+    # ==========================================
     # SUBSCRIPTION WEBHOOK
     # ==========================================
     path('subscription/webhook/', views.subscription_webhook, name='subscription_webhook'),

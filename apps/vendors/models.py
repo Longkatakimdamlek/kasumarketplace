@@ -879,9 +879,22 @@ class Subscription(models.Model):
         ('expired', 'Expired'),
     ]
 
+    PLAN_CHOICES = [
+        ('free', 'Free Plan'),
+        ('basic', 'Basic Plan'),
+        ('premium', 'Premium Plan'),
+    ]
+
     vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE, related_name='subscription')
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='trial')
+
+    plan = models.CharField(
+        max_length=10,
+        choices=PLAN_CHOICES,
+        default='free',
+        help_text="Current subscription tier."
+    )
 
     # Trial window (auto-set on creation, 3 months from signup)
     trial_ends_at = models.DateTimeField(
@@ -913,6 +926,19 @@ class Subscription(models.Model):
     paystack_plan_code = models.CharField(
         max_length=100, blank=True, default='',
         help_text="Paystack plan code used for this subscription."
+    )
+
+    cancel_at_period_end = models.BooleanField(
+        default=False,
+        help_text="If True, subscription will not auto-renew and will expire at period_end."
+    )
+
+    pending_plan = models.CharField(
+        max_length=10,
+        choices=PLAN_CHOICES,
+        blank=True,
+        default='',
+        help_text="Plan the vendor will move to when the current paid period ends."
     )
 
     # Payment retry tracking
@@ -959,6 +985,24 @@ class Subscription(models.Model):
         if self.status in ('past_due', 'cancelled'):
             return self.grace_ends_at is not None and self.grace_ends_at > now
         return False
+
+    def clean(self):
+        """
+        Validate subscription state consistency.
+
+        - active status requires period_end to be set
+        - trial status requires trial_ends_at to be set
+        """
+        from django.core.exceptions import ValidationError
+
+        if self.status == 'active' and not self.period_end:
+            raise ValidationError({
+                'period_end': 'Active subscriptions must have a period_end date.'
+            })
+        if self.status == 'trial' and not self.trial_ends_at:
+            raise ValidationError({
+                'trial_ends_at': 'Trial subscriptions must have a trial_ends_at date.'
+            })
 
 
 # ==========================================

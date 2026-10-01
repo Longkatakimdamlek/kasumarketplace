@@ -1,5 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
 
 from apps.vendors.models import Product, Store, MainCategory, SubCategory
 from apps.users.models import CustomUser
@@ -61,6 +63,10 @@ class ProductPublishingTest(TestCase):
             'business_email': 'store@example.com',
             'whatsapp': '08012345678',
             'address': 'Lagos',
+            'state': 'Lagos',
+            'city': 'Ikeja',
+            'latitude': '6.5244',
+            'longitude': '3.3792',
             'instagram': '',
             'facebook': '',
             'twitter': '',
@@ -74,7 +80,13 @@ class ProductPublishingTest(TestCase):
 
     def test_delete_confirmation_page_uses_standard_submit_flow(self):
         self.vendor.bank_status = 'verified'
-        self.vendor.save(update_fields=['bank_status'])
+        self.vendor.store_setup_completed = True
+        self.vendor.save(update_fields=['bank_status', 'store_setup_completed'])
+
+        # Ensure subscription is in trial and publicly active
+        self.vendor.subscription.status = 'trial'
+        self.vendor.subscription.trial_ends_at = timezone.now() + timedelta(days=30)
+        self.vendor.subscription.save(update_fields=['status', 'trial_ends_at'])
 
         product = Product.objects.create(
             vendor=self.vendor,

@@ -18,7 +18,7 @@ from .models import (
     VendorProfile, VerificationAttempt,
     MainCategory, SubCategory,
     Store, CategoryChangeRequest, Product, ProductImage,
-    Notification,
+    Notification, Subscription,
     SubCategoryAttribute
 )
 
@@ -449,6 +449,28 @@ class VerificationAttemptAdmin(admin.ModelAdmin):
     list_filter   = ['attempt_type', 'status', 'created_at']
     search_fields = ['vendor__full_name', 'vendor__user__email']
     readonly_fields = ['vendor', 'attempt_type', 'status', 'request_data', 'response_data', 'created_at']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+
+# ==========================================
+# SUBSCRIPTION ADMIN
+# ==========================================
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display  = ['vendor', 'plan', 'status', 'cancel_at_period_end', 'trial_ends_at', 'period_end', 'grace_ends_at', 'paystack_plan_code']
+    list_filter   = ['status', 'plan', 'cancel_at_period_end']
+    search_fields = ['vendor__full_name', 'vendor__user__email', 'vendor__user__username']
+    readonly_fields = [
+        'vendor', 'created_at', 'updated_at',
+        'paystack_customer_code', 'paystack_subscription_code', 'paystack_plan_code',
+        'retry_count', 'last_payment_attempt_at',
+    ]
 
     def has_add_permission(self, request):
         return False

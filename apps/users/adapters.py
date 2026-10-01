@@ -1,8 +1,11 @@
 import logging
 logger = logging.getLogger(__name__)
+from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings
 from django.db import IntegrityError
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
@@ -225,3 +228,22 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
             pass
         # fall back to default
         return settings.LOGIN_REDIRECT_URL
+
+
+class KasuAccountAdapter(DefaultAccountAdapter):
+    """Account adapter (registered as ACCOUNT_ADAPTER) enforcing the rule that
+    a vendor always lands on the vendor dashboard after any allauth login.
+
+    allauth resolves the post-login location as: explicit ``next`` URL first,
+    then the account adapter.  The stock adapter would therefore send vendors
+    to ``next`` or to ``LOGIN_REDIRECT_URL`` (a buyer-facing page).  We let
+    ``super().post_login(...)`` run unchanged (so ``user_logged_in`` signals
+    and flash messages still fire) and only swap the final redirect for
+    vendors.  Buyers and every other role keep the stock behaviour exactly.
+    """
+
+    def post_login(self, request, user, **kwargs):
+        response = super().post_login(request, user, **kwargs)
+        if getattr(user, 'is_vendor', False):
+            return HttpResponseRedirect(reverse('vendors:dashboard'))
+        return response

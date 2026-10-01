@@ -1923,3 +1923,320 @@ def vendor_reply_to_review(request, review_id):
         'reply_text': reply.reply_text,
         'created_at': reply.created_at.isoformat(),
     })
+
+
+# ==========================================
+# SUBSCRIPTION PLANS & MANAGEMENT
+# ==========================================
+
+@vendor_required
+def subscription_plans(request):
+    """
+    Display subscription plans page.
+    Vendor can view current plan, subscribe to a paid plan,
+    upgrade/downgrade, or cancel.
+    """
+    from apps.vendors.plans import get_plan, paid_plans, format_price
+    from django.utils import timezone
+
+    vendor = request.user.vendorprofile
+    try:
+        subscription = vendor.subscription
+    except Subscription.DoesNotExist:
+        subscription = None
+
+    current_plan = subscription.plan if subscription else 'free'
+    current_status = subscription.status if subscription else 'none'
+
+    plans_data = []
+    for p in paid_plans():
+        plan_data = {
+            'identifier': p['identifier'],
+            'display_name': p['display_name'],
+            'price_naira': p['price_naira'],
+            'price_display': format_price(p['price_naira']),
+            'benefits': p['benefits'],
+            'is_current': p['identifier'] == current_plan,
+        }
+        plans_data.append(plan_data)
+
+    # Free plan info (always show)
+    free_plan = {
+        'identifier': 'free',
+        'display_name': 'Free Plan',
+        'price_naira': 0,
+        'price_display': 'Free',
+        'benefits': [
+            'Access to vendor dashboard',
+            'Store setup & verification',
+            'Product management',
+        ],
+        'is_current': current_plan == 'free',
+    }
+
+    context = {
+        'vendor': vendor,
+        'subscription': subscription,
+        'current_plan': current_plan,
+        'current_status': current_status,
+        'free_plan': free_plan,
+        'paid_plans': plans_data,
+        'now': timezone.now(),
+        # --- Button-matrix state (see plans.html) ---
+        # paid_active: a paid plan (basic/premium) that is actually active.
+        'paid_active': bool(
+            subscription
+            and subscription.status == 'active'
+            and subscription.plan in ('basic', 'premium')
+        ),
+        # cancelling: paid_active AND auto-renew already switched off, so
+        # cancel/switch buttons must be hidden (no repeat action).
+        'cancelling': bool(
+            subscription
+            and subscription.status == 'active'
+            and subscription.plan in ('basic', 'premium')
+            and subscription.cancel_at_period_end
+        ),
+        # pending_basic: the only pending_plan a service ever writes.
+        'pending_basic': bool(
+            subscription
+            and subscription.status == 'active'
+            and subscription.plan in ('basic', 'premium')
+            and subscription.cancel_at_period_end
+            and subscription.pending_plan == 'basic'
+        ),
+    }
+
+    return render(request, 'vendors/subscription/plans.html', context)
+
+
+@vendor_required
+@require_http_methods(["POST"])
+def subscription_subscribe(request):
+    """
+    Handle subscription request for a paid plan.
+    Redirects to Paystack authorization URL.
+    """
+    from apps.vendors.plans import paid_plans
+    from apps.vendors.services.subscription_service import subscription_service
+
+    plan = request.POST.get('plan', '').strip()
+    valid_plans = [p['identifier'] for p in paid_plans()]
+
+    if plan not in valid_plans:
+        messages.error(request, 'Invalid plan selected.')
+        return redirect('vendors:subscription_plans')
+
+    vendor = request.user.vendorprofile
+    try:
+        subscription = vendor.subscription
+    except Subscription.DoesNotExist:
+        subscription = None
+
+    # Which plan changes are allowed from here.
+    #   - no paid plan yet (trial / expired / cancelled / past_due) -> any paid plan
+    #   - paid-active on basic                               -> premium (upgrade)
+    #   - paid-active on premium                             -> nothing (that is
+    #     the downgrade flow, not a checkout)
+    if subscription and subscription.plan in ('basic', 'premium') and subscription.status == 'active':
+        if subscription.cancel_at_period_end:
+            messages.warning(
+                request,
+                'Your plan is already scheduled to end. '
+                'Wait for it to expire before subscribing again.',
+            )
+            return redirect('vendors:subscription_plans')
+        if plan != 'premium' or subscription.plan != 'basic':
+            messages.warning(request, 'You already have an active paid subscription.')
+            return redirect('vendors:subscription_plans')
+
+    # Initialize subscription
+    metadata = {
+        'vendor_id': str(vendor.vendor_id),
+        'plan': plan,
+    }
+
+    try:
+        success, data = subscription_service.initialize_subscription(
+            email=vendor.user.email,
+            plan=plan,
+            metadata=metadata,
+        )
+    except Exception as exc:
+        logger.error('Subscription initialization failed for vendor %s: %s', vendor.vendor_id, exc)
+        messages.error(request, 'Unable to initialize subscription. Please try again later.')
+        return redirect('vendors:subscription_plans')
+
+    if not success:
+        messages.error(request, data.get('message', 'Failed to initialize subscription.'))
+        return redirect('vendors:subscription_plans')
+
+    auth_url = data.get('authorization_url')
+    if not auth_url:
+        messages.error(request, 'Failed to get Paystack authorization URL.')
+        return redirect('vendors:subscription_plans')
+
+    return redirect(auth_url)
+
+
+@vendor_required
+@require_http_methods(["GET"])
+def subscription_callback(request):
+    """
+    Paystack callback after subscription payment.
+
+    Verifies the transaction reference with Paystack, checks the transaction
+    belongs to the logged-in vendor, then activates through the SAME
+    idempotent path as the webhook (process_subscription_webhook).
+    """
+    from apps.vendors.services.subscription_service import subscription_service
+    from apps.vendors.models import WebhookEvent
+
+    reference = request.GET.get('reference', '').strip()
+    if not reference:
+        messages.error(request, 'Invalid callback - missing reference.')
+        return redirect('vendors:subscription_plans')
+
+    # Verify the reference with Paystack's verify endpoint.
+    try:
+        txn_data = subscription_service.verify_transaction(reference)
+    except Exception as exc:
+        logger.error('Transaction verification failed for reference %s: %s', reference, exc)
+        messages.error(request, 'Unable to verify payment. Please try again or contact support.')
+        return redirect('vendors:subscription_plans')
+
+    if not isinstance(txn_data, dict) or txn_data.get('status') != 'success':
+        # Abandoned / failed / pending payment: leave the Subscription alone.
+        messages.error(request, 'Payment was not completed. No charge was made - please try again.')
+        return redirect('vendors:subscription_plans')
+
+    vendor = request.user.vendorprofile
+    metadata = txn_data.get('metadata') or {}
+    customer = txn_data.get('customer') or {}
+
+    # Ownership check: metadata.vendor_id first, then the payer email.
+    meta_vendor_id = str(metadata.get('vendor_id', '') or '')
+    txn_email = str(customer.get('email', '') or '')
+    if meta_vendor_id and meta_vendor_id != str(vendor.vendor_id):
+        logger.warning(
+            'Subscription callback reference %s rejected: metadata vendor_id %s is not %s',
+            reference, meta_vendor_id, vendor.vendor_id,
+        )
+        messages.error(request, 'This payment does not belong to your account.')
+        return redirect('vendors:subscription_plans')
+    if not meta_vendor_id and txn_email and txn_email.lower() != vendor.user.email.lower():
+        logger.warning(
+            'Subscription callback reference %s rejected: payer email does not match the account',
+            reference,
+        )
+        messages.error(request, 'This payment does not belong to your account.')
+        return redirect('vendors:subscription_plans')
+    if not meta_vendor_id and not txn_email:
+        # Neither ownership signal is present, so the transaction cannot be
+        # attributed to this account. Reject instead of activating.
+        logger.warning(
+            'Subscription callback reference %s rejected: no vendor_id or payer email '
+            'to verify ownership',
+            reference,
+        )
+        messages.error(request, 'This payment does not belong to your account.')
+        return redirect('vendors:subscription_plans')
+
+    # Idempotency: the same reference replayed is acknowledged, not re-applied.
+    event_id = f'callback_{reference}'
+    if WebhookEvent.objects.filter(event_id=event_id).exists():
+        messages.success(request, 'Your subscription is already active.')
+        return redirect('vendors:subscription_plans')
+
+    # Resolve the Paystack subscription code for this charge.
+    plan_payload = txn_data.get('plan') or {}
+    sub_payload = txn_data.get('subscription') or {}
+    meta_sub_code = (
+        metadata.get('subscription_code')
+        or (sub_payload.get('subscription_code') if isinstance(sub_payload, dict) else '')
+        or ''
+    )
+    if not meta_sub_code:
+        # Nothing to key the activation on. Leave the Subscription untouched.
+        messages.error(request, 'Could not identify your subscription payment. Please contact support.')
+        return redirect('vendors:subscription_plans')
+
+    # Hand the verified transaction to the same processor the webhook uses.
+    from apps.vendors.services.subscription_service import process_subscription_webhook
+    synthetic_metadata = dict(metadata)
+    synthetic_metadata['subscription_code'] = meta_sub_code
+    synthetic_data = {
+        'subscription': {'subscription_code': meta_sub_code},
+        'customer': customer,
+        'plan': {'plan_code': plan_payload.get('plan_code', '') if isinstance(plan_payload, dict) else ''},
+        'amount': txn_data.get('amount', 0),
+        'metadata': synthetic_metadata,
+    }
+    result = process_subscription_webhook('charge.success', synthetic_data, event_id=event_id)
+    if result.get('success'):
+        if 'replay' in result.get('message', ''):
+            messages.success(request, 'Your subscription is already active.')
+        else:
+            messages.success(request, 'Subscription activated successfully!')
+    else:
+        messages.error(request, result.get('message', 'Activation failed.'))
+
+    return redirect('vendors:subscription_plans')
+
+
+@vendor_required
+@require_http_methods(["POST"])
+def subscription_cancel(request):
+    """
+    Cancel subscription — disable auto-renewal, expire at period_end.
+    """
+    from apps.vendors.services.subscription_service import subscription_service
+
+    vendor = request.user.vendorprofile
+    try:
+        subscription = vendor.subscription
+    except Subscription.DoesNotExist:
+        messages.error(request, 'No subscription found.')
+        return redirect('vendors:subscription_plans')
+
+    if subscription.status not in ('active', 'trial'):
+        messages.warning(request, 'No active subscription to cancel.')
+        return redirect('vendors:subscription_plans')
+
+    try:
+        subscription_service.cancel_subscription(subscription)
+        messages.success(request, 'Subscription cancelled. Your plan will remain active until the end of the billing period.')
+    except Exception as exc:
+        logger.error('Subscription cancellation failed for vendor %s: %s', vendor.vendor_id, exc)
+        messages.error(request, 'Unable to cancel subscription. Please try again later.')
+
+    return redirect('vendors:subscription_plans')
+
+
+@vendor_required
+@require_http_methods(["POST"])
+def subscription_downgrade(request):
+    """
+    Downgrade subscription — disable auto-renewal, switch to Basic at period_end.
+    """
+    from apps.vendors.services.subscription_service import subscription_service
+
+    vendor = request.user.vendorprofile
+    try:
+        subscription = vendor.subscription
+    except Subscription.DoesNotExist:
+        messages.error(request, 'No subscription found.')
+        return redirect('vendors:subscription_plans')
+
+    if subscription.plan != 'premium':
+        messages.warning(request, 'Only Premium plans can be downgraded.')
+        return redirect('vendors:subscription_plans')
+
+    try:
+        subscription_service.downgrade_subscription(subscription, 'basic')
+        messages.success(request, 'Downgrade scheduled. Your plan will switch to Basic at the end of the billing period.')
+    except Exception as exc:
+        logger.error('Subscription downgrade failed for vendor %s: %s', vendor.vendor_id, exc)
+        messages.error(request, 'Unable to schedule downgrade. Please try again later.')
+
+    return redirect('vendors:subscription_plans')

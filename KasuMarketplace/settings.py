@@ -314,6 +314,9 @@ SOCIALACCOUNT_EMAIL_REQUIRED = False
 SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 SOCIALACCOUNT_ADAPTER = 'apps.users.adapters.SocialAccountAdapter'
+# Account adapter: forces vendors to vendors:dashboard after any allauth
+# login (social, email confirmation); buyers keep stock allauth behaviour.
+ACCOUNT_ADAPTER = 'apps.users.adapters.KasuAccountAdapter'
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
 
@@ -347,7 +350,9 @@ RECAPTCHA_PRIVATE_KEY = os.getenv("RECAPTCHA_PRIVATE_KEY")
 PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', '')
 PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', '')
 PAYSTACK_BASE_URL = os.environ.get('PAYSTACK_BASE_URL', 'https://api.paystack.co')
-PAYSTACK_SUBSCRIPTION_PLAN_CODE = os.environ.get('PAYSTACK_SUBSCRIPTION_PLAN_CODE', '')  # TODO: Remedy — set this in .env
+# Plan-specific Paystack plan codes (replaces PAYSTACK_SUBSCRIPTION_PLAN_CODE)
+PAYSTACK_BASIC_PLAN_CODE = os.environ.get('PAYSTACK_BASIC_PLAN_CODE', '')
+PAYSTACK_PREMIUM_PLAN_CODE = os.environ.get('PAYSTACK_PREMIUM_PLAN_CODE', '')
 
 
 REST_FRAMEWORK = {

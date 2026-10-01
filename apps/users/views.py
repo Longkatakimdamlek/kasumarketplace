@@ -62,6 +62,9 @@ class BuyerSignupView(View):
     def get(self, request):
         """Display buyer signup form."""
         if request.user.is_authenticated:
+            # vendors must always land on their own dashboard first
+            if request.user.is_vendor:
+                return redirect('vendors:dashboard')
             return redirect('users:buyer_dashboard')
         
         form = self.form_class()
@@ -240,16 +243,19 @@ class LoginView(View):
             
             messages.success(request, f'Welcome back, {user.get_short_name()}!')
             
-            # if a next URL was provided and is safe, use it
+            # Vendors always land on the vendor dashboard first; the requested
+            # "next" page is deliberately NOT honored for them (spec rule).
+            if user.is_vendor:
+                return redirect('vendors:dashboard')
+            
+            # if a next URL was provided and is safe, use it (non-vendors only)
             if next_url:
                 from django.utils.http import url_has_allowed_host_and_scheme
                 if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
                     return redirect(next_url)
             
             # Redirect based on user role if no next or not safe
-            if user.is_vendor:
-                return redirect('vendors:dashboard')
-            elif user.is_buyer:
+            if user.is_buyer:
                 return redirect('users:buyer_dashboard')
             else:
                 # no specific dashboard for unknown role; send to marketplace listing
