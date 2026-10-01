@@ -207,13 +207,17 @@ class SubscriptionService:
             and sub.paystack_subscription_code == new_sub_code
         )
 
-    def _disable_paystack_subscription(self, subscription_code: str, sub_pk=None) -> bool:
+    def _disable_paystack_subscription(
+        self, subscription_code: str, sub_pk=None, failure_level: int = logging.ERROR
+    ) -> bool:
         """
         Disable a Paystack subscription through the shared disable endpoint.
 
-        Returns True on success.  On failure it logs at ERROR (including the
-        local subscription pk and the Paystack subscription code) and returns
-        False so the caller can keep the new plan active.
+        Returns True on success.  On failure it logs at failure_level
+        (ERROR by default, including the local subscription pk and the
+        Paystack subscription code) and returns False so the caller can keep
+        the new plan active.  Callers that disable an already-disabled code
+        pass a lower level so the failure is not read as a billing alarm.
         """
         if not subscription_code:
             return False
@@ -225,7 +229,8 @@ class SubscriptionService:
             )
             return True
         except SubscriptionServiceError as exc:
-            logger.error(
+            logger.log(
+                failure_level,
                 'Failed to disable Paystack subscription %s for subscription pk %s: %s',
                 subscription_code, sub_pk, exc,
             )
@@ -260,6 +265,11 @@ class SubscriptionService:
         # POST /subscription/{code}/disable authenticates with the secret-key
         # bearer token only.
         old_sub_code = sub.paystack_subscription_code or ''
+        # Captured before the save below clears it.  A vendor who cancelled or
+        # downgraded already had the old subscription disabled at Paystack, so
+        # failing to disable it again is expected and must not be reported as
+        # a double-billing ERROR.
+        was_cancelling = bool(sub.cancel_at_period_end)
 
         now = timezone.now()
         sub.status = 'active'
@@ -289,7 +299,11 @@ class SubscriptionService:
                 '- disabling the old subscription',
                 sub.pk, old_sub_code, new_sub_code,
             )
-            self._disable_paystack_subscription(old_sub_code, sub_pk=sub.pk)
+            self._disable_paystack_subscription(
+                old_sub_code,
+                sub_pk=sub.pk,
+                failure_level=logging.INFO if was_cancelling else logging.ERROR,
+            )
 
         return True
 
@@ -377,15 +391,15 @@ class SubscriptionService:
 
     def disable_subscription(self, sub: Subscription) -> None:
         """
-        Called when Paystack sends subscription.disable webhook.
+        Called when Paystack sends subscription.disable webhook for a
+        subscription that is NOT scheduled to end (cancel_at_period_end False),
+        i.e. it was disabled from the Paystack dashboard or outside our UI.
         Cancels the subscription; grace period still applies.
         """
         now = timezone.now()
         sub.status = 'cancelled'
         sub.grace_ends_at = now + timedelta(days=GRACE_PERIOD_DAYS)
-        sub.cancel_at_period_end = False
-        sub.pending_plan = ''
-        sub.save(update_fields=['status', 'grace_ends_at', 'cancel_at_period_end', 'pending_plan', 'updated_at'])
+        sub.save(update_fields=['status', 'grace_ends_at', 'updated_at'])
         logger.info('Subscription %s disabled via webhook', sub.pk)
 
     def cancel_subscription(self, sub: Subscription) -> None:
@@ -428,8 +442,16 @@ class SubscriptionService:
         Delegates to activate_subscription, which captures the old Paystack
         subscription code before overwriting it and then disables the old
         Basic subscription.  Returns True when the plan changed, False when
-        the charge was a replay.  Raises SubscriptionServiceError when the
-        subscription is not eligible for an upgrade.
+        the charge was a replay.
+
+        A Premium charge always activates, even when the row is cancelling
+        (cancel_at_period_end): the money was taken, so the plan must follow.
+        activate_subscription clears cancel_at_period_end and pending_plan.
+
+        Raises SubscriptionServiceError only when sub.plan is not 'basic'.
+        That case is unreachable from process_subscription_webhook, which
+        routes to this method only when plan == 'premium' and sub.plan ==
+        'basic'; it stays as a guard for direct callers.
         """
         new_sub_code = paystack_data.get('subscription_code') or sub.paystack_subscription_code
 
@@ -445,9 +467,12 @@ class SubscriptionService:
             raise SubscriptionServiceError(
                 f"Can only upgrade from basic plan (subscription {sub.pk} is on '{sub.plan}')"
             )
+
         if sub.cancel_at_period_end:
-            raise SubscriptionServiceError(
-                f'Subscription {sub.pk} is already scheduled to end; cancel that first.'
+            logger.info(
+                'Subscription %s was cancelling plan %s; activating premium anyway '
+                '(charge already succeeded)',
+                sub.pk, sub.plan,
             )
 
         return self.activate_subscription(sub, paystack_data, plan='premium')
@@ -538,7 +563,10 @@ def process_subscription_webhook(event_type: str, data: dict, event_id: str = ''
     - charge.success (initial: metadata.subscription_code; recurring: data.subscription.subscription_code)
       → activate_subscription (initial) or handle_successful_payment (recurring)
     - invoice.payment_failed → handle_failed_payment
-    - subscription.disable → disable_subscription
+    - subscription.disable → disable_subscription (only when the code is the
+      row's current code and cancel_at_period_end is False; otherwise the
+      event is acknowledged and ignored)
+    - subscription.not_renew → acknowledged and ignored (recorded only)
 
     Idempotency: if event_id is provided and already exists in WebhookEvent,
     the event is acknowledged but not re-processed.
@@ -554,10 +582,13 @@ def process_subscription_webhook(event_type: str, data: dict, event_id: str = ''
             return {'success': True, 'message': f'Event {event_id} already processed (idempotent skip).'}
 
     # ---- Extract subscription code from multiple possible locations ----
-    sub_code = ''
-    sub_data = data.get('subscription') or {}
-    if isinstance(sub_data, dict):
-        sub_code = sub_data.get('subscription_code', '')
+    # Real Paystack subscription.* events may carry the code at the top level
+    # (data.subscription_code) or nested (data.subscription.subscription_code).
+    sub_code = data.get('subscription_code', '')
+    if not sub_code:
+        sub_data = data.get('subscription') or {}
+        if isinstance(sub_data, dict):
+            sub_code = sub_data.get('subscription_code', '')
 
     # ---- Map Paystack plan code to our plan identifier ----
     paystack_plan_code = ''
@@ -581,12 +612,57 @@ def process_subscription_webhook(event_type: str, data: dict, event_id: str = ''
             WebhookEvent.objects.create(event_id=event_id, event_type=event_type, reference=sub_code, payload=data)
         return {'success': True, 'message': f'invoice.payment_failed processed for sub {sub_code}.'}
 
-    # ---- subscription.disable ----
-    if event_type == 'subscription.disable' and sub_code:
+    # ---- subscription.disable / subscription.not_renew ----
+    # Both arrive as a consequence of our own disable calls (cancel, downgrade,
+    # upgrade) and of a disable done outside our UI (Paystack dashboard), so
+    # they are gated twice:
+    #   1. the code must be the row's CURRENT paystack_subscription_code - an
+    #      event for the old Basic code that an upgrade replaced is ignored;
+    #   2. a row already scheduled to end (cancel_at_period_end) is left alone:
+    #      it keeps paid benefits until period_end, and expire_grace_periods()
+    #      expires it then.
+    if event_type in ('subscription.disable', 'subscription.not_renew') and sub_code:
         try:
             sub = Subscription.objects.get(paystack_subscription_code=sub_code)
         except Subscription.DoesNotExist:
-            return {'success': False, 'message': f'No subscription for code {sub_code}.'}
+            # No row currently holds this code (the Basic code that an upgrade
+            # replaced, or a code we never knew). Acknowledge, record, ignore.
+            if event_id:
+                WebhookEvent.objects.create(event_id=event_id, event_type=event_type, reference=sub_code, payload=data)
+            logger.info(
+                '%s ignored: event for non-current subscription code %s',
+                event_type, sub_code,
+            )
+            return {'success': True, 'message': f'{event_type} ignored: event for non-current subscription code {sub_code}.'}
+
+        if sub.cancel_at_period_end:
+            # Our own disable call. Status stays active until period_end and
+            # the schedule flags stay as the vendor left them.
+            if event_id:
+                WebhookEvent.objects.create(event_id=event_id, event_type=event_type, reference=sub_code, payload=data)
+            logger.info(
+                '%s acknowledged for subscription %s: already scheduled to end at '
+                'period_end, no change (code %s)',
+                event_type, sub.pk, sub_code,
+            )
+            return {
+                'success': True,
+                'message': f'{event_type} acknowledged; subscription {sub.pk} is scheduled to end at period_end.',
+            }
+
+        if event_type == 'subscription.not_renew':
+            # Not scheduled to end and not one of ours: record it and log it,
+            # but change nothing - no local rule depends on this event.
+            if event_id:
+                WebhookEvent.objects.create(event_id=event_id, event_type=event_type, reference=sub_code, payload=data)
+            logger.info(
+                'subscription.not_renew acknowledged for subscription %s: '
+                'no local change (code %s)',
+                sub.pk, sub_code,
+            )
+            return {'success': True, 'message': f'subscription.not_renew acknowledged for sub {sub_code}.'}
+
+        # cancel_at_period_end is False: disabled from outside our UI.
         subscription_service.disable_subscription(sub)
         if event_id:
             WebhookEvent.objects.create(event_id=event_id, event_type=event_type, reference=sub_code, payload=data)

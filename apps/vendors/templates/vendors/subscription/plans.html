@@ -210,6 +210,9 @@
                 {% endfor %}
             </ul>
             {% if paid_active and current_plan == 'basic' %}
+                {% if cancelling %}
+                {# plan already scheduled to end - no upgrade action while cancelling #}
+                {% else %}
             <form method="post" action="{% url 'vendors:subscription_subscribe' %}">
                 {% csrf_token %}
                 <input type="hidden" name="plan" value="premium">
@@ -217,6 +220,7 @@
                     Upgrade to Premium
                 </button>
             </form>
+                {% endif %}
             {% elif paid_active and current_plan == 'premium' %}
             <button disabled class="w-full bg-gray-100 text-gray-400 py-3 px-6 rounded-lg font-medium cursor-not-allowed">
                 Current Plan

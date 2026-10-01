@@ -306,6 +306,20 @@ class VendorProfile(models.Model):
             return False
 
     @property
+    def is_available(self) -> bool:
+        """
+        True when the vendor's subscription is publicly active (trial/active
+        inside its dates, or past_due/cancelled inside the grace period).
+
+        Used by Phase 4 to decide whether contact buttons show; does NOT
+        affect visibility.  Missing Subscription row -> False.
+        """
+        try:
+            return self.subscription.is_publicly_active
+        except Subscription.DoesNotExist:
+            return False
+
+    @property
     def current_step(self):
         """Calculate which verification step user should see next.
         BVN no longer blocks progression to later steps."""
@@ -625,10 +639,15 @@ class SubCategoryAttribute(models.Model):
 
 class PublicStoreManager(models.Manager):
     def publicly_visible(self):
+        """
+        Store is publicly visible when it is published AND the vendor is not
+        admin-suspended.  Subscription state (plan, trial, period, grace,
+        qualification) never hides a store - see Store.is_publicly_visible.
+        """
         return self.filter(
             is_published=True
-        ).filter(
-            subscription_visibility_q('vendor__subscription__')
+        ).exclude(
+            vendor__verification_status='suspended'
         ).select_related('vendor__subscription')
 
 
@@ -750,16 +769,27 @@ class Store(models.Model):
     @property
     def is_publicly_visible(self) -> bool:
         """
-        True only when the store is both published AND the vendor's
-        subscription is publicly active.  Phase 5 will wire this into
-        product-list queries; for now it is defined but not consumed.
+        True only when the store is published AND the vendor is not
+        admin-suspended (verification_status == 'suspended').
+
+        Subscription state never affects this: a restricted (trial expired,
+        subscription expired, past due) vendor stays publicly visible.  The
+        owner-preview exception lives in the views (store_public and
+        product_detail_public), not here.
         """
         if not self.is_published:
             return False
-        try:
-            return self.vendor.subscription.is_publicly_active
-        except Subscription.DoesNotExist:
-            return False
+        return self.vendor.verification_status != 'suspended'
+
+    @property
+    def is_vendor_available(self) -> bool:
+        """
+        Convenience alias for Store.vendor.is_available.
+
+        Used by Phase 4 to decide whether contact buttons show; does NOT
+        affect visibility.
+        """
+        return self.vendor.is_available
 
     def get_absolute_url(self):
         return reverse('vendors:store_public', kwargs={'slug': self.slug})
@@ -1082,11 +1112,17 @@ class CategoryChangeRequest(models.Model):
 
 class PublicProductManager(models.Manager):
     def publicly_visible(self):
+        """
+        Product is publicly visible when its own public conditions hold
+        (status='published', store published) AND its store is publicly
+        visible under Store's rule (vendor not admin-suspended).
+        Subscription state never hides a product.
+        """
         return self.filter(
             status='published',
             store__is_published=True,
-        ).filter(
-            subscription_visibility_q('store__vendor__subscription__')
+        ).exclude(
+            store__vendor__verification_status='suspended'
         ).select_related('store__vendor__subscription', 'subcategory__main_category').prefetch_related('images')
 
 

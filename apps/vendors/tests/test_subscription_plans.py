@@ -7,6 +7,7 @@ from decimal import Decimal
 from unittest.mock import patch, MagicMock
 import hmac
 import hashlib
+import logging
 
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
@@ -480,7 +481,7 @@ class SubscriptionTemplateMatrixTests(TestCase):
         self.assertIn(reverse('vendors:subscription_downgrade'), html)
 
     def test_state_paid_active_basic_cancelling(self):
-        """paid-active basic + cancel_at_period_end -> notice, Upgrade kept, no cancel/switch."""
+        """paid-active basic + cancel_at_period_end -> notice only, no buttons."""
         Subscription.objects.create(
             vendor=self.vendor, status='active', plan='basic',
             cancel_at_period_end=True,
@@ -494,9 +495,8 @@ class SubscriptionTemplateMatrixTests(TestCase):
 
         self.assertIn('Your plan ends on', html)
         self.assertIn('No automatic charge will occur.', html)
-        self.assertIn(self.UPGRADE_PREMIUM, cards)
-        for text in [self.CANCEL, self.SWITCH_BASIC, self.SUBSCRIBE_BASIC,
-                     self.SUBSCRIBE_PREMIUM]:
+        for text in [self.UPGRADE_PREMIUM, self.CANCEL, self.SWITCH_BASIC,
+                     self.SUBSCRIBE_BASIC, self.SUBSCRIBE_PREMIUM]:
             self.assertNotIn(text, cards, f'expected {text!r} NOT to be rendered')
         self.assertNotIn('You chose to switch to Basic', html)
 
@@ -1271,6 +1271,313 @@ class SubscriptionActionTests(TestCase):
         sub.refresh_from_db()
         self.assertEqual(sub.status, 'expired')
         self.assertEqual(sub.plan, 'premium')  # Plan preserved
+
+
+class SubscriptionOwnDisableWebhookTests(TestCase):
+    """
+    Phase 2C: events our own disable calls trigger must not undo a scheduled
+    cancel, a disable event for a superseded (old) code must be ignored, and a
+    Premium charge must activate even while the row is cancelling.
+    Paystack is mocked throughout; no network access.
+    """
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            email='vendor_own_disable@example.com',
+            password='password123',
+            username='vendor_own_disable',
+            role='vendor',
+        )
+        self.vendor = self.user.vendorprofile
+        Subscription.objects.filter(vendor=self.vendor).delete()
+        WebhookEvent.objects.all().delete()
+
+    def make_basic(self, **overrides):
+        fields = {
+            'vendor': self.vendor,
+            'status': 'active',
+            'plan': 'basic',
+            'paystack_subscription_code': 'sub_basic_1',
+            'period_end': timezone.now() + timedelta(days=20),
+        }
+        fields.update(overrides)
+        return Subscription.objects.create(**fields)
+
+    @staticmethod
+    def disable_payload(code):
+        return {'subscription': {'subscription_code': code}}
+
+    def snapshot(self, sub):
+        return (
+            sub.status, sub.plan, sub.period_end, sub.grace_ends_at,
+            sub.paystack_subscription_code, sub.cancel_at_period_end, sub.pending_plan,
+        )
+
+    # ---- Task 1: our own disable events must not undo the schedule ----
+
+    @patch('apps.vendors.services.subscription_service.SubscriptionService._request')
+    def test_own_disable_webhook_keeps_scheduled_cancel(self, mock_request):
+        """The disable event sent because WE cancelled must change nothing."""
+        mock_request.return_value = {'status': True, 'data': {}}
+        sub = self.make_basic()
+        subscription_service.cancel_subscription(sub)
+        sub.refresh_from_db()
+        self.assertTrue(sub.cancel_at_period_end)
+        before = self.snapshot(sub)
+
+        result = process_subscription_webhook(
+            'subscription.disable', self.disable_payload('sub_basic_1'),
+            event_id='evt_own_dis_1',
+        )
+
+        self.assertTrue(result['success'])
+        self.assertIn('scheduled to end', result['message'])
+        sub.refresh_from_db()
+        self.assertEqual(self.snapshot(sub), before)
+        self.assertTrue(sub.cancel_at_period_end)
+        self.assertIsNone(sub.grace_ends_at)
+        self.assertEqual(sub.pending_plan, '')
+        self.assertTrue(WebhookEvent.objects.filter(event_id='evt_own_dis_1').exists())
+
+    @patch('apps.vendors.services.subscription_service.SubscriptionService._request')
+    def test_own_not_renew_webhook_keeps_scheduled_cancel(self, mock_request):
+        """subscription.not_renew for a row we already disabled: acknowledged only."""
+        mock_request.return_value = {'status': True, 'data': {}}
+        sub = self.make_basic()
+        subscription_service.cancel_subscription(sub)
+        sub.refresh_from_db()
+        before = self.snapshot(sub)
+
+        result = process_subscription_webhook(
+            'subscription.not_renew', self.disable_payload('sub_basic_1'),
+            event_id='evt_own_nr_1',
+        )
+
+        self.assertTrue(result['success'])
+        self.assertIn('scheduled to end', result['message'])
+        sub.refresh_from_db()
+        self.assertEqual(self.snapshot(sub), before)
+        self.assertTrue(sub.cancel_at_period_end)
+        self.assertIsNone(sub.grace_ends_at)
+        self.assertTrue(WebhookEvent.objects.filter(event_id='evt_own_nr_1').exists())
+
+    def test_disable_webhook_without_scheduled_cancel_still_cancels(self):
+        """A disable from outside our UI (no cancel scheduled) still cancels."""
+        sub = self.make_basic(paystack_subscription_code='sub_basic_3')
+
+        result = process_subscription_webhook(
+            'subscription.disable', self.disable_payload('sub_basic_3'),
+            event_id='evt_dis_3',
+        )
+
+        self.assertTrue(result['success'])
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'cancelled')
+        self.assertIsNotNone(sub.grace_ends_at)
+        self.assertFalse(sub.cancel_at_period_end)
+        self.assertEqual(sub.pending_plan, '')
+        self.assertEqual(sub.plan, 'basic')
+        self.assertTrue(WebhookEvent.objects.filter(event_id='evt_dis_3').exists())
+
+    # ---- Task 2: a stale (superseded) code must be ignored ----
+
+    @patch('apps.vendors.services.subscription_service.SubscriptionService._request')
+    def test_disable_for_old_code_after_upgrade_is_ignored(self, mock_request):
+        """Events for the old Basic code must not touch the upgraded Premium row."""
+        mock_request.return_value = {'status': True, 'data': {}}
+        sub = self.make_basic(paystack_subscription_code='sub_basic_old')
+        self.assertTrue(subscription_service.upgrade_subscription(sub, {
+            'customer_code': 'cus_new',
+            'subscription_code': 'sub_premium_new',
+            'plan_code': 'PLN_premium',
+        }))
+        sub.refresh_from_db()
+        before = self.snapshot(sub)
+
+        with self.assertLogs('apps.vendors.services.subscription_service', level='INFO') as logs:
+            result = process_subscription_webhook(
+                'subscription.disable', self.disable_payload('sub_basic_old'),
+                event_id='evt_stale_dis_1',
+            )
+
+        self.assertTrue(result['success'])
+        self.assertIn('non-current subscription code', result['message'])
+        sub.refresh_from_db()
+        self.assertEqual(self.snapshot(sub), before)
+        self.assertEqual(sub.plan, 'premium')
+        self.assertEqual(sub.paystack_subscription_code, 'sub_premium_new')
+        self.assertTrue(WebhookEvent.objects.filter(event_id='evt_stale_dis_1').exists())
+        self.assertIn(
+            'ignored: event for non-current subscription code',
+            '\n'.join(logs.output),
+        )
+        # the stale event must not trigger a second disable call
+        disable_calls = [c for c in mock_request.call_args_list if 'disable' in c[0][1]]
+        self.assertEqual(len(disable_calls), 1)
+
+    # ---- Task 3: a Premium charge lands even while cancelling ----
+
+    @override_settings(PAYSTACK_PREMIUM_PLAN_CODE='PLN_premium')
+    def test_upgrade_while_cancelling_activates_without_error_log(self):
+        """Cancelling basic vendor + Premium charge -> premium, no ERROR logged."""
+        calls = []
+
+        def fake_request(method, endpoint, data=None):
+            calls.append(endpoint)
+            if endpoint.endswith('/disable'):
+                raise SubscriptionServiceError('paystack 500')
+            return {'status': True, 'data': {}}
+
+        sub = self.make_basic(
+            paystack_subscription_code='sub_basic_cancel',
+            cancel_at_period_end=True,
+            pending_plan='basic',
+        )
+        data = {
+            'metadata': {
+                'subscription_code': 'sub_premium_new',
+                'vendor_id': str(self.vendor.vendor_id),
+                'plan': 'premium',
+            },
+            'subscription': {'subscription_code': 'sub_premium_new'},
+            'plan': {'plan_code': 'PLN_premium'},
+            'customer': {'customer_code': 'cus_new'},
+        }
+
+        with patch.object(subscription_service, '_request', side_effect=fake_request):
+            with self.assertLogs('apps.vendors.services.subscription_service', level='INFO') as logs:
+                result = process_subscription_webhook('charge.success', data, event_id='evt_up_cancel_1')
+
+        self.assertTrue(result['success'])
+        self.assertNotIn('replay', result['message'])
+        sub.refresh_from_db()
+        self.assertEqual(sub.plan, 'premium')
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.paystack_subscription_code, 'sub_premium_new')
+        self.assertFalse(sub.cancel_at_period_end)
+        self.assertEqual(sub.pending_plan, '')
+        self.assertIsNotNone(sub.period_end)
+        # the old Basic code was still attempted, and its failure was INFO
+        self.assertIn('/subscription/sub_basic_cancel/disable', calls)
+        errors = [r.getMessage() for r in logs.records if r.levelno >= logging.ERROR]
+        self.assertEqual(errors, [])
+        self.assertTrue(any(
+            r.levelno == logging.INFO
+            and 'Failed to disable Paystack subscription sub_basic_cancel' in r.getMessage()
+            for r in logs.records
+        ))
+        self.assertTrue(WebhookEvent.objects.filter(event_id='evt_up_cancel_1').exists())
+
+    @override_settings(PAYSTACK_PREMIUM_PLAN_CODE='PLN_premium')
+    def test_replay_of_upgrade_while_cancelling_changes_nothing(self):
+        """A duplicate Premium charge for a row that is now premium is a replay."""
+        calls = []
+
+        def fake_request(method, endpoint, data=None):
+            calls.append(endpoint)
+            if endpoint.endswith('/disable'):
+                raise SubscriptionServiceError('paystack 500')
+            return {'status': True, 'data': {}}
+
+        sub = self.make_basic(
+            paystack_subscription_code='sub_basic_cancel',
+            cancel_at_period_end=True,
+            pending_plan='basic',
+        )
+        data = {
+            'metadata': {
+                'subscription_code': 'sub_premium_new',
+                'vendor_id': str(self.vendor.vendor_id),
+                'plan': 'premium',
+            },
+            'subscription': {'subscription_code': 'sub_premium_new'},
+            'plan': {'plan_code': 'PLN_premium'},
+            'customer': {'customer_code': 'cus_new'},
+        }
+
+        with patch.object(subscription_service, '_request', side_effect=fake_request):
+            first = process_subscription_webhook('charge.success', data, event_id='evt_up_cancel_1')
+            sub.refresh_from_db()
+            before = self.snapshot(sub)
+            second = process_subscription_webhook('charge.success', data, event_id='evt_up_cancel_2')
+
+        self.assertNotIn('replay', first['message'])
+        self.assertIn('replay', second['message'])
+        sub.refresh_from_db()
+        self.assertEqual(self.snapshot(sub), before)
+        self.assertEqual(sub.plan, 'premium')
+        disable_calls = [c for c in calls if 'disable' in c]
+        self.assertEqual(len(disable_calls), 1)
+
+
+    # ---- Phase 3, Task 0: tolerant subscription-code extraction ----
+
+    @patch('apps.vendors.services.subscription_service.SubscriptionService._request')
+    def test_top_level_and_nested_codes_behave_identically(self, mock_request):
+        """data.subscription_code and data.subscription.subscription_code agree."""
+        mock_request.return_value = {'status': True, 'data': {}}
+        sub = self.make_basic()
+        subscription_service.cancel_subscription(sub)
+        sub.refresh_from_db()
+        before = self.snapshot(sub)
+
+        nested = process_subscription_webhook(
+            'subscription.disable', self.disable_payload('sub_basic_1'),
+            event_id='evt_code_nested',
+        )
+        top_level = process_subscription_webhook(
+            'subscription.disable', {'subscription_code': 'sub_basic_1'},
+            event_id='evt_code_top_level',
+        )
+
+        self.assertEqual(nested, top_level)
+        self.assertTrue(nested['success'])
+        self.assertIn('scheduled to end', nested['message'])
+        sub.refresh_from_db()
+        self.assertEqual(self.snapshot(sub), before)
+        self.assertTrue(sub.cancel_at_period_end)
+        self.assertEqual(
+            WebhookEvent.objects.filter(event_type='subscription.disable').count(), 2,
+        )
+
+    def test_top_level_code_reaches_the_disable_path(self):
+        """A top-level code is extracted well enough to reach disable_subscription."""
+        sub = self.make_basic(paystack_subscription_code='sub_basic_top')
+
+        result = process_subscription_webhook(
+            'subscription.disable', {'subscription_code': 'sub_basic_top'},
+            event_id='evt_code_top_disable',
+        )
+
+        self.assertTrue(result['success'])
+        self.assertIn('processed', result['message'])
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'cancelled')
+
+    @patch('apps.vendors.services.subscription_service.SubscriptionService._request')
+    def test_top_level_code_for_stale_subscription_is_ignored(self, mock_request):
+        """The stale-code ignore rule works when the code is top-level."""
+        mock_request.return_value = {'status': True, 'data': {}}
+        sub = self.make_basic(paystack_subscription_code='sub_basic_old')
+        self.assertTrue(subscription_service.upgrade_subscription(sub, {
+            'customer_code': 'cus_new',
+            'subscription_code': 'sub_premium_new',
+            'plan_code': 'PLN_premium',
+        }))
+        sub.refresh_from_db()
+        before = self.snapshot(sub)
+
+        result = process_subscription_webhook(
+            'subscription.disable', {'subscription_code': 'sub_basic_old'},
+            event_id='evt_code_top_stale',
+        )
+
+        self.assertTrue(result['success'])
+        self.assertIn('non-current subscription code', result['message'])
+        sub.refresh_from_db()
+        self.assertEqual(self.snapshot(sub), before)
+        self.assertEqual(sub.plan, 'premium')
 
 
 class SubscriptionViewsTests(TestCase):
