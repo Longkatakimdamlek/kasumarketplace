@@ -721,10 +721,7 @@ def wishlist_view(request):
 
     # "You Might Also Like" — trending products not already wishlisted
     from apps.vendors.models import Product
-    recommended = Product.objects.filter(
-        status='published',
-        store__is_published=True,
-    ).exclude(
+    recommended = Product.objects.publicly_visible().exclude(
         pk__in=wishlisted_pks
     ).select_related('store').prefetch_related('images').order_by(
         '-trending_score', '-created_at'

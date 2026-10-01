@@ -885,7 +885,7 @@ def product_detail_public(request, store_slug, product_slug):
     URL: /shop/<store_slug>/products/<product_slug>/
     """
     try:
-        store = Store.objects.get(slug=store_slug)
+        store = Store.objects.select_related('vendor__subscription').get(slug=store_slug)
     except Store.DoesNotExist:
         raise Http404("No Store matches the given query.")
 
@@ -1519,7 +1519,7 @@ def store_public(request, slug):
     No login required
     """
     try:
-        store = Store.objects.get(slug=slug)
+        store = Store.objects.select_related('vendor__subscription').get(slug=slug)
     except Store.DoesNotExist:
         raise Http404("No Store matches the given query.")
 
@@ -1530,7 +1530,11 @@ def store_public(request, slug):
     if not store.is_publicly_visible and not is_owner:
         raise Http404("No Store matches the given query.")
 
-    all_products = store.vendor.products.filter(status='published').order_by('-created_at')
+    all_products = store.vendor.products.filter(
+        status='published'
+    ).select_related(
+        'store__vendor__subscription'
+    ).order_by('-created_at')
     total_products_count = all_products.count()  # computed BEFORE any filter is applied
 
     # ---- Sidebar data: subcategories under this store's locked main category ----
@@ -1836,6 +1840,11 @@ def contact_intent(request, product_id):
     channel = request.POST.get('channel', '')
     if channel not in ('call', 'whatsapp'):
         return JsonResponse({'success': False}, status=400)
+
+    # An unavailable vendor has no Call/WhatsApp controls on the page, so a
+    # beacon for one is refused server-side: no row, no notification.
+    if not product.store.vendor.is_available:
+        return JsonResponse({'success': False}, status=403)
 
     user = request.user if request.user.is_authenticated else None
     session_key = ''

@@ -235,6 +235,14 @@
         <!-- Contact Vendor Buttons -->
         <div class="flex items-center gap-1 pt-1 flex-wrap">
 
+            {% if not item.store.vendor.is_available %}
+
+                <span class="inline-flex h-6 sm:h-7 items-center rounded-md border border-border bg-surface px-1.5 sm:px-2 text-[8px] sm:text-[9px] font-semibold text-muted">
+                    Vendor Unavailable
+                </span>
+
+            {% else %}
+
             {% if item.store.whatsapp %}
 
                 <!-- Buy via WhatsApp -->
@@ -301,6 +309,8 @@
                     </span>
 
                 </button>
+
+            {% endif %}
 
             {% endif %}
 
