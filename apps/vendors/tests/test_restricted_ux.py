@@ -684,7 +684,7 @@ class BannerRenderingTests(RestrictedUxFixture):
     def login(self, vendor):
         self.client.force_login(vendor.user)
 
-    def test_dashboard_shows_the_state_and_drops_the_old_verification_pushes(self):
+    def test_dashboard_moves_subscription_action_into_the_hero_and_drops_the_old_verification_pushes(self):
         vendor, store = self.make_vendor('p6-dash-restricted', sub_fields=self.restricted('dash'))
         self.login(vendor)
 
@@ -692,10 +692,10 @@ class BannerRenderingTests(RestrictedUxFixture):
         body = self.content_of(response)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn('Free trial ended', body)
-        self.assertIn('Plan: Free Plan', body)
-        self.assertIn('Status: Trial', body)
+        self.assertIn('View Marketplace', body)
+        self.assertIn('Subscribe', body)
         self.assertIn(reverse('vendors:subscription_plans'), body)
+        self.assertNotIn('Your store and products stay public, but buyers see Vendor Unavailable', body)
 
         self.assertNotIn(OLD_DASHBOARD_FLASH, body)
         self.assertNotIn(OLD_DASHBOARD_BANNER, body)
@@ -711,8 +711,8 @@ class BannerRenderingTests(RestrictedUxFixture):
         body = self.content_of(response)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn('Basic Plan active', body)
-        self.assertIn('Renews on', body)
+        self.assertIn('View Marketplace', body)
+        self.assertNotIn('Basic Plan active', body)
         self.assertIn('Plan', body)
         self.assertIn('Basic Plan (Active)', body)
 
@@ -725,10 +725,11 @@ class BannerRenderingTests(RestrictedUxFixture):
         body = self.content_of(response)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn('Free trial qualification: 1 of 3 published products', body)
-        self.assertIn('1 of 3 published products', body)
-        self.assertIn('Add product', body)
-        self.assertIn('day(s) left', body)
+        self.assertIn('View Marketplace', body)
+        self.assertNotIn('Free trial qualification: 1 of 3 published products', body)
+        self.assertNotIn('1 of 3 published products', body)
+        self.assertNotIn('day(s) left', body)
+        self.assertIn('Add Product', body)
 
     def test_products_list_banner_is_conditional(self):
         restricted, store = self.make_vendor('p6-list-restricted', sub_fields=self.restricted('list'))

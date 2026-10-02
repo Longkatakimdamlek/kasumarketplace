@@ -8,13 +8,6 @@
 {% block content %}
 
 {# ============================================================ #}
-{# Subscription / qualification state banner (Phase 6)          #}
-{# Always shown: plan name, status, countdown and the right CTA.#}
-{# Built by apps.vendors.subscription_state (shared copy).      #}
-{# ============================================================ #}
-{% include 'vendors/subscription/_state_banner.html' %}
-
-{# ============================================================ #}
 {# Welcome Banner                                                #}
 {# ============================================================ #}
 <div class="rounded-xl bg-gradient-to-br from-primary to-soft-blue p-5 mb-4 text-white shadow-sm sm:p-6 sm:mb-6">
@@ -34,9 +27,12 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                 </svg>
             </a>
-            {# Phase 6: the old "Complete Verification" button lived here. #}
-            {# It sent restricted (subscription) vendors to the verification #}
-            {# center; the state banner above carries the right CTA now. #}
+            {% if subscription_state and subscription_state.is_restricted %}
+            <a href="{% url subscription_state.primary_cta_url_name %}"
+               class="inline-flex items-center rounded-full bg-yellow-300 px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md sm:px-5">
+                {{ subscription_state.primary_cta_label }}
+            </a>
+            {% endif %}
         </div>
     </div>
 </div>
