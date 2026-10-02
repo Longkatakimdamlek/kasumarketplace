@@ -3,8 +3,22 @@
 
 {% block title %}Subscription Plans - KasuMarketplace Vendor{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Phase 6B design tokens, sampled from reference_pricing.webp.
+       Scoped to this page only - no global stylesheet change. */
+    .kasu-plans {
+        --kasu-lime: #F3F43F;
+        --kasu-lime-soft: #CEF970;
+        --kasu-card-dark: #2C333E;
+        --kasu-card-muted: #5D686D;
+        --kasu-card-light: #C9D1D9;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="kasu-plans max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Page Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Subscription Plans</h1>
@@ -12,249 +26,123 @@
     </div>
 
     <!-- Current Status Card -->
-    <div class="mb-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Current Subscription</h2>
-        </div>
-        <div class="px-6 py-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Current Plan</p>
-                    <p class="mt-1 text-xl font-bold text-gray-900">
-                        {% if current_plan == 'free' %}
-                            Free Plan
-                        {% elif current_plan == 'basic' %}
-                            Basic Plan
-                        {% elif current_plan == 'premium' %}
-                            Premium Plan
+    <div class="mb-10 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+        <h2 class="text-lg font-semibold text-gray-900">Current Subscription</h2>
+
+        <div class="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-3">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Current Plan</p>
+                <p class="mt-1 text-xl font-bold text-gray-900">
+                    {% if current_plan == 'free' %}
+                        Free Plan
+                    {% elif current_plan == 'basic' %}
+                        Basic Plan
+                    {% elif current_plan == 'premium' %}
+                        Premium Plan
+                    {% else %}
+                        {{ current_plan|title }}
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-500">Status</p>
+                <p class="mt-1 text-xl font-bold {% if current_status == 'active' %}text-green-600{% elif current_status == 'trial' %}text-blue-600{% elif current_status == 'past_due' %}text-yellow-600{% else %}text-gray-600{% endif %}">
+                    {{ current_status|title }}
+                </p>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-500">
+                    {% if subscription %}
+                        {% if subscription.status == 'trial' %}
+                            Trial Ends
+                        {% elif subscription.status == 'active' %}
+                            Period Ends
+                        {% elif subscription.cancel_at_period_end %}
+                            Cancelled - Ends
                         {% else %}
-                            {{ current_plan|title }}
+                            Grace Ends
                         {% endif %}
-                    </p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Status</p>
-                    <p class="mt-1 text-xl font-bold {% if current_status == 'active' %}text-green-600{% elif current_status == 'trial' %}text-blue-600{% elif current_status == 'past_due' %}text-yellow-600{% else %}text-gray-600{% endif %}">
-                        {{ current_status|title }}
-                    </p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500">
-                        {% if subscription %}
-                            {% if subscription.status == 'trial' %}
-                                Trial Ends
-                            {% elif subscription.status == 'active' %}
-                                Period Ends
-                            {% elif subscription.cancel_at_period_end %}
-                                Cancelled - Ends
-                            {% else %}
-                                Grace Ends
-                            {% endif %}
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </p>
-                    <p class="mt-1 text-xl font-bold text-gray-900">
-                        {% if subscription %}
-                            {% if subscription.status == 'trial' and subscription.trial_ends_at %}
-                                {{ subscription.trial_ends_at|date:"M d, Y" }}
-                            {% elif subscription.status == 'active' and subscription.period_end %}
-                                {{ subscription.period_end|date:"M d, Y" }}
-                            {% elif subscription.cancel_at_period_end and subscription.period_end %}
-                                {{ subscription.period_end|date:"M d, Y" }}
-                            {% elif subscription.grace_ends_at %}
-                                {{ subscription.grace_ends_at|date:"M d, Y" }}
-                            {% else %}
-                                —
-                            {% endif %}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+                <p class="mt-1 text-xl font-bold text-gray-900">
+                    {% if subscription %}
+                        {% if subscription.status == 'trial' and subscription.trial_ends_at %}
+                            {{ subscription.trial_ends_at|date:"M d, Y" }}
+                        {% elif subscription.status == 'active' and subscription.period_end %}
+                            {{ subscription.period_end|date:"M d, Y" }}
+                        {% elif subscription.cancel_at_period_end and subscription.period_end %}
+                            {{ subscription.period_end|date:"M d, Y" }}
+                        {% elif subscription.grace_ends_at %}
+                            {{ subscription.grace_ends_at|date:"M d, Y" }}
                         {% else %}
                             —
                         {% endif %}
-                    </p>
-                </div>
+                    {% else %}
+                        —
+                    {% endif %}
+                </p>
             </div>
-
-{% if cancelling %}
-            <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div class="flex items-center">
-                    <svg class="w-5 h-5 text-yellow-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                    </svg>
-                    <div>
-                        <p class="text-sm font-medium text-yellow-800">
-                            Your plan ends on {{ subscription.period_end|date:"M d, Y" }}. No automatic charge will occur.
-                        </p>
-                        {% if pending_basic %}
-                        <p class="text-sm text-yellow-700 mt-1">
-                            You chose to switch to Basic. Subscribe to Basic after your current period ends.
-                        </p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
         </div>
+
+        {% if cancelling %}
+        <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div class="flex items-center">
+                <svg class="mr-3 h-5 w-5 shrink-0 text-amber-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <p class="text-sm font-medium text-yellow-800">
+                        Your plan ends on {{ subscription.period_end|date:"M d, Y" }}. No automatic charge will occur.
+                    </p>
+                    {% if pending_basic %}
+                    <p class="mt-1 text-sm text-yellow-700">
+                        You chose to switch to Basic. Subscribe to Basic after your current period ends.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Plans Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+
         <!-- Free Plan Card -->
-        <div class="relative bg-white rounded-xl shadow-sm border border-gray-200 p-6 {% if free_plan.is_current %}ring-2 ring-primary{% endif %}">
-            {% if free_plan.is_current %}
-            <div class="absolute -top-3 -right-3 bg-primary text-white text-xs font-medium px-2 py-0.5 rounded-full">Current</div>
-            {% endif %}
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
-                    <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900">{{ free_plan.display_name }}</h3>
-                <p class="mt-2 text-3xl font-bold text-gray-900">{{ free_plan.price_display }}</p>
-            </div>
-            <ul class="space-y-3 mb-6">
-                {% for benefit in free_plan.benefits %}
-                <li class="flex items-start text-gray-600">
-                    <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    <span>{{ benefit }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-            {% if free_plan.is_current %}
-            <button disabled class="w-full bg-gray-100 text-gray-400 py-3 px-6 rounded-lg font-medium cursor-not-allowed">
-                Current Plan
-            </button>
-            {% endif %}
-        </div>
+        {% if free_plan.is_current %}
+        {% include 'vendors/subscription/_plan_card.html' with plan_key='free' variant='muted' is_current=free_plan.is_current is_cancelling=cancelling plan_name=free_plan.display_name price_display=free_plan.price_display %}
+        {% else %}
+        {% include 'vendors/subscription/_plan_card.html' with plan_key='free' variant='light' is_current=free_plan.is_current is_cancelling=cancelling plan_name=free_plan.display_name price_display=free_plan.price_display %}
+        {% endif %}
 
         <!-- Basic Plan Card -->
         {% for plan in paid_plans %}
         {% if plan.identifier == 'basic' %}
-        <div class="relative bg-white rounded-xl shadow-sm border border-gray-200 p-6 {% if paid_active and plan.is_current %}ring-2 ring-primary{% endif %}">
-            {% if paid_active and plan.is_current %}
-            <div class="absolute -top-3 -right-3 bg-primary text-white text-xs font-medium px-2 py-0.5 rounded-full">Current</div>
-            {% endif %}
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
-                    <svg class="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8.5c0 3.25 2 6.5 3 7.5 1-1 3-4.25 3-7.5 0-2.58-1.382-4.25-3-4.25S9 5.42 9 7.5c0 1 2 3.5 3 4.5"/>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900">{{ plan.display_name }}</h3>
-                <p class="mt-2 text-3xl font-bold text-gray-900">{{ plan.price_display }}/month</p>
-            </div>
-            <ul class="space-y-3 mb-6">
-                {% for benefit in plan.benefits %}
-                <li class="flex items-start text-gray-600">
-                    <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    <span>{{ benefit }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-            {% if paid_active and current_plan == 'premium' %}
-                {% if cancelling %}
-                {# plan already scheduled to end - no repeat switch action #}
-                {% else %}
-                <form method="post" action="{% url 'vendors:subscription_downgrade' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="w-full bg-yellow-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-yellow-700 transition-colors">
-                        Switch to Basic at End of Billing Period
-                    </button>
-                </form>
-                {% endif %}
-            {% elif paid_active and current_plan == 'basic' %}
-            <button disabled class="w-full bg-gray-100 text-gray-400 py-3 px-6 rounded-lg font-medium cursor-not-allowed">
-                Current Plan
-            </button>
-            {% else %}
-            <form method="post" action="{% url 'vendors:subscription_subscribe' %}">
-                {% csrf_token %}
-                <input type="hidden" name="plan" value="basic">
-                <button type="submit" class="w-full bg-primary text-white py-3 px-6 rounded-lg font-medium hover:bg-primary/90 transition-colors">
-                    Subscribe to Basic Plan
-                </button>
-            </form>
-            {% endif %}
-        </div>
+        {% if paid_active and plan.is_current %}
+        {% include 'vendors/subscription/_plan_card.html' with plan_key='basic' variant='muted' is_current=plan.is_current is_cancelling=cancelling plan_name=plan.display_name price_display=plan.price_display show_monthly=True %}
+        {% else %}
+        {% include 'vendors/subscription/_plan_card.html' with plan_key='basic' variant='light' is_current=plan.is_current is_cancelling=cancelling plan_name=plan.display_name price_display=plan.price_display show_monthly=True %}
+        {% endif %}
         {% endif %}
         {% endfor %}
 
         <!-- Premium Plan Card -->
         {% for plan in paid_plans %}
         {% if plan.identifier == 'premium' %}
-        <div class="relative bg-white rounded-xl shadow-sm border border-gray-200 p-6 {% if paid_active and plan.is_current %}ring-2 ring-primary{% endif %}">
-            {% if paid_active and plan.is_current %}
-            <div class="absolute -top-3 -right-3 bg-primary text-white text-xs font-medium px-2 py-0.5 rounded-full">Current</div>
-            {% endif %}
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-purple-100 mb-4">
-                    <svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8.5c0 3.25 2 6.5 3 7.5 1-1 3-4.25 3-7.5 0-2.58-1.382-4.25-3-4.25S9 5.42 9 7.5c0 1 2 3.5 3 4.5"/>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900">{{ plan.display_name }}</h3>
-                <p class="mt-2 text-3xl font-bold text-gray-900">{{ plan.price_display }}/month</p>
-            </div>
-            <ul class="space-y-3 mb-6">
-                {% for benefit in plan.benefits %}
-                <li class="flex items-start text-gray-600">
-                    <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    <span>{{ benefit }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-            {% if paid_active and current_plan == 'basic' %}
-                {% if cancelling %}
-                {# plan already scheduled to end - no upgrade action while cancelling #}
-                {% else %}
-            <form method="post" action="{% url 'vendors:subscription_subscribe' %}">
-                {% csrf_token %}
-                <input type="hidden" name="plan" value="premium">
-                <button type="submit" class="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-purple-700 transition-colors">
-                    Upgrade to Premium
-                </button>
-            </form>
-                {% endif %}
-            {% elif paid_active and current_plan == 'premium' %}
-            <button disabled class="w-full bg-gray-100 text-gray-400 py-3 px-6 rounded-lg font-medium cursor-not-allowed">
-                Current Plan
-            </button>
-            {% else %}
-            <form method="post" action="{% url 'vendors:subscription_subscribe' %}">
-                {% csrf_token %}
-                <input type="hidden" name="plan" value="premium">
-                <button type="submit" class="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-purple-700 transition-colors">
-                    Subscribe to Premium Plan
-                </button>
-            </form>
-            {% endif %}
-        </div>
+        {% if paid_active and plan.is_current %}
+        {% include 'vendors/subscription/_plan_card.html' with plan_key='premium' variant='muted' is_current=plan.is_current is_cancelling=cancelling plan_name=plan.display_name price_display=plan.price_display show_monthly=True %}
+        {% else %}
+        {% include 'vendors/subscription/_plan_card.html' with plan_key='premium' variant='featured' is_current=plan.is_current is_cancelling=cancelling plan_name=plan.display_name price_display=plan.price_display show_monthly=True %}
+        {% endif %}
         {% endif %}
         {% endfor %}
     </div>
 
-    <!-- Cancel action: paid-active only, hidden while already cancelling -->
-    {% if paid_active and not cancelling %}
-    <div class="mt-6 flex justify-center">
-        <form method="post" action="{% url 'vendors:subscription_cancel' %}">
-            {% csrf_token %}
-            <button type="submit" class="bg-red-600 text-white py-3 px-8 rounded-lg font-medium hover:bg-red-700 transition-colors"
-                    onclick="return confirm('Are you sure you want to cancel? Your plan will remain active until the end of the billing period, then expire.')">
-                Cancel Subscription
-            </button>
-        </form>
-    </div>
-    {% endif %}
-
     <!-- Help Text -->
-    <div class="mt-8 p-6 bg-gray-50 rounded-xl">
-        <h3 class="text-lg font-semibold text-gray-900 mb-3">Need help choosing?</h3>
+    <div class="mt-8 rounded-2xl bg-gray-50 p-6">
+        <h3 class="mb-3 text-lg font-semibold text-gray-900">Need help choosing?</h3>
         <ul class="space-y-2 text-gray-600">
             <li><strong>Free Plan:</strong> Perfect for getting started — access dashboard, set up your store, and manage products.</li>
             <li><strong>Basic Plan (₦1,200/month):</strong> Unlock unlimited products, premium store control, and a free subdomain.</li>

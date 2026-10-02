@@ -14,6 +14,25 @@ PLANS = {
         'paystack_plan_code_setting': '',  # No Paystack plan for free tier
         'benefits': [],
         'is_paid': False,
+        # Display data only (Phase 6B): one-line summary + the card feature
+        # rows (label, included). Nothing here feeds billing or webhooks.
+        'summary': (
+            'Perfect for getting started - access dashboard, set up your '
+            'store, and manage products.'
+        ),
+        'features': [
+            {'label': 'Store and products stay public', 'included': True},
+            {
+                'label': (
+                    '3-month free trial after you publish 3 products '
+                    'within 7 days'
+                ),
+                'included': True,
+            },
+            {'label': 'V-Batch', 'included': False},
+            {'label': 'Promotions', 'included': False},
+            {'label': 'SEO service', 'included': False},
+        ],
     },
     'basic': {
         'identifier': 'basic',
@@ -28,6 +47,19 @@ PLANS = {
             'Free Subdomain',
         ],
         'is_paid': True,
+        'summary': (
+            'Unlock unlimited products, premium store control, and a free '
+            'subdomain.'
+        ),
+        'features': [
+            {'label': 'Unlimited product listing', 'included': True},
+            {'label': 'Full store control', 'included': True},
+            {'label': 'No marketplace restrictions', 'included': True},
+            {'label': 'Free subdomain (coming soon)', 'included': True},
+            {'label': 'V-Batch', 'included': False},
+            {'label': 'Promotions', 'included': False},
+            {'label': 'SEO service', 'included': False},
+        ],
     },
     'premium': {
         'identifier': 'premium',
@@ -44,6 +76,17 @@ PLANS = {
             'SEO service',
         ],
         'is_paid': True,
+        'summary': (
+            'Everything in Basic plus product/store promotion, V-Batch, '
+            'search discovery boost, and SEO service.'
+        ),
+        'features': [
+            {'label': 'Everything in Basic', 'included': True},
+            {'label': 'Product and store promotions', 'included': True},
+            {'label': 'V-Batch', 'included': True},
+            {'label': 'Search and discovery promotion', 'included': True},
+            {'label': 'SEO service', 'included': True},
+        ],
     },
 }
 

@@ -3,9 +3,18 @@
 {% block title %}Subscription needed to add products - KasuMarketplace{% endblock %}
 {% block page_title %}Add Product{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Phase 6B: neon lime accent for this page (sampled from reference_pricing.webp). */
+    .kasu-prompt {
+        --kasu-lime: #F3F43F;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<div class="mx-auto mt-6 w-full max-w-lg sm:mt-12">
+<div class="kasu-prompt mx-auto mt-6 w-full max-w-lg sm:mt-12">
 
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div class="border-b border-gray-100 px-5 py-4">
@@ -22,7 +31,7 @@
 
             <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <a href="{% url 'vendors:subscription_plans' %}"
-                   class="inline-flex flex-1 items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:opacity-90">
+                   class="inline-flex flex-1 items-center justify-center rounded-lg bg-[var(--kasu-lime)] px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:brightness-95">
                     Subscribe
                 </a>
                 <a href="{% url 'vendors:products_list' %}"

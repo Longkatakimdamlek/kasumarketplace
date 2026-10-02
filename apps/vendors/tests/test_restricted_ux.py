@@ -643,6 +643,26 @@ class RestrictedVendorAccessTests(RestrictedUxFixture):
         self.assertNotIn(PROMPT_HEADING, body)
         self.assertIn('id_subcategory', body)
 
+    def test_unverified_vendor_with_a_qualifying_subscription_is_available(self):
+        """Phase 6B Task 0 carry-over.
+
+        is_available must not consult verification status: a brand new vendor
+        is verification_status='pending' (the model default) and only gets
+        approved later, so any verification check here would lock new vendors
+        out of the product form for ever.
+        """
+        vendor, store = self.make_vendor('p6-unverified-qualifying')
+        vendor = VendorProfile.objects.get(pk=vendor.pk)
+
+        self.assertEqual(vendor.verification_status, 'pending')
+        self.assertNotEqual(vendor.verification_status, 'approved')
+        self.assertFalse(vendor.is_verified)
+
+        sub = Subscription.objects.get(vendor=vendor)
+        self.assertEqual(sub.status, 'qualifying')
+        self.assertIsNone(sub.first_product_at)
+        self.assertTrue(vendor.is_available)
+
     def test_vendor_inside_the_payment_grace_window_can_still_create(self):
         vendor, store = self.make_vendor('p6-grace-create', sub_fields={
             'status': 'past_due',

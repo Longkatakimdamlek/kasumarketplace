@@ -1,0 +1,143 @@
+{# ============================================================ #}
+{# Shared plan card (Phase 6B)                                  #}
+{#                                                              #}
+{# Inputs (all passed by plans.html):                           #}
+{#   plan_key      'free' | 'basic' | 'premium'                 #}
+{#   variant       'muted' | 'featured' | 'light'               #}
+{#   is_current    badge condition from the current template    #}
+{#   is_cancelling cancelling flag for this vendor              #}
+{#   plan_name     display name from the view's plan dict       #}
+{#   price_display price string from the view's plan dict       #}
+{#   show_monthly  True for paid plans -> renders "/month"      #}
+{#                                                              #}
+{# Card mapping:                                                #}
+{#   muted    = current plan card, "Active" pill, Cancel here   #}
+{#   featured = premium when it is NOT the current card         #}
+{#   light    = free / basic when they are not current          #}
+{#                                                              #}
+{# The CTA block below is the Phase 6 button matrix, 1:1.       #}
+{# ============================================================ #}
+{% load plan_features %}
+{% plan_features plan_key as features %}
+{% plan_summary plan_key as summary %}
+<article class="relative flex h-full flex-col rounded-2xl p-6 shadow-sm sm:p-7 {% if variant == 'muted' %}bg-[var(--kasu-card-muted)] text-white ring-1 ring-white/10{% elif variant == 'featured' %}bg-[var(--kasu-card-dark)] text-white ring-2 ring-[var(--kasu-lime)]{% else %}bg-[var(--kasu-card-light)] text-[#2C333E]{% endif %}">
+
+    {% if variant == 'featured' %}
+    <span class="kasu-best-value absolute -top-3 right-5 rounded-full bg-[var(--kasu-lime)] px-3 py-1 text-[11px] font-bold tracking-wide text-[#2C333E] shadow-sm">
+        Best value
+    </span>
+    {% endif %}
+
+    {% if is_current and not subscription_state.is_restricted %}
+    <span class="kasu-active-pill absolute -top-3 left-5 rounded-full bg-[var(--kasu-lime)] px-3 py-1 text-[11px] font-bold tracking-wide text-[#2C333E] shadow-sm">
+        Active
+    </span>
+    {% endif %}
+
+    <div>
+        <h3 class="text-lg font-bold">{{ plan_name }}</h3>
+        <p class="mt-3 text-4xl font-extrabold tracking-tight">
+            {{ price_display }}{% if show_monthly %}<span class="text-base font-semibold opacity-70">/month</span>{% endif %}
+        </p>
+        <p class="mt-3 text-sm leading-relaxed {% if variant == 'light' %}opacity-70{% else %}text-white/75{% endif %}">
+            {{ summary }}
+        </p>
+    </div>
+
+    <div class="my-5 border-t border-dashed {% if variant == 'light' %}border-black/20{% else %}border-white/30{% endif %}"></div>
+
+    <ul class="space-y-3">
+        {% for feature in features %}
+        <li class="flex items-start gap-3 text-sm">
+            {% if feature.included %}
+            <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--kasu-lime-soft)]">
+                <svg class="h-3.5 w-3.5 text-[#2C333E]" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+            </span>
+            <span>{{ feature.label }}</span>
+            {% else %}
+            <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full {% if variant == 'light' %}bg-black/10{% else %}bg-white/15{% endif %}">
+                <svg class="h-3.5 w-3.5 opacity-60" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+            </span>
+            <span class="{% if variant == 'light' %}opacity-50{% else %}text-white/60{% endif %}">{{ feature.label }}</span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="mt-auto pt-7">
+        {% if plan_key == 'free' %}
+            {% if is_current %}
+            <button disabled class="w-full cursor-not-allowed rounded-full px-6 py-3 text-sm font-semibold {% if variant == 'light' %}bg-black/5 text-black/40{% else %}bg-white/15 text-white/60{% endif %}">
+                Current Plan
+            </button>
+            {% endif %}
+
+        {% elif plan_key == 'basic' %}
+            {% if paid_active and current_plan == 'premium' %}
+                {% if is_cancelling %}
+                {# plan already scheduled to end - no repeat switch action #}
+                {% else %}
+                <form method="post" action="{% url 'vendors:subscription_downgrade' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full rounded-full bg-[var(--kasu-lime)] px-6 py-3 text-sm font-bold text-[#2C333E] transition-colors hover:brightness-95">
+                        Switch to Basic at End of Billing Period
+                    </button>
+                </form>
+                {% endif %}
+            {% elif paid_active and current_plan == 'basic' %}
+            <button disabled class="w-full cursor-not-allowed rounded-full px-6 py-3 text-sm font-semibold {% if variant == 'light' %}bg-black/5 text-black/40{% else %}bg-white/15 text-white/60{% endif %}">
+                Current Plan
+            </button>
+            {% else %}
+            <form method="post" action="{% url 'vendors:subscription_subscribe' %}">
+                {% csrf_token %}
+                <input type="hidden" name="plan" value="basic">
+                <button type="submit" class="w-full rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90">
+                    Subscribe to Basic Plan
+                </button>
+            </form>
+            {% endif %}
+
+        {% else %}
+            {% if paid_active and current_plan == 'basic' %}
+                {% if is_cancelling %}
+                {# plan already scheduled to end - no upgrade action while cancelling #}
+                {% else %}
+                <form method="post" action="{% url 'vendors:subscription_subscribe' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="plan" value="premium">
+                    <button type="submit" class="w-full rounded-full bg-white px-6 py-3 text-sm font-bold text-[#2C333E] transition-colors hover:bg-gray-100">
+                        Upgrade to Premium
+                    </button>
+                </form>
+                {% endif %}
+            {% elif paid_active and current_plan == 'premium' %}
+            <button disabled class="w-full cursor-not-allowed rounded-full px-6 py-3 text-sm font-semibold {% if variant == 'light' %}bg-black/5 text-black/40{% else %}bg-white/15 text-white/60{% endif %}">
+                Current Plan
+            </button>
+            {% else %}
+            <form method="post" action="{% url 'vendors:subscription_subscribe' %}">
+                {% csrf_token %}
+                <input type="hidden" name="plan" value="premium">
+                <button type="submit" class="w-full rounded-full bg-[var(--kasu-lime)] px-6 py-3 text-sm font-bold text-[#2C333E] transition-colors hover:brightness-95">
+                    Subscribe to Premium Plan
+                </button>
+            </form>
+            {% endif %}
+        {% endif %}
+
+        {% if paid_active and not is_cancelling and is_current %}
+        <form method="post" action="{% url 'vendors:subscription_cancel' %}" class="mt-3">
+            {% csrf_token %}
+            <button type="submit" class="w-full rounded-full border px-6 py-3 text-sm font-semibold transition-colors {% if variant == 'light' %}border-black/20 text-[#2C333E] hover:bg-black/5{% else %}border-white/40 text-white hover:bg-white/10{% endif %}"
+                    onclick="return confirm('Are you sure you want to cancel? Your plan will remain active until the end of the billing period, then expire.')">
+                Cancel Subscription
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</article>
