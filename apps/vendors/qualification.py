@@ -93,6 +93,56 @@ def sync_qualification(sub, now=None):
     return False
 
 
+def evaluate_qualification(sub, now=None):
+    """
+    Shared evaluation of a status='qualifying' row (Phase 6 refactor).
+
+    One implementation used by BOTH the Product post_save hook and the admin
+    'restart qualification window' action:
+
+      - past the 14-day window -> fail (sync_qualification)
+      - >= QUALIFICATION_REQUIRED_PRODUCTS published products -> qualify now
+        (status 'trial', trial_ends_at now + FREE_TRIAL_DAYS, label
+        'qualified', qualified_at)
+      - otherwise -> refresh the stored label (sync_qualification)
+
+    Assumes `sub.first_product_at` is already set (the hook sets it from the
+    first product; the admin action sets it to `now`) and that the caller
+    owns any transaction/locking it needs.  Does nothing - and runs no count
+    query - for rows whose status is not 'qualifying'.
+
+    Returns True only when a write actually happened.
+    """
+    if sub.status != 'qualifying':
+        return False
+
+    now = now or timezone.now()
+
+    if sub.first_product_at is None:
+        return False
+
+    # Past the 14-day window: fail, never qualify.
+    if now > _window_end(
+        sub.first_product_at, QUALIFICATION_DAYS + QUALIFICATION_GRACE_DAYS
+    ):
+        return sync_qualification(sub, now=now)
+
+    published = sub.vendor.products.filter(status='published').count()
+    if published >= QUALIFICATION_REQUIRED_PRODUCTS:
+        sub.status = 'trial'
+        sub.trial_ends_at = now + timedelta(days=FREE_TRIAL_DAYS)
+        sub.qualification_status = 'qualified'
+        sub.qualified_at = now
+        # plan stays 'free'; grace_ends_at / period_end are left alone.
+        sub.save(update_fields=[
+            'status', 'trial_ends_at', 'qualification_status',
+            'qualified_at', 'updated_at',
+        ])
+        return True
+
+    return sync_qualification(sub, now=now)
+
+
 def on_product_saved(product):
     """
     post_save hook for Product (Phase 5).  Recomputes the free-plan
@@ -130,23 +180,5 @@ def on_product_saved(product):
             )
             changed = True
 
-        # Past the 14-day window: fail, never qualify.
-        if now > _window_end(
-            sub.first_product_at, QUALIFICATION_DAYS + QUALIFICATION_GRACE_DAYS
-        ):
-            return sync_qualification(sub, now=now) or changed
-
-        published = vendor.products.filter(status='published').count()
-        if published >= QUALIFICATION_REQUIRED_PRODUCTS:
-            sub.status = 'trial'
-            sub.trial_ends_at = now + timedelta(days=FREE_TRIAL_DAYS)
-            sub.qualification_status = 'qualified'
-            sub.qualified_at = now
-            # plan stays 'free'; grace_ends_at / period_end are left alone.
-            sub.save(update_fields=[
-                'status', 'trial_ends_at', 'qualification_status',
-                'qualified_at', 'updated_at',
-            ])
-            return True
-
-        return sync_qualification(sub, now=now) or changed
+        # Count / qualify / fail - shared with the admin restart action.
+        return evaluate_qualification(sub, now=now) or changed

@@ -25,6 +25,22 @@
         </div>
     </div>
 
+    <!-- Phase 6: a restricted vendor reaches this page from old links and
+         from the chip, but its blocking problem is the subscription, not
+         verification.  Neutral note built from the shared descriptor. -->
+    {% if subscription_state.is_restricted %}
+    <div class="mb-5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+        <p class="text-sm font-medium text-gray-800">
+            Your selling access depends on your subscription.
+        </p>
+        <p class="mt-0.5 text-xs text-gray-600">
+            {{ subscription_state.title }} - {{ subscription_state.plan_name }} ({{ subscription_state.status_label }})
+        </p>
+        <a href="{% url 'vendors:subscription_plans' %}"
+           class="mt-1.5 inline-flex text-sm font-semibold text-primary hover:underline">See plans</a>
+    </div>
+    {% endif %}
+
     {% regroup steps by completed as step_groups %}
 
     <!-- Continue Here — first incomplete step -->

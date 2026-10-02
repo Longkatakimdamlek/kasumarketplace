@@ -496,7 +496,14 @@ class SubscriptionAdmin(admin.ModelAdmin):
         Give a free-plan vendor a fresh 14-day window: status 'qualifying',
         clock restarted at now.  Only rows with plan 'free', no Paystack
         subscription code and a status other than 'active' are eligible.
+
+        Phase 6: each restarted row is then handed to the SAME evaluation
+        the Product post_save hook uses (qualification.evaluate_qualification)
+        - a vendor who already has 3+ published products qualifies on the
+        spot instead of being left with a fresh 'in_progress' window.
         """
+        from .qualification import evaluate_qualification
+
         now = timezone.now()
         restart_pks = []
         reasons = []
@@ -511,6 +518,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
             else:
                 restart_pks.append(sub.pk)
 
+        qualified_now = 0
         if restart_pks:
             Subscription.objects.filter(pk__in=restart_pks).update(
                 status='qualifying',
@@ -520,11 +528,21 @@ class SubscriptionAdmin(admin.ModelAdmin):
                 trial_ends_at=None,
                 grace_ends_at=None,
             )
+            for sub in Subscription.objects.filter(
+                pk__in=restart_pks
+            ).select_related('vendor__user'):
+                if evaluate_qualification(sub, now=now):
+                    qualified_now += 1
 
         summary = (
             f'Restarted {len(restart_pks)} qualification window(s); '
             f'skipped {len(reasons)}'
         )
+        if qualified_now:
+            summary += (
+                f'; {qualified_now} qualified immediately '
+                f'(vendor already had 3+ published products)'
+            )
         if reasons:
             counts = {}
             for reason in reasons:

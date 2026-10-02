@@ -169,6 +169,46 @@ def store_setup_required(view_func):
     return wrapper
 
 
+def vendor_store_ready_required(view_func):
+    """
+    Decorator (Phase 6): authenticated + vendor profile + store setup done.
+
+    Unlike vendor_verified_required it never checks the subscription and
+    never redirects to the verification center.  A restricted vendor
+    (qualification failed / trial expired / paid expired) keeps full access
+    to its whole vendor area, including listing, editing, deleting and
+    viewing its own products.
+
+    Product CREATION is gated separately, inside views.product_create, by
+    vendor.is_available - that page renders the subscription prompt.
+
+    Usage:
+        @vendor_store_ready_required
+        def products_list(request):
+            ...
+    """
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            messages.warning(request, 'Please login to access this page.')
+            return redirect(f'{reverse("users:login")}?next={request.path}')
+
+        if not hasattr(request.user, 'vendorprofile'):
+            messages.error(request, 'You need to be a registered vendor.')
+            return redirect('/')
+
+        if not request.user.vendorprofile.store_setup_completed:
+            messages.info(
+                request,
+                'Please complete your store setup before accessing this feature.'
+            )
+            return redirect('vendors:store_setup')
+
+        return view_func(request, *args, **kwargs)
+
+    return wrapper
+
+
 # ==========================================
 # OWNERSHIP DECORATORS
 # ==========================================

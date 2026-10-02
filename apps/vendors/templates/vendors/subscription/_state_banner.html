@@ -1,0 +1,68 @@
+{# ============================================================ #}
+{# Subscription state banner (Phase 6)                          #}
+{#                                                              #}
+{# Reads `subscription_state` from context - built by           #}
+{# apps.vendors.subscription_state.describe_subscription_state. #}
+{# Colours come from `tone`; the copy and both CTAs come from   #}
+{# the module, so this file never writes its own wording.       #}
+{#                                                              #}
+{# Usage: {% include 'vendors/subscription/_state_banner.html' %}#}
+{#   hide_ctas=True  -> text only (product creation prompt)     #}
+{# ============================================================ #}
+{% if subscription_state %}
+{% with state=subscription_state %}
+{% if state.tone == 'success' %}
+<div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 sm:px-6" style="--banner:#059669">
+{% elif state.tone == 'warning' %}
+<div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 sm:px-6" style="--banner:#d97706">
+{% elif state.tone == 'danger' %}
+<div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800 sm:px-6" style="--banner:#dc2626">
+{% elif state.tone == 'info' %}
+<div class="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 sm:px-6" style="--banner:#2563eb">
+{% else %}
+<div class="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 sm:px-6" style="--banner:#4b5563">
+{% endif %}
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold">{{ state.title }}</p>
+            <p class="mt-1 text-xs leading-relaxed">{{ state.message }}</p>
+            <p class="mt-2 text-[11px] font-medium opacity-80">
+                Plan: {{ state.plan_name }} | Status: {{ state.status_label }}
+            </p>
+
+            {% if state.qualification %}
+            <div class="mt-2 max-w-sm">
+                <div class="flex items-center justify-between text-[11px] font-semibold">
+                    <span>{{ state.qualification.products_done }} of {{ state.qualification.required }} published products</span>
+                    {% if state.qualification.days_left %}
+                    <span>{{ state.qualification.days_left }} day(s) left</span>
+                    {% endif %}
+                </div>
+                {% widthratio state.qualification.products_done state.qualification.required 100 as progress %}
+                <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/70">
+                    <div class="h-1.5 rounded-full" style="width: {{ progress }}%; background-color: var(--banner)"></div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if not hide_ctas %}
+        <div class="flex shrink-0 flex-wrap items-center gap-2">
+            <a href="{% url state.primary_cta_url_name %}"
+               class="inline-flex items-center rounded-full px-4 py-2 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+               style="background-color: var(--banner)">
+                {{ state.primary_cta_label }}
+            </a>
+            {% if state.secondary_cta_label %}
+            <a href="{% url state.secondary_cta_url_name %}"
+               class="inline-flex items-center rounded-full border px-4 py-2 text-xs font-semibold transition-colors"
+               style="border-color: var(--banner); color: var(--banner)">
+                {{ state.secondary_cta_label }}
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endwith %}
+{% endif %}

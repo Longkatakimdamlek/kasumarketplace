@@ -33,11 +33,13 @@
             <!-- Verification Status Badge -->
             {% if not vendor.can_sell and not hide_verification_badge|default:False %}
             <a href="{% url 'vendors:verification_center' %}" 
-               class="hidden sm:flex items-center px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors">
-                <svg class="w-4 h-4 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+               class="hidden sm:flex items-center px-3 py-1.5 border rounded-lg transition-colors {% if subscription_state.is_restricted %}bg-red-50 border-red-200 hover:bg-red-100{% else %}bg-yellow-50 border-yellow-200 hover:bg-yellow-100{% endif %}">
+                <svg class="w-4 h-4 mr-2 {% if subscription_state.is_restricted %}text-red-600{% else %}text-yellow-600{% endif %}" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                 </svg>
-                <span class="text-xs font-semibold text-yellow-800">Complete Verification</span>
+                <span class="text-xs font-semibold {% if subscription_state.is_restricted %}text-red-800{% else %}text-yellow-800{% endif %}">
+                    {% if subscription_state.is_restricted %}Restricted{% else %}Complete Verification{% endif %}
+                </span>
             </a>
             {% endif %}
             

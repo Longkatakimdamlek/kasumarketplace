@@ -33,9 +33,12 @@ from .models import (
 
 from .decorators import (
     vendor_required, vendor_verified_required,
+    vendor_store_ready_required,
     vendor_owns_product,
     rate_limit_verification
 )
+
+from .subscription_state import describe_subscription_state
 
 from .services import dojah_service, notification_service, email_name
 from .services.utils import generate_reference, calculate_commission
@@ -297,7 +300,11 @@ def dashboard(request):
     """
     Main vendor dashboard with stats and overview
     """
-    vendor = request.user.vendorprofile
+    # One fetch, subscription preloaded: the state descriptor + the banner
+    # partial then run no extra vendor/subscription queries.
+    vendor = VendorProfile.objects.select_related('subscription').get(
+        pk=request.user.vendorprofile.pk
+    )
 
     # Safely get the vendor's store if it exists
     try:
@@ -337,6 +344,7 @@ def dashboard(request):
         'total_wishlists': total_wishlists,
         'avg_rating': round(float(avg_rating), 1),
         'subscription': subscription,
+        'subscription_state': describe_subscription_state(vendor),
         'greeting': _get_greeting(),
         'display_name': _get_display_name(vendor),
         'today': timezone.localdate(),
@@ -349,12 +357,9 @@ def dashboard(request):
         )[:5],
     }
 
-    # Show verification banner if not verified
-    if not vendor.can_sell:
-        messages.info(
-            request,
-            f'Complete verification to start selling. Progress: {vendor.completion_percentage}%'
-        )
+    # Phase 6: the old flash "Complete verification to start selling.
+    # Progress: N%" lived here and told restricted vendors to go verify;
+    # the dashboard banner (subscription_state) replaces it.
 
     context['hide_verification_badge'] = True
     return render(request, 'vendors/dashboard.html', context)
@@ -498,6 +503,7 @@ def verification_center(request):
         'current_step': vendor.current_step,
         'can_sell': vendor.can_sell,
         'hide_verification_badge': True,
+        'subscription_state': describe_subscription_state(vendor),
     }
 
     return render(request, 'vendors/verification/center.html', context)
@@ -636,7 +642,7 @@ def verification_success(request):
 # PRODUCT VIEWS
 # ==========================================
 
-@vendor_verified_required
+@vendor_store_ready_required
 def products_list(request):
     """List all vendor products with filters and stock status"""
     vendor = request.user.vendorprofile
@@ -692,12 +698,13 @@ def products_list(request):
         'stock_filter': stock_filter,
         'search_query': search,
         'hide_verification_badge': True,
+        'subscription_state': describe_subscription_state(vendor),
     }
 
     return render(request, 'vendors/products/list.html', context)
 
 
-@vendor_verified_required
+@vendor_store_ready_required
 def product_create(request):
     """Create new product with dynamic attributes and images"""
     vendor = request.user.vendorprofile
@@ -705,6 +712,21 @@ def product_create(request):
     if not hasattr(vendor, 'store'):
         messages.warning(request, 'Please complete store setup first')
         return redirect('vendors:store_setup')
+
+    # Phase 6: creating a product is the ONE vendor action the subscription
+    # still blocks.  Restricted vendors (qualification failed / trial expired
+    # / paid expired) get the subscription prompt here, before any form is
+    # built or processed, so a POST creates nothing.
+    if not vendor.is_available:
+        return render(
+            request,
+            'vendors/subscription/product_prompt.html',
+            {
+                'vendor': vendor,
+                'subscription_state': describe_subscription_state(vendor),
+                'hide_verification_badge': True,
+            },
+        )
 
     if request.method == 'POST':
         subcategory_id = request.POST.get('subcategory')
@@ -764,7 +786,7 @@ def product_create(request):
     return render(request, 'vendors/products/create.html', context)
 
 
-@vendor_verified_required
+@vendor_store_ready_required
 @vendor_owns_product
 def product_edit(request, slug):
     """Edit existing product"""
@@ -838,7 +860,7 @@ def product_edit(request, slug):
     return render(request, 'vendors/products/edit.html', context)
 
 
-@vendor_verified_required
+@vendor_store_ready_required
 @vendor_owns_product
 def product_delete(request, slug):
     """Delete product"""
@@ -859,7 +881,7 @@ def product_delete(request, slug):
     return render(request, 'vendors/products/delete_confirm.html', context)
 
 
-@vendor_verified_required
+@vendor_store_ready_required
 @vendor_owns_product
 def product_detail(request, slug):
     """View product details"""
@@ -1986,6 +2008,9 @@ def subscription_plans(request):
     context = {
         'vendor': vendor,
         'subscription': subscription,
+        # This page does NOT set hide_verification_badge, so the chip in
+        # base.html/sidebar needs the descriptor to read 'Restricted'.
+        'subscription_state': describe_subscription_state(vendor),
         'current_plan': current_plan,
         'current_status': current_status,
         'free_plan': free_plan,

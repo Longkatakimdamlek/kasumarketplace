@@ -53,9 +53,15 @@
             </svg>
             Verification
             {% if not vendor.can_sell and not hide_verification_badge|default:False %}
+            {% if subscription_state.is_restricted %}
+            <span class="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                Restricted
+            </span>
+            {% else %}
             <span class="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                 Pending
             </span>
+            {% endif %}
             {% endif %}
         </a>
         

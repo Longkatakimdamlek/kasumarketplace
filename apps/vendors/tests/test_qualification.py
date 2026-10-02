@@ -393,11 +393,14 @@ class QualificationFailureTests(QualificationFixture):
         self.assertEqual(response.status_code, 200)
         self.assertIn('Vendor Unavailable', response.content.decode('utf-8'))
 
-        # product creation is blocked by vendor_verified_required
+        # Phase 6: product creation is blocked by the subscription prompt,
+        # not by a redirect to the verification center (was vendor_verified_required).
         self.client.force_login(vendor.user)
-        blocked = self.client.get(reverse('vendors:product_create'))
-        self.assertEqual(blocked.status_code, 302)
-        self.assertEqual(blocked.url, reverse('vendors:verification_center'))
+        prompt = self.client.get(reverse('vendors:product_create'))
+        self.assertEqual(prompt.status_code, 200)
+        body = prompt.content.decode('utf-8')
+        self.assertIn('Subscription needed to add products', body)
+        self.assertIn(reverse('vendors:subscription_plans'), body)
 
     def test_command_failure_path_matches_the_hook(self):
         """(8) command path: same expired/failed end state."""

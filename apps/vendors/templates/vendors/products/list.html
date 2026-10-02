@@ -6,6 +6,15 @@
 {% block content %}
 
 {# ============================================================ #}
+{# Subscription / qualification state (Phase 6)                 #}
+{# Shown when the vendor is restricted, close to running out   #}
+{# (warning: grace / trial ending), or still qualifying.       #}
+{# ============================================================ #}
+{% if subscription_state.is_restricted or subscription_state.tone == 'warning' or 'qualifying' in subscription_state.key %}
+{% include 'vendors/subscription/_state_banner.html' %}
+{% endif %}
+
+{# ============================================================ #}
 {# Page Header                                                   #}
 {# ============================================================ #}
 <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-4 sm:mb-5">

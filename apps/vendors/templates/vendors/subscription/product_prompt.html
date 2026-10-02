@@ -1,0 +1,38 @@
+{% extends 'vendors/base.html' %}
+
+{% block title %}Subscription needed to add products - KasuMarketplace{% endblock %}
+{% block page_title %}Add Product{% endblock %}
+
+{% block content %}
+
+<div class="mx-auto mt-6 w-full max-w-lg sm:mt-12">
+
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div class="border-b border-gray-100 px-5 py-4">
+            <h1 class="text-base font-bold text-gray-900 sm:text-lg">
+                Subscription needed to add products
+            </h1>
+            <p class="mt-0.5 text-xs text-gray-500">
+                Current plan: {{ subscription_state.plan_name }} ({{ subscription_state.status_label }})
+            </p>
+        </div>
+
+        <div class="px-5 py-4">
+            {% include 'vendors/subscription/_state_banner.html' with hide_ctas=True %}
+
+            <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <a href="{% url 'vendors:subscription_plans' %}"
+                   class="inline-flex flex-1 items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:opacity-90">
+                    Subscribe
+                </a>
+                <a href="{% url 'vendors:products_list' %}"
+                   class="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
