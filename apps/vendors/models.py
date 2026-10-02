@@ -1648,3 +1648,47 @@ class WebhookEvent(models.Model):
 
     def __str__(self):
         return f"{self.event_type} ({self.event_id})"
+
+
+class SubscriptionNotificationLog(models.Model):
+    """
+    Dedupe ledger for subscription / qualification notifications (Phase 7).
+
+    One row per (subscription, kind, cycle_key) that has already been
+    notified.  Both the synchronous qualifying -> trial hook and the daily
+    check_subscription_status cron claim the cycle with get_or_create()
+    BEFORE the Notification row is written, so two overlapping runs can
+    never double-send the same kind for the same cycle.
+
+    cycle_key is normally an ISO date (trial_ends_at / first_product_at /
+    the paid expiry date), which is what makes a fresh cycle send again.
+    """
+
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.CASCADE,
+        related_name='notification_logs',
+    )
+    kind = models.CharField(
+        max_length=40,
+        help_text="Notification kind, e.g. trial_ending_soon.",
+    )
+    cycle_key = models.CharField(
+        max_length=40,
+        help_text="Cycle identifier, usually an ISO date (YYYY-MM-DD).",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Subscription Notification Log"
+        verbose_name_plural = "Subscription Notification Logs"
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['subscription', 'kind', 'cycle_key'],
+                name='uniq_subscription_notification_cycle',
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.kind} @ {self.cycle_key}"

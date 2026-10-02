@@ -19,10 +19,13 @@ This module is import-safe next to apps.vendors.models: it only pulls the
 model layer in lazily, inside the functions that need it.
 """
 
+import logging
 from datetime import timedelta
 
 from django.db import transaction
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------
 # Constants - single source of truth (Phase 6 reads these for its countdown)
@@ -93,6 +96,21 @@ def sync_qualification(sub, now=None):
     return False
 
 
+def _notify_trial_unlocked(sub):
+    """
+    Phase 7: fire kind 1 ('trial_unlocked') at the qualifying -> trial
+    transition.  The service claims (subscription, kind, trial_ends_at date)
+    first, so a restarted window that lands on the same cycle never sends
+    twice, and any failure is logged without breaking qualification.
+    """
+    try:
+        from .services.subscription_notifications import notify_trial_unlocked
+    except Exception:  # pragma: no cover - import safety
+        logger.exception('subscription notification service unavailable')
+        return 'error'
+    return notify_trial_unlocked(sub)
+
+
 def evaluate_qualification(sub, now=None):
     """
     Shared evaluation of a status='qualifying' row (Phase 6 refactor).
@@ -138,6 +156,7 @@ def evaluate_qualification(sub, now=None):
             'status', 'trial_ends_at', 'qualification_status',
             'qualified_at', 'updated_at',
         ])
+        _notify_trial_unlocked(sub)
         return True
 
     return sync_qualification(sub, now=now)

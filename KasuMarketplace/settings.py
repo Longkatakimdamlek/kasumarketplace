@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import sys
 import dj_database_url
 import cloudinary
 import cloudinary.uploader
@@ -203,6 +204,12 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# Test runs only: MD5PasswordHasher skips the slow key-derivation hashers and
+# cuts a test suite's runtime substantially. It is never used outside `manage.py test`
+# because 'test' only appears in sys.argv for that command.
+if 'test' in sys.argv:
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
 
 
 # Internationalization
