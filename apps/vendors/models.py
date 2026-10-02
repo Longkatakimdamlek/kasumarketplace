@@ -92,6 +92,15 @@ class VendorProfile(models.Model):
         ('rejected', 'Rejected'),
     ]
 
+    # Phase 8: how the persistent V-Batch badge was earned.  Recorded once,
+    # on the first award only; later awards never overwrite it.
+    VBATCH_SOURCE_CHOICES = [
+        ('bvn', 'BVN verification'),
+        ('premium', 'Premium plan'),
+        ('admin', 'Admin'),
+        ('legacy', 'Legacy backfill'),
+    ]
+
     GENDER_CHOICES = [
         ('male', 'Male'),
         ('female', 'Female'),
@@ -208,6 +217,25 @@ class VendorProfile(models.Model):
         max_length=20,
         choices=STUDENT_STATUS_CHOICES,
         default='not_applicable'
+    )
+
+    # ==========================================
+    # V-Batch (Phase 8) - persistent buyer-facing badge
+    # ==========================================
+    has_vbatch = models.BooleanField(
+        default=False,
+        help_text=(
+            "Persistent V-Batch badge. Awarded once by code and never "
+            "removed by code - only a manual admin edit changes it."
+        ),
+    )
+    vbatch_earned_at = models.DateTimeField(null=True, blank=True)
+    vbatch_source = models.CharField(
+        max_length=10,
+        choices=VBATCH_SOURCE_CHOICES,
+        blank=True,
+        default='',
+        help_text="How the V-Batch was earned (bvn, premium, admin, legacy).",
     )
 
     # ==========================================

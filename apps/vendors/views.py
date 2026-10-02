@@ -38,7 +38,7 @@ from .decorators import (
     rate_limit_verification
 )
 
-from .subscription_state import describe_subscription_state
+from .subscription_state import describe_subscription_state, DATE_FORMAT
 
 from .services import dojah_service, notification_service, email_name
 from .services.utils import generate_reference, calculate_commission
@@ -246,6 +246,22 @@ def _process_bvn_with_selfie(request, vendor, bvn_number, selfie_data_uri):
             notification_service.send_bvn_verified(vendor)
         except Exception:
             logger.warning('Failed to send BVN verified notification')
+
+        # Phase 8: a successful BVN verification earns the persistent
+        # V-Batch, but only while the admin suspension toggle is not engaged
+        # (verification_status != 'suspended').  When it is engaged the BVN
+        # flow behaves exactly as before and no badge is awarded.  Turning
+        # the toggle off again later never removes an earned V-Batch.
+        try:
+            from .vbatch import _bvn_toggle_is_on, award_vbatch
+
+            if _bvn_toggle_is_on(vendor):
+                award_vbatch(vendor, 'bvn')
+        except Exception:
+            logger.exception(
+                'V-Batch award failed after BVN verification for vendor %s',
+                vendor.pk,
+            )
 
     if vendor.bank_status == 'failed':
         messages.error(request, outcome_message)
@@ -504,6 +520,12 @@ def verification_center(request):
         'can_sell': vendor.can_sell,
         'hide_verification_badge': True,
         'subscription_state': describe_subscription_state(vendor),
+        # Phase 8: read-only V-Batch status line (DATE_FORMAT is the one the
+        # subscription banner uses, so dates read identically everywhere).
+        'vbatch_earned_on': (
+            vendor.vbatch_earned_at.strftime(DATE_FORMAT)
+            if vendor.vbatch_earned_at else ''
+        ),
     }
 
     return render(request, 'vendors/verification/center.html', context)

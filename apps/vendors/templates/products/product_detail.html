@@ -492,7 +492,7 @@
                                     {{ store.store_name }}
                                 </span>
 
-                                {% if store.vendor.is_verified %}
+                                {% if store.vendor.has_vbatch %}
 
                                 <svg
                                     class="size-4 shrink-0 text-brand"
@@ -912,7 +912,7 @@
                                     {{ store.store_name }}
                                 </p>
 
-                                {% if store.vendor.is_verified %}
+                                {% if store.vendor.has_vbatch %}
 
                                 <svg
                                     class="size-4 shrink-0 text-brand"
@@ -1022,7 +1022,7 @@
                     Contact Vendor
                 </h2>
 
-                {% if store.vendor.is_verified %}
+                {% if store.vendor.has_vbatch %}
                 <span
                     class="inline-flex items-center gap-1
                            rounded-full bg-emerald-50
@@ -1030,7 +1030,7 @@
                            font-semibold text-emerald-700"
                 >
                     <span class="size-1.5 rounded-full bg-emerald-500"></span>
-                    Verified
+                    V-Batch
                 </span>
                 {% endif %}
 
@@ -1715,7 +1715,7 @@
                                 {{ store.store_name }}
                             </h3>
 
-                            {% if store.vendor.is_verified %}
+                            {% if store.vendor.has_vbatch %}
 
                             <svg
                                 class="size-4 shrink-0 text-brand"

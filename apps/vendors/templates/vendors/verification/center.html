@@ -25,6 +25,17 @@
         </div>
     </div>
 
+    <!-- Phase 8: V-Batch status - read-only, never a control here -->
+    <div class="mb-5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+        <p class="text-sm font-medium text-gray-800">
+            {% if vendor.has_vbatch %}
+            V-Batch: Earned on {{ vbatch_earned_on }} via {{ vendor.get_vbatch_source_display }}
+            {% else %}
+            V-Batch: Not earned
+            {% endif %}
+        </p>
+    </div>
+
     <!-- Phase 6: a restricted vendor reaches this page from old links and
          from the chip, but its blocking problem is the subscription, not
          verification.  Neutral note built from the shared descriptor. -->

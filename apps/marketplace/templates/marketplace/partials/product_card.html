@@ -116,14 +116,14 @@
                 {{ item.store.store_name }}
             </p>
 
-            {% if item.store.vendor.is_verified %}
+            {% if item.store.vendor.has_vbatch %}
 
-                <!-- V-Badge -->
+                <!-- V-Batch -->
                 <svg
                     class="size-3.5 shrink-0 text-primary"
                     fill="currentColor"
                     viewBox="0 0 20 20"
-                    aria-label="Verified vendor"
+                    aria-label="V-Batch"
                 >
                     <path
                         fill-rule="evenodd"

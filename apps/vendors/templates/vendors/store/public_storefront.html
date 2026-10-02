@@ -101,9 +101,9 @@
                     <div class="flex size-full items-center justify-center bg-brand/10 text-3xl font-bold text-brand">{{ store.store_name|slice:":1" }}</div>
                     {% endif %}
                 </div>
-                {% if store.vendor.is_verified %}
+                {% if store.vendor.has_vbatch %}
                 <div class="absolute -bottom-0.5 -right-0.5 rounded-full bg-white p-0.5 shadow-sm">
-                    {% include 'vendors/components/verification_badge.html' with status="completed" size="sm" show_icon=True icon_only=True %}
+                    {% include 'vendors/components/verification_badge.html' with status="completed" label="V-Batch" size="sm" show_icon=True icon_only=True %}
                 </div>
                 {% endif %}
             </div>
@@ -199,9 +199,9 @@
                         <div class="flex size-full items-center justify-center bg-brand/10 text-2xl font-bold text-brand">{{ store.store_name|slice:":1" }}</div>
                         {% endif %}
                     </div>
-                    {% if store.vendor.is_verified %}
+                    {% if store.vendor.has_vbatch %}
                     <div class="absolute bottom-0 right-0 rounded-full bg-white p-0.5 shadow-sm">
-                        {% include 'vendors/components/verification_badge.html' with status="completed" size="sm" show_icon=True icon_only=True %}
+                        {% include 'vendors/components/verification_badge.html' with status="completed" label="V-Batch" size="sm" show_icon=True icon_only=True %}
                     </div>
                     {% endif %}
                 </div>

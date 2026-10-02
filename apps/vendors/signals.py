@@ -160,6 +160,51 @@ def send_verification_notifications(sender, instance, created, **kwargs):
 
 
 # ==========================================
+# V-BATCH SIGNAL (Phase 8)
+# ==========================================
+
+@receiver(post_save, sender=Subscription)
+def award_vbatch_on_premium_active(sender, instance, **kwargs):
+    """
+    Phase 8: a Premium subscription becoming active earns the persistent
+    V-Batch badge.
+
+    This is the single Premium trigger: every path that can write
+    plan='premium' + status='active' goes through Subscription.save()
+    (activate_subscription, upgrade_subscription, the Paystack webhook and
+    callback, and a manual admin edit).  Paths that bypass save()
+    (QuerySet.update in the backfill / expire / restart actions) are
+    structurally unable to produce premium + active.
+
+    award_vbatch() is a no-op when the badge is already earned, so repeated
+    saves of an already-earned premium row cost one conditional UPDATE.
+    """
+    if instance.plan != 'premium' or instance.status != 'active':
+        return
+
+    try:
+        from .vbatch import award_vbatch
+
+        vendor = VendorProfile.objects.filter(
+            pk=instance.vendor_id
+        ).select_related('user').first()
+        if vendor is None:
+            return
+
+        if award_vbatch(vendor, 'premium'):
+            logger.info(
+                "V-Batch awarded on premium activation for vendor %s "
+                "(subscription %s)",
+                instance.vendor_id, instance.pk,
+            )
+    except Exception as e:
+        logger.error(
+            f"V-Batch award failed for subscription {instance.pk}: {str(e)}",
+            exc_info=True,
+        )
+
+
+# ==========================================
 # STORE SIGNALS
 # ==========================================
 

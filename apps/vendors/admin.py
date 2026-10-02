@@ -132,12 +132,13 @@ class VendorProfileAdmin(admin.ModelAdmin):
         'vendor_id_short', 'full_name', 'user_email',
         'verification_badge', 'bank_badge', 'selfie_confidence_badge',
         'risk_flags_badge',
-        'can_sell_badge', 'created_at'
+        'can_sell_badge', 'has_vbatch', 'created_at'
     ]
     list_filter = [
         'verification_status', 'bank_status',
         'created_at',
         'has_duplicate_bvn', 'is_underage',
+        'has_vbatch',
     ]
     search_fields = [
         'full_name', 'user__email', 'phone',
@@ -186,6 +187,13 @@ class VendorProfileAdmin(admin.ModelAdmin):
             'fields': ('risk_flags_summary', 'duplicate_bvn_vendor_id'),
             'classes': ('collapse',),
             'description': '⚠️ Automated security alerts — review before approving vendor.'
+        }),
+        ('⭐ V-Batch', {
+            'fields': ('has_vbatch', 'vbatch_earned_at', 'vbatch_source'),
+            'description': (
+                'Phase 8: persistent buyer-facing badge. Code only ever '
+                'sets it - clearing it here is the only way to remove it.'
+            ),
         }),
         ('🔒 Security & Tracking', {
             'fields': ('registration_ip',),
