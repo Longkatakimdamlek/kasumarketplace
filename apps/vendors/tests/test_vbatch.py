@@ -2,6 +2,10 @@
 Phase 8 - V-Batch (persistent badge) + BVN admin toggle
 =======================================================
 
+Phase 8B rewrote the toggle half: it is no longer the per-vendor
+verification_status == 'suspended' proxy but the platform-wide
+PlatformSettings.bvn_verification_enabled singleton (ships OFF).
+
 Covers:
   - award_vbatch(): first award, idempotence, source never overwritten,
     race safety (conditional UPDATE loses when the row changed underneath)
@@ -9,8 +13,12 @@ Covers:
     the fact that Basic / Free never award
   - persistence: downgrade / cancel / expiry / restriction / suspension never
     clear the flag, plus a repo-wide grep that no production code clears it
-  - BVN trigger and the admin suspension toggle (ON awards, OFF does not,
-    OFF after an award keeps the badge)
+  - BVN trigger and the platform BVN toggle (ON awards, OFF is refused
+    before Dojah, OFF after an award keeps the badge and the verification)
+  - the toggle itself: migration default OFF, singleton cannot be duplicated
+    or deleted, superuser-only in the admin, backfill rule 2 condition and
+    comparison block, independence from selling / visibility / contact, and
+    unchanged public-page query counts
   - notification: one in-app + one email on the first award, nothing on
     repeat, nothing from the backfill
   - backfill_vbatch: dry-run writes nothing, --apply awards with the right
@@ -20,7 +28,9 @@ Covers:
   - independence: V-Batch never changes restricted/selling state
   - public pages issue the same number of queries with and without the flag
 
-No existing test is modified.
+Existing tests are untouched except where Phase 8B made them wrong on
+purpose: the shared fixture now switches the platform toggle ON, and the
+migration-shape assertion admits 0037.
 """
 
 import re
@@ -33,8 +43,9 @@ from django.conf import settings
 from django.contrib import admin as django_admin
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core import mail
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
-from django.db import connection
+from django.db import IntegrityError, connection, transaction
 from django.test import RequestFactory, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
@@ -45,10 +56,12 @@ from apps.users.models import CustomUser
 from apps.vendors.models import (
     MainCategory,
     Notification,
+    PlatformSettings,
     Product,
     Store,
     SubCategory,
     Subscription,
+    VerificationAttempt,
     VendorProfile,
 )
 from apps.vendors.services.subscription_service import (
@@ -83,6 +96,13 @@ VBATCH_MESSAGE = (
 class VbatchFixture(TestCase):
 
     def setUp(self):
+        # Phase 8B: the platform-wide BVN verification toggle ships OFF, but
+        # the Phase 8 tests in this file use
+        # award_vbatch(vendor, 'bvn') as a badge fixture, so the shared
+        # fixture switches the platform toggle ON here.  Tests that are about
+        # the toggle itself flip it with self.set_bvn_toggle(False).
+        self.set_bvn_toggle(True)
+
         self.category = MainCategory.objects.create(
             name='Electronics', slug='vb-electronics',
         )
@@ -181,6 +201,47 @@ class VbatchFixture(TestCase):
             verification_status=status,
         )
         return VendorProfile.objects.get(pk=vendor.pk)
+
+    @staticmethod
+    def set_bvn_toggle(enabled):
+        """Phase 8B: flip the platform-wide BVN verification singleton."""
+        PlatformSettings.get_solo()
+        PlatformSettings.objects.filter(
+            pk=PlatformSettings.SINGLETON_PK,
+        ).update(bvn_verification_enabled=enabled)
+        return PlatformSettings.get_solo()
+
+    def run_bvn_flow(self, vendor):
+        """
+        Drive the real BVN+selfie executor with a mocked Dojah call.
+
+        Returns (response, dojah_mock) so a caller can prove whether Dojah
+        was reached at all.
+        """
+        from apps.vendors import views as vendor_views
+
+        request = RequestFactory().post('/vendors/verification/bvn/selfie/')
+        request.session = {}
+        setattr(request, '_messages', FallbackStorage(request))
+
+        payload = {
+            'full_name': 'VB Test Vendor',
+            'gender': 'male',
+            'phone': '08000000000',
+            'selfie_match': True,
+            'selfie_confidence': 97.5,
+            'selfie_image_url': '',
+            'dateofbirth': '1990-01-01',
+        }
+        with patch.object(
+            vendor_views.dojah_service, 'verify_bvn_with_selfie',
+            return_value=(True, payload),
+        ) as dojah:
+            response = vendor_views._process_bvn_with_selfie(
+                request, vendor, '12345678901',
+                'data:image/jpeg;base64,AAAA',
+            )
+        return response, dojah
 
     @staticmethod
     def run_backfill(*args):
@@ -416,18 +477,280 @@ class PremiumAwardTests(VbatchFixture):
 
 
 # ==========================================================================
-# 3. BVN trigger + the existing admin suspension toggle
+# 3. BVN trigger + the platform-wide BVN verification toggle (Phase 8B)
 # ==========================================================================
 
 class BvnToggleTests(VbatchFixture):
+    """
+    Phase 8B rewrite of the toggle tests.
 
-    def run_bvn_flow(self, vendor):
-        """Drive the real BVN+selfie executor with a mocked Dojah call."""
+    They used to read the per-vendor verification_status == 'suspended'
+    proxy, which was the wrong signal: suspending a vendor has nothing to do
+    with whether BVN verification is enabled on the platform.  The toggle is
+    now PlatformSettings.bvn_verification_enabled - one platform-wide row
+    that ships OFF and is edited by a superuser in the admin.
+    """
+
+    def test_toggle_on_bvn_success_awards(self):
+        self.set_bvn_toggle(True)
+        vendor, _store, _product = self.make_vendor('bvn-1')
+
+        response, dojah = self.run_bvn_flow(vendor)
+
+        dojah.assert_called_once()
+        self.assertEqual(response.status_code, 302)
+        vendor = self.reload(vendor)
+        self.assertEqual(vendor.bank_status, 'verified')
+        self.assertTrue(vendor.has_vbatch)
+        self.assertEqual(vendor.vbatch_source, 'bvn')
+
+    def test_toggle_off_bvn_success_does_not_award(self):
+        self.set_bvn_toggle(False)
+        vendor, _store, _product = self.make_vendor('bvn-2')
+        before = (vendor.bank_status, vendor.verification_status)
+
+        response, dojah = self.run_bvn_flow(vendor)
+
+        # refused before Dojah: no call, no write, no attempt, no badge
+        dojah.assert_not_called()
+        self.assertEqual(response.status_code, 302)
+        vendor = self.reload(vendor)
+        self.assertEqual(
+            (vendor.bank_status, vendor.verification_status), before,
+        )
+        self.assertFalse(vendor.has_vbatch)
+        self.assertEqual(vendor.vbatch_source, '')
+        self.assertFalse(
+            VerificationAttempt.objects.filter(vendor=vendor).exists()
+        )
+
+    def test_turning_the_toggle_off_after_an_award_keeps_the_badge(self):
+        self.set_bvn_toggle(True)
+        vendor, _store, _product = self.make_vendor('bvn-3')
+
+        self.run_bvn_flow(vendor)
+        self.assertTrue(self.reload(vendor).has_vbatch)
+
+        self.set_bvn_toggle(False)              # toggle switched off later
+        vendor = self.reload(vendor)
+        self.assertTrue(vendor.has_vbatch)
+        self.assertEqual(vendor.vbatch_source, 'bvn')
+        self.assertEqual(vendor.bank_status, 'verified')
+
+    def test_toggle_reader_semantics(self):
+        from apps.vendors.vbatch import _bvn_toggle_is_on
+
+        vendor, _store, _product = self.make_vendor('bvn-4')
+
+        self.set_bvn_toggle(True)
+        self.assertTrue(_bvn_toggle_is_on())            # ON  = singleton True
+        self.set_bvn_toggle(False)
+        self.assertFalse(_bvn_toggle_is_on())           # OFF = singleton False
+
+        # the toggle is platform-wide: suspending a vendor changes nothing
+        self.set_bvn_toggle(True)
+        self.suspend(vendor)
+        self.assertTrue(_bvn_toggle_is_on())
+
+    def test_awarding_when_the_toggle_is_off_is_a_no_op_even_if_called(self):
+        vendor, _store, _product = self.make_vendor('bvn-5')
+        self.set_bvn_toggle(False)
+
+        self.assertFalse(award_vbatch(vendor, 'bvn'))
+        self.assertFalse(self.reload(vendor).has_vbatch)
+
+        # the gate only guards the 'bvn' source - the Premium path is
+        # untouched by the toggle
+        self.assertTrue(award_vbatch(vendor, 'premium'))
+        self.assertTrue(self.reload(vendor).has_vbatch)
+
+
+# ==========================================================================
+# 3b. Phase 8B - the platform-wide BVN verification toggle
+# ==========================================================================
+
+class PlatformToggleTests(VbatchFixture):
+    """
+    The real toggle: PlatformSettings.bvn_verification_enabled.
+
+    One platform-wide singleton row that ships OFF, is superuser-only in the
+    admin, refuses both a duplicate row and deletion, and gates ONLY BVN
+    verification - never selling, visibility, contact, an earned V-Batch or
+    a completed verification.
+    """
+
+    BVN_UNAVAILABLE = 'BVN verification is currently unavailable.'
+
+    # ------------------------------------------------------------------
+    # storage + admin
+    # ------------------------------------------------------------------
+
+    def test_default_is_off_after_migration(self):
+        from importlib import import_module
+
+        from django.apps import apps as django_apps
+
+        migration = import_module(
+            'apps.vendors.migrations.0037_platformsettings'
+        )
+
+        self.assertIs(
+            PlatformSettings._meta.get_field(
+                'bvn_verification_enabled'
+            ).default,
+            False,
+        )
+
+        # re-run the data migration against an empty table: it must seed
+        # exactly one row and that row must be switched off
+        PlatformSettings.objects.all().delete()
+        migration.create_default_settings(django_apps, None)
+        self.assertEqual(PlatformSettings.objects.count(), 1)
+        self.assertFalse(
+            PlatformSettings.get_solo().bvn_verification_enabled
+        )
+
+    def test_singleton_cannot_be_duplicated_or_deleted(self):
+        PlatformSettings.get_solo()
+        self.assertEqual(PlatformSettings.objects.count(), 1)
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                PlatformSettings.objects.create(
+                    bvn_verification_enabled=True,
+                )
+        self.assertEqual(PlatformSettings.objects.count(), 1)
+
+        with self.assertRaises(ValidationError):
+            PlatformSettings.get_solo().delete()
+        self.assertEqual(PlatformSettings.objects.count(), 1)
+
+        # saving any other instance re-points at pk=1 instead of adding a row
+        PlatformSettings(pk=99, bvn_verification_enabled=True).save()
+        self.assertEqual(PlatformSettings.objects.count(), 1)
+        self.assertEqual(PlatformSettings.get_solo().pk, 1)
+
+    def test_only_superusers_can_edit_it_in_admin(self):
+        PlatformSettings.get_solo()
+        change_url = reverse(
+            'admin:vendors_platformsettings_change', args=[1],
+        )
+        changelist_url = reverse(
+            'admin:vendors_platformsettings_changelist',
+        )
+
+        staff = CustomUser.objects.create_user(
+            email='settings-staff@example.com',
+            password='password123',
+            username='settings_staff',
+            role='vendor',
+        )
+        staff.is_staff = True
+        staff.save(update_fields=['is_staff'])
+
+        self.client.force_login(staff)
+        self.assertEqual(self.client.get(changelist_url).status_code, 403)
+        self.assertEqual(self.client.get(change_url).status_code, 403)
+
+        superuser = CustomUser.objects.create_superuser(
+            email='settings-admin@example.com',
+            password='password123',
+            username='settings_admin',
+        )
+        self.client.force_login(superuser)
+        response = self.client.get(change_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'bvn_verification_enabled')
+
+        model_admin = django_admin.site._registry[PlatformSettings]
+        request = RequestFactory().get('/')
+        request.user = superuser
+        self.assertFalse(model_admin.has_add_permission(request))
+        self.assertFalse(model_admin.has_delete_permission(request))
+
+    # ------------------------------------------------------------------
+    # the BVN flow while the toggle is OFF
+    # ------------------------------------------------------------------
+
+    def test_center_page_shows_the_exact_message_and_no_bvn_form(self):
+        self.set_bvn_toggle(False)
+        vendor, _store, _product = self.make_vendor('off-center')
+        self.client.force_login(vendor.user)
+
+        body = self.content_of(
+            self.client.get(reverse('vendors:verification_center'))
+        )
+        self.assertIn(self.BVN_UNAVAILABLE, body)
+        # the step keeps its heading but loses the link to the BVN form
+        self.assertIn('Verify Your Identity', body)
+        self.assertNotIn(reverse('vendors:bvn_verification'), body)
+
+        # with the toggle ON the same page links to it and says nothing
+        self.set_bvn_toggle(True)
+        body = self.content_of(
+            self.client.get(reverse('vendors:verification_center'))
+        )
+        self.assertIn(reverse('vendors:bvn_verification'), body)
+        self.assertNotIn(self.BVN_UNAVAILABLE, body)
+
+    def test_bvn_endpoints_are_rejected_with_zero_dojah_calls(self):
+        self.set_bvn_toggle(False)
+        vendor, _store, _product = self.make_vendor('off-submit')
+        self.client.force_login(vendor.user)
+        before = (
+            vendor.bank_status,
+            vendor.bvn_consent_given,
+            vendor.verification_status,
+        )
+
         from apps.vendors import views as vendor_views
 
-        request = RequestFactory().post('/vendors/verification/bvn/selfie/')
-        request.session = {}
-        setattr(request, '_messages', FallbackStorage(request))
+        with patch.object(
+            vendor_views.dojah_service, 'verify_bvn_with_selfie',
+        ) as dojah:
+            responses = [
+                self.client.get(reverse('vendors:bvn_verification'),
+                                follow=True),
+                self.client.post(
+                    reverse('vendors:bvn_verification'),
+                    {'bvn_number': '12345678901', 'consent': 'on'},
+                    follow=True,
+                ),
+                self.client.post(
+                    reverse('vendors:bvn_selfie_capture'),
+                    {'selfie_image': 'data:image/jpeg;base64,' + 'A' * 2000},
+                    follow=True,
+                ),
+            ]
+
+        dojah.assert_not_called()
+
+        for response in responses:
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.request['PATH_INFO'],
+                reverse('vendors:verification_center'),
+            )
+            rendered = [str(m) for m in response.context['messages']]
+            self.assertIn(self.BVN_UNAVAILABLE, rendered)
+
+        vendor = self.reload(vendor)
+        self.assertEqual(
+            (vendor.bank_status, vendor.bvn_consent_given,
+             vendor.verification_status),
+            before,
+        )
+        self.assertFalse(vendor.has_vbatch)
+        self.assertFalse(
+            VerificationAttempt.objects.filter(vendor=vendor).exists()
+        )
+
+    def test_toggle_on_runs_the_whole_flow_and_awards(self):
+        self.set_bvn_toggle(True)
+        vendor, _store, _product = self.make_vendor('on-flow')
+        self.client.force_login(vendor.user)
+
+        from apps.vendors import views as vendor_views
 
         payload = {
             'full_name': 'VB Test Vendor',
@@ -441,58 +764,191 @@ class BvnToggleTests(VbatchFixture):
         with patch.object(
             vendor_views.dojah_service, 'verify_bvn_with_selfie',
             return_value=(True, payload),
-        ):
-            vendor_views._process_bvn_with_selfie(
-                request, vendor, '12345678901',
-                'data:image/jpeg;base64,AAAA',
+        ) as dojah:
+            entry = self.client.post(
+                reverse('vendors:bvn_verification'),
+                {'bvn_number': '12345678901', 'consent': 'on'},
+            )
+            selfie = self.client.post(
+                reverse('vendors:bvn_selfie_capture'),
+                {'selfie_image': 'data:image/jpeg;base64,' + 'A' * 2000},
             )
 
-    def test_toggle_on_bvn_success_awards(self):
-        vendor, _store, _product = self.make_vendor('bvn-1')
-        self.assertEqual(vendor.verification_status, 'pending')  # toggle ON
-
-        self.run_bvn_flow(vendor)
+        self.assertEqual(entry.status_code, 302)
+        self.assertEqual(selfie.status_code, 302)
+        dojah.assert_called_once()
 
         vendor = self.reload(vendor)
         self.assertEqual(vendor.bank_status, 'verified')
         self.assertTrue(vendor.has_vbatch)
         self.assertEqual(vendor.vbatch_source, 'bvn')
+        self.assertTrue(
+            VerificationAttempt.objects.filter(
+                vendor=vendor, status='success',
+            ).exists()
+        )
 
-    def test_toggle_off_bvn_success_does_not_award(self):
-        vendor, _store, _product = self.make_vendor('bvn-2')
-        vendor = self.suspend(vendor)          # toggle OFF
-        self.assertEqual(vendor.verification_status, 'suspended')
-
-        self.run_bvn_flow(vendor)
-
-        vendor = self.reload(vendor)
-        self.assertEqual(vendor.bank_status, 'verified')   # flow unchanged
-        self.assertFalse(vendor.has_vbatch)
-        self.assertEqual(vendor.vbatch_source, '')
-
-    def test_turning_the_toggle_off_after_an_award_keeps_the_badge(self):
-        vendor, _store, _product = self.make_vendor('bvn-3')
-
+    def test_turning_the_toggle_off_keeps_the_verified_state_and_badge(self):
+        self.set_bvn_toggle(True)
+        vendor, _store, _product = self.make_vendor('keep-1')
         self.run_bvn_flow(vendor)
         self.assertTrue(self.reload(vendor).has_vbatch)
 
-        self.suspend(vendor)                  # toggle switched off later
-        self.assertTrue(self.reload(vendor).has_vbatch)
-        self.assertEqual(self.reload(vendor).vbatch_source, 'bvn')
-
-    def test_toggle_reader_semantics(self):
-        from apps.vendors.vbatch import _bvn_toggle_is_on
-
-        vendor, _store, _product = self.make_vendor('bvn-4')
-        self.assertTrue(_bvn_toggle_is_on(vendor))           # ON  = not suspended
-        self.suspend(vendor)
+        self.set_bvn_toggle(False)
         vendor = self.reload(vendor)
-        self.assertFalse(_bvn_toggle_is_on(vendor))          # OFF = suspended
+        self.assertEqual(vendor.bank_status, 'verified')
+        self.assertTrue(vendor.has_vbatch)
+        self.assertEqual(vendor.vbatch_source, 'bvn')
 
-    def test_awarding_when_the_toggle_is_off_is_a_no_op_even_if_called(self):
-        vendor, _store, _product = self.make_vendor('bvn-5')
-        vendor = self.suspend(vendor)
-        self.assertFalse(award_vbatch(vendor, 'bvn'))
+        # an already verified vendor is never told the feature is off
+        self.client.force_login(vendor.user)
+        response = self.client.get(
+            reverse('vendors:bvn_verification'), follow=True,
+        )
+        self.assertEqual(
+            response.request['PATH_INFO'],
+            reverse('vendors:verification_center'),
+        )
+        rendered = [str(m) for m in response.context['messages']]
+        self.assertIn('Identity already verified', rendered)
+        self.assertNotIn(self.BVN_UNAVAILABLE, rendered)
+        self.assertNotIn(
+            self.BVN_UNAVAILABLE, self.content_of(response),
+        )
+
+    def test_vendor_suspension_does_not_affect_awarding_either_way(self):
+        # toggle ON, vendor admin-suspended -> still awarded
+        self.set_bvn_toggle(True)
+        suspended, _store, _product = self.make_vendor('sus-on')
+        self.suspend(suspended)
+        self.assertTrue(award_vbatch(suspended, 'bvn'))
+
+        # toggle OFF, vendor never suspended -> still refused
+        self.set_bvn_toggle(False)
+        healthy, _store, _product = self.make_vendor('sus-off')
+        self.assertFalse(award_vbatch(healthy, 'bvn'))
+        self.assertFalse(self.reload(healthy).has_vbatch)
+
+    # ------------------------------------------------------------------
+    # backfill
+    # ------------------------------------------------------------------
+
+    def test_backfill_rule_two_keys_on_the_verified_bvn_condition(self):
+        verified, _store, _product = self.make_vendor('rule-verified')
+        VendorProfile.objects.filter(pk=verified.pk).update(
+            bank_status='verified', bvn_verified_at=NOW,
+        )
+        approved, _store, _product = self.make_vendor(
+            'rule-approved', verification_status='approved',
+        )
+
+        output = self.run_backfill()
+
+        self.assertIn(
+            "rule 2: BVN verified on record -> source 'legacy': "
+            "1 candidate(s)",
+            output,
+        )
+        self.assertIn(f'rule 2 would award pk={verified.pk}', output)
+        self.assertNotIn(f'rule 2 would award pk={approved.pk}', output)
+
+    def test_comparison_block_lists_every_approved_vendor(self):
+        earned, _store, _product = self.make_vendor(
+            'cmp-earned', verification_status='approved', vbatch=True,
+        )
+        verified, _store, _product = self.make_vendor(
+            'cmp-verified', verification_status='approved',
+        )
+        VendorProfile.objects.filter(pk=verified.pk).update(
+            bank_status='verified', bvn_verified_at=NOW,
+        )
+        gap, _store, _product = self.make_vendor(
+            'cmp-gap', verification_status='approved',
+        )
+
+        output = self.run_backfill()
+
+        self.assertIn(
+            'comparison: 3 approved vendor(s) - 2 receive the V-Batch, '
+            '1 do not',
+            output,
+        )
+        for vendor, marker in (
+            (self.reload(earned), 'receives'),
+            (self.reload(verified), 'receives'),
+            (self.reload(gap), 'skips'),
+        ):
+            self.assertIn(
+                f'{marker:<9} pk={vendor.pk} vendor={vendor.user.email} '
+                f'[verification_status=approved]',
+                output,
+            )
+
+    # ------------------------------------------------------------------
+    # independence
+    # ------------------------------------------------------------------
+
+    def test_toggling_off_changes_no_selling_visibility_or_contact_state(
+        self,
+    ):
+        self.set_bvn_toggle(False)
+        vendor, store, product = self.make_vendor(
+            'indep-off', sub_fields=ACTIVE_BASIC,
+        )
+
+        after = self.reload(vendor)
+        self.assertTrue(after.can_sell)
+        self.assertEqual(after.verification_status, 'pending')
+        self.assertFalse(after.has_vbatch)
+
+        body = self.content_of(
+            self.client.get(self.product_detail_url(store, product))
+        )
+        self.assertNotIn('Vendor Unavailable', body)
+        self.assertIn('wa.me', body)
+        self.assertNotIn('V-Batch', body)
+
+        buyer = CustomUser.objects.create_user(
+            email='indep-off-buyer@example.com',
+            password='password123',
+            username='indep_off_buyer',
+        )
+        ContactIntent.objects.create(
+            user=buyer, vendor=vendor, product=product, channel='whatsapp',
+        )
+        self.assertEqual(ContactIntent.objects.count(), 1)
+
+    def test_public_pages_cost_the_same_with_the_toggle_off_and_on(self):
+        vendor, store, product = self.make_vendor('q-toggle', vbatch=True)
+        detail = self.product_detail_url(store, product)
+
+        pages = [
+            ('product list', reverse('marketplace:product_list'), {}),
+            ('product detail', detail, {}),
+            ('store page', self.store_url(store), {}),
+            ('search', reverse('marketplace:search'), {'q': product.title}),
+        ]
+
+        report = []
+        for label, url, data in pages:
+            self.client.get(url, data)          # warm one-off caches first
+            self.set_bvn_toggle(False)
+            off = self.queries_for(url, **data)
+            self.set_bvn_toggle(True)
+            on = self.queries_for(url, **data)
+            report.append(f'{label}: toggle off={off} on={on}')
+            self.assertEqual(
+                off, on,
+                f'{label}: the BVN toggle changed the query count',
+            )
+
+        print('QUERY COUNTS: ' + '; '.join(report))
+
+    def queries_for(self, url, **data):
+        with CaptureQueriesContext(connection) as ctx:
+            response = self.client.get(url, data)
+        self.assertEqual(response.status_code, 200)
+        return len(ctx.captured_queries)
 
 
 # ==========================================================================
@@ -1056,7 +1512,24 @@ class ModelShapeTests(VbatchFixture):
         from django.db.migrations.loader import MigrationLoader
 
         loader = MigrationLoader(connection)
+        # the vendors chain must end at the Phase 9 Task 5 pending_plan
+        # choices migration (a choices-only AlterField, explicitly allowed
+        # by that task) ...
         leafs = loader.graph.leaf_nodes('vendors')
         self.assertEqual(
-            [node[1] for node in leafs], ['0036_add_vbatch_fields'],
+            [node[1] for node in leafs], ['0038_alter_subscription_pending_plan'],
+        )
+        # ... and Phase 8, Phase 8B and Phase 9 Task 5 may have added
+        # nothing else
+        added = sorted(
+            name for app, name in loader.graph.nodes
+            if app == 'vendors' and name >= '0036'
+        )
+        self.assertEqual(
+            added,
+            [
+                '0036_add_vbatch_fields',
+                '0037_platformsettings',
+                '0038_alter_subscription_pending_plan',
+            ],
         )

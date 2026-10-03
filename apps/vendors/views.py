@@ -32,7 +32,7 @@ from .models import (
 )
 
 from .decorators import (
-    vendor_required, vendor_verified_required,
+    vendor_required,
     vendor_store_ready_required,
     vendor_owns_product,
     rate_limit_verification
@@ -42,6 +42,7 @@ from .subscription_state import describe_subscription_state, DATE_FORMAT
 
 from .services import dojah_service, notification_service, email_name
 from .services.utils import generate_reference, calculate_commission
+from .vbatch import _bvn_toggle_is_on, award_vbatch
 from .forms import (
     BVNEntryForm,
     BVNSelfieForm,
@@ -80,6 +81,10 @@ def _parse_dojah_date(date_str):
 BVN_SESSION_KEY = 'bvn_pending_verification'
 BVN_SESSION_MAX_AGE_SECONDS = 900  # 15 minutes
 
+# Phase 8B: the exact wording shown when the platform-wide BVN verification
+# toggle is OFF (verification center step, flash message, submit endpoints).
+BVN_UNAVAILABLE_MESSAGE = 'BVN verification is currently unavailable.'
+
 
 def _bvn_verification_guard(request, vendor):
     """Shared pre-checks for both BVN verification pages. Returns a response or None."""
@@ -88,6 +93,14 @@ def _bvn_verification_guard(request, vendor):
         return redirect('vendors:verification_center')
     if vendor.bank_status == 'pending_review':
         messages.info(request, 'Your verification is pending review.')
+        return redirect('vendors:verification_center')
+    # Phase 8B: platform-wide BVN verification toggle.  Checked after the
+    # already-verified / pending-review shortcuts (a vendor who is already
+    # done is never told the feature is off) and before anything reaches
+    # Dojah: both BVN endpoints are refused here with a redirect back to the
+    # verification center, exactly like the other guard exits.
+    if not _bvn_toggle_is_on():
+        messages.warning(request, BVN_UNAVAILABLE_MESSAGE)
         return redirect('vendors:verification_center')
     failed_attempts_count = VerificationAttempt.objects.filter(
         vendor=vendor, attempt_type='bvn', status='failed'
@@ -142,6 +155,14 @@ def _process_bvn_with_selfie(request, vendor, bvn_number, selfie_data_uri):
     Run Dojah BVN+selfie verification and persist vendor identity state.
     Returns a redirect response.
     """
+    # Phase 8B: belt and braces behind _bvn_verification_guard().  The
+    # executor itself refuses to run while the platform BVN toggle is OFF,
+    # so a stale tab, a replayed session or a direct call can never reach
+    # Dojah or write a single field.
+    if not _bvn_toggle_is_on():
+        messages.warning(request, BVN_UNAVAILABLE_MESSAGE)
+        return redirect('vendors:verification_center')
+
     selfie_base64 = (
         selfie_data_uri.split(',', 1)[-1]
         if ',' in selfie_data_uri else selfie_data_uri
@@ -248,15 +269,12 @@ def _process_bvn_with_selfie(request, vendor, bvn_number, selfie_data_uri):
             logger.warning('Failed to send BVN verified notification')
 
         # Phase 8: a successful BVN verification earns the persistent
-        # V-Batch, but only while the admin suspension toggle is not engaged
-        # (verification_status != 'suspended').  When it is engaged the BVN
-        # flow behaves exactly as before and no badge is awarded.  Turning
-        # the toggle off again later never removes an earned V-Batch.
+        # V-Batch.  The platform BVN toggle is enforced inside
+        # award_vbatch() (and this executor already refused to run while the
+        # toggle is OFF), so no caller can award through an OFF toggle.
+        # Turning the toggle off again later never removes an earned badge.
         try:
-            from .vbatch import _bvn_toggle_is_on, award_vbatch
-
-            if _bvn_toggle_is_on(vendor):
-                award_vbatch(vendor, 'bvn')
+            award_vbatch(vendor, 'bvn')
         except Exception:
             logger.exception(
                 'V-Batch award failed after BVN verification for vendor %s',
@@ -474,6 +492,14 @@ def verification_center(request):
     step1_status = bvn_badge_status
     step2_status = 'completed' if store_done else 'not_started'
 
+    # Phase 8B: while the platform BVN verification toggle is OFF the BVN
+    # step is presented as unavailable with the exact message, and its link
+    # (which also hides the skip link, both are rendered from step.url) is
+    # removed so no BVN form can be reached from this page.  A vendor who has
+    # already completed BVN keeps the completed step untouched, and step 2
+    # (store setup) is never affected - the toggle only ever touches BVN.
+    bvn_unavailable = (not _bvn_toggle_is_on()) and (not bvn_done)
+
     steps = [
         {
             'number': 1,
@@ -488,8 +514,12 @@ def verification_center(request):
                 "Your verification is awaiting manual review."
                 if vendor.bank_status == 'pending_review' else None
             ),
-            'url': 'vendors:bvn_verification',
-            'skip_url': 'vendors:store_setup',
+            'url': None if bvn_unavailable else 'vendors:bvn_verification',
+            'skip_url': None if bvn_unavailable else 'vendors:store_setup',
+            'unavailable': bvn_unavailable,
+            'unavailable_message': (
+                BVN_UNAVAILABLE_MESSAGE if bvn_unavailable else ''
+            ),
             'verification_type': 'bvn',
             'icon': '''<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>

@@ -27,6 +27,22 @@
         </div>
 
         <div class="px-5 py-4">
+            {% if vendor.verification_status == 'suspended' %}
+            {# Phase 9: an admin suspension is not a billing problem, so the   #}
+            {# Subscribe offer would be a lie - offer support instead.         #}
+            <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800 sm:px-6">
+                <a href="mailto:support@kasumarketplace.com.ng" class="text-sm font-bold hover:underline">
+                    Your store is currently suspended. Contact support for help.
+                </a>
+            </div>
+
+            <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <a href="{% url 'vendors:products_list' %}"
+                   class="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50">
+                    Cancel
+                </a>
+            </div>
+            {% else %}
             {% include 'vendors/subscription/_state_banner.html' with hide_ctas=True %}
 
             <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -39,6 +55,7 @@
                     Cancel
                 </a>
             </div>
+            {% endif %}
         </div>
     </div>
 

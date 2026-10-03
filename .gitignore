@@ -12,6 +12,11 @@ venv/
 db.sqlite3
 media/
 
+# Logs / working artifacts
+*.log
+debug.log
+Report.txt
+report.txt
 
 # OS / Editor junk
 .DS_Store

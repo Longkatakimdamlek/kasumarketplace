@@ -16,6 +16,10 @@ fixture (see report.txt):
     no_subscription 9, free_qualifying 10, trial_free 9, basic_active 9,
     premium_active 9, basic_cancelling 9, premium_cancelling_pending 9,
     restricted_expired 9
+
+Phase 9 Task 7 then added exactly ONE query to every vendor page (the
+memoised platform BVN toggle read in the vendor context processor); the
+test allows that single query on top of each baseline and nothing more.
 """
 from datetime import timedelta
 
@@ -50,6 +54,14 @@ BASELINE_QUERIES = {
     'premium_cancelling_pending': 9,
     'restricted_expired': 9,
 }
+
+# Phase 9 Task 7 adds EXACTLY ONE query to every vendor page: the platform
+# BVN toggle read in apps/vendors/context_processors.py::vendor_context.
+# It is memoised on the request object, so it can never cost more than one
+# query per request, and anonymous/public pages never pay for it (their
+# context processor returns early).  This is the only permitted growth
+# over the pre-redesign baseline above.
+TASK7_BVN_TOGGLE_QUERY = 1
 
 # state -> (subscription fields, present labels, absent labels, actions,
 #           active-pill count, featured-tag count)
@@ -294,7 +306,7 @@ class PlansRenderMatrixTests(PlansPageFixture):
 
 
 class PlansQueryCountTests(PlansPageFixture):
-    """The redesign must not add a single query."""
+    """The redesign must not add a single query (see TASK7_BVN_TOGGLE_QUERY)."""
 
     def test_query_count_did_not_increase(self):
         for name, state in STATES.items():
@@ -306,9 +318,9 @@ class PlansQueryCountTests(PlansPageFixture):
                 response = self.client.get(reverse('vendors:subscription_plans'))
             self.assertEqual(response.status_code, 200, name)
             used = len(ctx.captured_queries)
-            allowed = BASELINE_QUERIES[name]
-            print('PLANS_QUERY_AFTER %-26s n=%d (baseline %d)'
-                  % (name, used, allowed))
+            allowed = BASELINE_QUERIES[name] + TASK7_BVN_TOGGLE_QUERY
+            print('PLANS_QUERY_AFTER %-26s n=%d (baseline %d + %d)'
+                  % (name, used, BASELINE_QUERIES[name], TASK7_BVN_TOGGLE_QUERY))
             self.assertLessEqual(
                 used, allowed,
                 '%s used %d queries, baseline was %d' % (name, used, allowed),

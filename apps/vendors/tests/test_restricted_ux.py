@@ -37,7 +37,8 @@ from django.utils import timezone
 
 from apps.users.models import CustomUser
 from apps.vendors.models import (
-    MainCategory, Product, Store, SubCategory, Subscription, VendorProfile,
+    MainCategory, PlatformSettings, Product, Store, SubCategory, Subscription,
+    VendorProfile,
 )
 from apps.vendors.subscription_state import (
     RESTRICTED_MESSAGE,
@@ -766,6 +767,14 @@ class BannerRenderingTests(RestrictedUxFixture):
         self.assertNotIn('Complete Verification', body)
 
     def test_chip_keeps_the_old_text_when_the_vendor_is_not_restricted(self):
+        # Phase 9 Task 7: the non-restricted chip only renders while the
+        # platform BVN toggle is ON (otherwise it promises a verification
+        # that cannot run), so the toggle is switched on here.  The intent
+        # of this test - the chip text itself - is unchanged.
+        PlatformSettings.get_solo()
+        PlatformSettings.objects.filter(
+            pk=PlatformSettings.SINGLETON_PK
+        ).update(bvn_verification_enabled=True)
         vendor, store = self.make_vendor(
             'p6-chip-pending', sub_fields=self.available_paid(), store_setup=False
         )

@@ -32,6 +32,11 @@
             
             <!-- Verification Status Badge -->
             {% if not vendor.can_sell and not hide_verification_badge|default:False %}
+            {# Phase 9 Task 7: while the platform BVN toggle is OFF the chip  #}
+            {# would promise a verification the vendor cannot finish, so the   #}
+            {# non-restricted chip is dropped entirely.  A vendor who already  #}
+            {# completed BVN, and the Restricted chip, keep today's markup.    #}
+            {% if subscription_state.is_restricted or bvn_verification_enabled or vendor.bank_status == 'verified' %}
             <a href="{% url 'vendors:verification_center' %}" 
                class="hidden sm:flex items-center px-3 py-1.5 border rounded-lg transition-colors {% if subscription_state.is_restricted %}bg-red-50 border-red-200 hover:bg-red-100{% else %}bg-yellow-50 border-yellow-200 hover:bg-yellow-100{% endif %}">
                 <svg class="w-4 h-4 mr-2 {% if subscription_state.is_restricted %}text-red-600{% else %}text-yellow-600{% endif %}" fill="currentColor" viewBox="0 0 20 20">
@@ -41,6 +46,7 @@
                     {% if subscription_state.is_restricted %}Restricted{% else %}Complete Verification{% endif %}
                 </span>
             </a>
+            {% endif %}
             {% endif %}
             
             <!-- Notifications Dropdown -->

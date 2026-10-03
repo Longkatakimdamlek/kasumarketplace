@@ -2,7 +2,7 @@
 V-Batch - the persistent buyer-facing store badge (Phase 8).
 
 V-Batch is a one-way flag on VendorProfile: it is earned either by BVN
-verification (while the admin suspension toggle is not engaged) or by a
+verification (while the platform BVN verification toggle is ON) or by a
 Premium subscription becoming active, and once earned no code path ever
 removes it.  Only a manual admin edit of ``has_vbatch`` clears it.
 
@@ -46,19 +46,20 @@ def award_vbatch(vendor, source, *, notify=True):
     Returns:
         True only on the first award; False when the vendor already has the
         V-Batch (including a second award attempt with a different source,
-        or a BVN award attempted while the admin toggle is OFF).
+        or a BVN award attempted while the platform BVN toggle is OFF).
     """
     from apps.vendors.models import VendorProfile
 
     if not vendor or not vendor.pk or vendor.has_vbatch:
         return False
 
-    # Rule 1 - the BVN award is gated by the existing admin toggle, enforced
-    # here so no caller can bypass it.  Suspension never runs this UPDATE,
-    # so a later toggle change cannot take a badge away either.
-    if source == 'bvn' and not _bvn_toggle_is_on(vendor):
+    # Rule 1 - the BVN award is gated by the platform-wide BVN verification
+    # toggle, enforced here so no caller can bypass it.  Flipping the toggle
+    # never runs this UPDATE in reverse, so a later change cannot take a
+    # badge away either.
+    if source == 'bvn' and not _bvn_toggle_is_on():
         logger.info(
-            'V-Batch BVN award skipped for vendor %s (admin toggle OFF)',
+            'V-Batch BVN award skipped for vendor %s (BVN toggle OFF)',
             vendor.pk,
         )
         return False
@@ -116,15 +117,25 @@ def _notify_vbatch_earned(vendor):
     )
 
 
-def _bvn_toggle_is_on(vendor) -> bool:
+def _bvn_toggle_is_on():
     """
-    The existing admin toggle for BVN standing is VendorProfile
-    verification_status == 'suspended' (admin action ``suspend_vendors``).
+    The platform-wide "BVN verification enabled" toggle (Phase 8B).
 
-    ON  = the vendor is NOT admin-suspended -> a BVN success may award.
-    OFF = the vendor IS admin-suspended     -> a BVN success awards nothing.
+    Read from the single PlatformSettings row, which ships OFF (default) and
+    is edited by a superuser in the admin.
 
-    Flipping the toggle after an award changes nothing here: this helper is
-    only ever consulted at award time.
+    ON  = BVN verification is enabled -> a BVN success may award.
+    OFF = BVN verification is disabled -> no BVN award, and the BVN flow
+          itself is rejected before any Dojah call.
+
+    The toggle is platform-wide, so it never looks at the vendor: suspending
+    a vendor has no effect on awarding either way.  Flipping it after an
+    award changes nothing - this helper is only ever consulted at award time,
+    and no code path ever clears an earned badge.
+
+    Cost: at most one cheap primary-key query per call, so never call it in
+    a loop.
     """
-    return getattr(vendor, 'verification_status', '') != 'suspended'
+    from apps.vendors.models import PlatformSettings
+
+    return PlatformSettings.get_solo().bvn_verification_enabled

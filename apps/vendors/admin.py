@@ -19,7 +19,8 @@ from .models import (
     MainCategory, SubCategory,
     Store, CategoryChangeRequest, Product, ProductImage,
     Notification, Subscription,
-    SubCategoryAttribute
+    SubCategoryAttribute,
+    PlatformSettings,
 )
 
 logger = logging.getLogger(__name__)
@@ -979,3 +980,37 @@ class NotificationAdmin(admin.ModelAdmin):
     def recipient_email(self, obj):
         return obj.user.email if obj.user else '-'
     recipient_email.short_description = 'Recipient'
+
+
+# ==========================================
+# PLATFORM SETTINGS ADMIN (Phase 8B)
+# ==========================================
+
+@admin.register(PlatformSettings)
+class PlatformSettingsAdmin(admin.ModelAdmin):
+    """
+    Superuser-only edit screen for the platform singleton row.
+
+    There is exactly one row (pk=1), so add and delete are switched off and
+    the change form always loads and saves that row regardless of the id in
+    the URL.  Regular staff cannot see the menu entry or open the page.
+    """
+    list_display = ['bvn_verification_enabled']
+
+    def get_object(self, request, object_id, *args, **kwargs):
+        return PlatformSettings.get_solo()
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser

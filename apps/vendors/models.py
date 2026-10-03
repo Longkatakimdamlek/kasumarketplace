@@ -7,6 +7,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from cloudinary.models import CloudinaryField
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator, RegexValidator
 from django.utils.text import slugify
 from django.urls import reverse
@@ -960,6 +961,14 @@ class Subscription(models.Model):
         ('premium', 'Premium Plan'),
     ]
 
+    # Phase 9: pending_plan only ever describes a pending PAID change, so
+    # 'free' can never be a valid value for it.  Services write only '' or
+    # 'basic' (see SubscriptionService.downgrade_subscription).
+    PENDING_PLAN_CHOICES = [
+        ('basic', 'Basic Plan'),
+        ('premium', 'Premium Plan'),
+    ]
+
     vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE, related_name='subscription')
 
     # Phase 5: free-plan vendors start at 'qualifying'; they become 'trial'
@@ -1028,7 +1037,7 @@ class Subscription(models.Model):
 
     pending_plan = models.CharField(
         max_length=10,
-        choices=PLAN_CHOICES,
+        choices=PENDING_PLAN_CHOICES,
         blank=True,
         default='',
         help_text="Plan the vendor will move to when the current paid period ends."
@@ -1720,3 +1729,63 @@ class SubscriptionNotificationLog(models.Model):
 
     def __str__(self):
         return f"{self.kind} @ {self.cycle_key}"
+
+
+# ==========================================
+# PLATFORM SETTINGS (Phase 8B)
+# ==========================================
+
+
+class PlatformSettings(models.Model):
+    """
+    Platform-wide configuration, stored as one permanent singleton row.
+
+    Exactly one row can ever exist: ``save()`` forces ``pk`` to
+    ``SINGLETON_PK`` and ``delete()`` refuses to run, so the row can be
+    neither duplicated nor removed (admin add/delete are switched off too).
+    ``get_solo()`` creates the row on demand with the field defaults, so
+    reading costs at most one cheap query and never raises on a database
+    that has never seen the row.
+
+    ``bvn_verification_enabled`` ships OFF: a platform admin has to switch
+    BVN verification on explicitly.  Switching it off again stops NEW BVN
+    verification and NEW V-Batch awards only - it never reverts a completed
+    verification and never removes an earned V-Batch.
+    """
+
+    SINGLETON_PK = 1
+
+    bvn_verification_enabled = models.BooleanField(
+        default=False,
+        help_text=(
+            'ON: vendors can run BVN verification and a BVN success earns '
+            'the V-Batch. OFF: the BVN flow is rejected before any Dojah '
+            'call and no V-Batch is awarded. Turning this off never removes '
+            'an earned V-Batch or a completed verification.'
+        ),
+    )
+
+    class Meta:
+        verbose_name = 'Platform Settings'
+        verbose_name_plural = 'Platform Settings'
+
+    @classmethod
+    def get_solo(cls):
+        """Return the singleton, creating it with defaults if it is missing."""
+        instance, _created = cls.objects.get_or_create(pk=cls.SINGLETON_PK)
+        return instance
+
+    @property
+    def bvn_toggle_is_on(self):
+        """Convenience reader used by the BVN flow and the V-Batch award."""
+        return self.bvn_verification_enabled
+
+    def save(self, *args, **kwargs):
+        self.pk = self.SINGLETON_PK
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Platform Settings is a singleton and cannot be deleted.')
+
+    def __str__(self):
+        return 'Platform Settings'

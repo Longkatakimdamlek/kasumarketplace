@@ -465,8 +465,17 @@ class QuickSellViewTest(QuickSellFormTestBase):
             price=Decimal('50000.00'),
         )
         url = reverse('quicksell:delete', kwargs={'slug': listing.slug})
+
+        # The delete view is POST-only (no delete page), so a GET never
+        # reaches the ownership check - it only redirects to my_listings.
         response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(QuickSell.objects.filter(pk=listing.pk).exists())
+
+        # The actual delete attempt by a non-owner must 404 and delete nothing.
+        response = self.client.post(url)
         self.assertEqual(response.status_code, 404)
+        self.assertTrue(QuickSell.objects.filter(pk=listing.pk).exists())
 
     def test_my_listings_view(self):
         QuickSell.objects.create(

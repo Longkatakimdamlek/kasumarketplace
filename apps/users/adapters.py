@@ -1,6 +1,7 @@
 import logging
 logger = logging.getLogger(__name__)
 from allauth.account.adapter import DefaultAccountAdapter
+from allauth.core.exceptions import ImmediateHttpResponse
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings
 from django.db import IntegrityError
@@ -19,13 +20,22 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
             logger.info(f"User {request.user.email} already authenticated, skipping pre_social_login")
             return
 
-        if not sociallogin.email_addresses:
+        # Resolve the email to look up.  Providers normally populate
+        # ``email_addresses``; when they do not, fall back to the address
+        # already attached to the sociallogin user so the role-mismatch guard
+        # below still runs instead of silently skipping the whole check.
+        email = ''
+        if sociallogin.email_addresses:
+            email = sociallogin.email_addresses[0].email
+        elif getattr(sociallogin, 'user', None) is not None:
+            email = getattr(sociallogin.user, 'email', '') or ''
+
+        if not email:
             logger.warning("No email addresses in sociallogin object")
             return
 
         from apps.users.models import CustomUser
         try:
-            email = sociallogin.email_addresses[0].email
             logger.info(f"Looking for existing user with email: {email}")
             user = CustomUser.objects.get(email=email)
             logger.info(f"Found existing user, connecting: {email}")
@@ -46,7 +56,6 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
             # if the existing user already has a different role, abort with a
             # friendly error rather than silently changing it.
             if user.role and user.role != desired_role:
-                from allauth.exceptions import ImmediateHttpResponse
                 from django.contrib import messages
                 from django.shortcuts import redirect
                 from django.contrib.auth import logout
@@ -65,10 +74,15 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
                 except Exception:
                     pass
 
+                # fail_silently: the block below must still fire when the
+                # request has no message storage (MessageMiddleware absent);
+                # losing the flash text must never turn into an exception
+                # that the generic handler below swallows.
                 messages.error(
                     request,
                     f"Email already registered as {user.get_role_display()}. "
-                    f"Please log in or use a different address."
+                    f"Please log in or use a different address.",
+                    fail_silently=True,
                 )
 
                 # send them to the login page instead of signup; they already have an account
@@ -86,6 +100,11 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
         except CustomUser.DoesNotExist:
             logger.info(f"No existing user found for email: {email}, proceeding with new account creation")
             pass
+        except ImmediateHttpResponse:
+            # allauth control-flow exception: it carries the redirect that
+            # blocks the opposite-role signup.  It must propagate, otherwise
+            # the guard above silently becomes a no-op.
+            raise
         except Exception as e:
             logger.error(f"Error in pre_social_login: {str(e)}", exc_info=True)
     
