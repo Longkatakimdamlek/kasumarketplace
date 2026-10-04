@@ -81,6 +81,12 @@ def _parse_dojah_date(date_str):
 BVN_SESSION_KEY = 'bvn_pending_verification'
 BVN_SESSION_MAX_AGE_SECONDS = 900  # 15 minutes
 
+# Paystack transaction references created by subscription_subscribe for this
+# browser session.  The callback only accepts a reference we handed to this
+# vendor, so a reference from any other checkout cannot activate a plan.
+PENDING_SUBSCRIPTION_REFS_KEY = 'pending_subscription_references'
+PENDING_SUBSCRIPTION_REFS_MAX = 5
+
 # Phase 8B: the exact wording shown when the platform-wide BVN verification
 # toggle is OFF (verification center step, flash message, submit endpoints).
 BVN_UNAVAILABLE_MESSAGE = 'BVN verification is currently unavailable.'
@@ -2162,6 +2168,24 @@ def subscription_subscribe(request):
         messages.error(request, 'Failed to get Paystack authorization URL.')
         return redirect('vendors:subscription_plans')
 
+    # Remember which references we created for this browser, so the callback
+    # can prove the payment it is about to apply came from a checkout we
+    # started for this vendor (see subscription_callback).
+    new_reference = str(data.get('reference') or '').strip()
+    if new_reference:
+        pending = [
+            ref for ref in request.session.get(PENDING_SUBSCRIPTION_REFS_KEY, [])
+            if ref and ref != new_reference
+        ]
+        pending.append(new_reference)
+        request.session[PENDING_SUBSCRIPTION_REFS_KEY] = pending[-PENDING_SUBSCRIPTION_REFS_MAX:]
+    else:
+        logger.warning(
+            'Subscription initialize for vendor %s returned no reference - '
+            'the callback will fall back to metadata/email binding',
+            vendor.vendor_id,
+        )
+
     return redirect(auth_url)
 
 
@@ -2171,48 +2195,72 @@ def subscription_callback(request):
     """
     Paystack callback after subscription payment.
 
-    Verifies the transaction reference with Paystack, checks the transaction
-    belongs to the logged-in vendor, then activates through the SAME
-    idempotent path as the webhook (process_subscription_webhook).
-    """
-    from apps.vendors.services.subscription_service import subscription_service
-    from apps.vendors.models import WebhookEvent
+    Verifies the transaction reference with Paystack's servers, binds the
+    payment to the logged-in vendor (a reference this session's checkout
+    created, the metadata vendor_id / payer email, and the plan + amount we
+    expect), then activates through the SAME idempotent path as the webhook
+    (process_subscription_webhook).
 
-    reference = request.GET.get('reference', '').strip()
+    Every rejection is logged with the reference and the check that failed;
+    the vendor only ever sees a short, safe message.
+    """
+    import time
+
+    from apps.vendors.models import WebhookEvent
+    from apps.vendors.plans import (
+        get_paystack_plan_code, get_plan, get_plan_price_kobo,
+        plan_for_paystack_code,
+    )
+    from apps.vendors.services.subscription_service import (
+        plan_code_from_transaction,
+        process_subscription_webhook,
+        subscription_service,
+    )
+
+    reference = (request.GET.get('reference') or request.GET.get('trxref') or '').strip()
     if not reference:
         messages.error(request, 'Invalid callback - missing reference.')
         return redirect('vendors:subscription_plans')
 
-    # Verify the reference with Paystack's verify endpoint.
+    # 1. Verify the reference with Paystack's verify endpoint - the query
+    #    string on its own proves nothing.
     try:
         txn_data = subscription_service.verify_transaction(reference)
     except Exception as exc:
-        logger.error('Transaction verification failed for reference %s: %s', reference, exc)
+        logger.error('Subscription callback %s: Paystack verify failed: %s', reference, exc)
         messages.error(request, 'Unable to verify payment. Please try again or contact support.')
         return redirect('vendors:subscription_plans')
 
-    if not isinstance(txn_data, dict) or txn_data.get('status') != 'success':
+    txn_status = txn_data.get('status') if isinstance(txn_data, dict) else None
+    if txn_status != 'success':
         # Abandoned / failed / pending payment: leave the Subscription alone.
-        messages.error(request, 'Payment was not completed. No charge was made - please try again.')
+        logger.warning(
+            'Subscription callback %s rejected: transaction status is %r, not success',
+            reference, txn_status,
+        )
+        if txn_status in ('pending', 'processing', 'ongoing', 'queued'):
+            messages.error(request, 'Payment is still pending. Please wait a moment, then reload this page.')
+        else:
+            messages.error(request, 'Payment was not completed. No charge was made - please try again.')
         return redirect('vendors:subscription_plans')
 
     vendor = request.user.vendorprofile
-    metadata = txn_data.get('metadata') or {}
-    customer = txn_data.get('customer') or {}
+    metadata = txn_data.get('metadata') if isinstance(txn_data.get('metadata'), dict) else {}
+    customer = txn_data.get('customer') if isinstance(txn_data.get('customer'), dict) else {}
 
-    # Ownership check: metadata.vendor_id first, then the payer email.
+    # 2. Ownership check: metadata.vendor_id first, then the payer email.
     meta_vendor_id = str(metadata.get('vendor_id', '') or '')
     txn_email = str(customer.get('email', '') or '')
     if meta_vendor_id and meta_vendor_id != str(vendor.vendor_id):
         logger.warning(
-            'Subscription callback reference %s rejected: metadata vendor_id %s is not %s',
+            'Subscription callback %s rejected: metadata vendor_id %s is not %s',
             reference, meta_vendor_id, vendor.vendor_id,
         )
         messages.error(request, 'This payment does not belong to your account.')
         return redirect('vendors:subscription_plans')
     if not meta_vendor_id and txn_email and txn_email.lower() != vendor.user.email.lower():
         logger.warning(
-            'Subscription callback reference %s rejected: payer email does not match the account',
+            'Subscription callback %s rejected: payer email does not match the account',
             reference,
         )
         messages.error(request, 'This payment does not belong to your account.')
@@ -2221,51 +2269,152 @@ def subscription_callback(request):
         # Neither ownership signal is present, so the transaction cannot be
         # attributed to this account. Reject instead of activating.
         logger.warning(
-            'Subscription callback reference %s rejected: no vendor_id or payer email '
+            'Subscription callback %s rejected: no vendor_id or payer email '
             'to verify ownership',
             reference,
         )
         messages.error(request, 'This payment does not belong to your account.')
         return redirect('vendors:subscription_plans')
 
-    # Idempotency: the same reference replayed is acknowledged, not re-applied.
+    # 3. Idempotency: the same reference replayed is acknowledged, not re-applied.
     event_id = f'callback_{reference}'
     if WebhookEvent.objects.filter(event_id=event_id).exists():
-        messages.success(request, 'Your subscription is already active.')
+        messages.success(request, 'Payment verified but already applied.')
         return redirect('vendors:subscription_plans')
 
-    # Resolve the Paystack subscription code for this charge.
-    plan_payload = txn_data.get('plan') or {}
-    sub_payload = txn_data.get('subscription') or {}
-    meta_sub_code = (
-        metadata.get('subscription_code')
-        or (sub_payload.get('subscription_code') if isinstance(sub_payload, dict) else '')
-        or ''
+    # 4. The reference must come from a checkout this session started.  If the
+    #    session was lost (different browser, cleared cookies) the list is
+    #    empty and the Paystack-verified metadata / email binding above still
+    #    applies.
+    pending_refs = list(request.session.get(PENDING_SUBSCRIPTION_REFS_KEY) or [])
+    if pending_refs and reference not in pending_refs:
+        logger.warning(
+            'Subscription callback %s rejected: reference was not created by a '
+            'checkout of this session (%d reference(s) on file)',
+            reference, len(pending_refs),
+        )
+        messages.error(request, 'This payment does not belong to your account.')
+        return redirect('vendors:subscription_plans')
+
+    # 5. The charge must be for a plan we sell, at the price we charge.
+    plan_code = plan_code_from_transaction(txn_data)
+    plan = plan_for_paystack_code(plan_code) if plan_code else None
+    meta_plan = str(metadata.get('plan', '') or '').strip()
+    if plan and meta_plan in ('basic', 'premium') and meta_plan != plan:
+        logger.error(
+            'Subscription callback %s rejected: metadata plan %r disagrees with '
+            'paystack plan code %r (%s)',
+            reference, meta_plan, plan_code, plan,
+        )
+        messages.error(request, 'This payment could not be matched to your subscription. Please contact support.')
+        return redirect('vendors:subscription_plans')
+    if plan is None and meta_plan in ('basic', 'premium'):
+        # The plan code is unknown to us (env changed / foreign plan); trust
+        # only the plan we recorded at checkout - the amount check below still
+        # has to pass.
+        plan = meta_plan
+    if plan is None:
+        logger.error(
+            'Subscription callback %s rejected: plan not identifiable (paystack plan '
+            'code %r, metadata keys %s)',
+            reference, plan_code, sorted(metadata),
+        )
+        messages.error(request, 'This payment could not be matched to your subscription. Please contact support.')
+        return redirect('vendors:subscription_plans')
+
+    amount = txn_data.get('amount')
+    expected_amount = get_plan_price_kobo(plan)
+    if amount != expected_amount:
+        logger.error(
+            'Subscription callback %s rejected: amount %r is not the %d kobo price '
+            'of plan %s',
+            reference, amount, expected_amount, plan,
+        )
+        messages.error(request, 'The amount paid does not match the selected plan. Please contact support.')
+        return redirect('vendors:subscription_plans')
+
+    subscription = None
+    try:
+        subscription = vendor.subscription
+    except Subscription.DoesNotExist:
+        subscription = None
+
+    # 6. Already paying for the plan they already have: acknowledge the charge
+    #    and change nothing (no double activation, no error).
+    if subscription and subscription.status == 'active' and subscription.plan == plan:
+        WebhookEvent.objects.get_or_create(
+            event_id=event_id,
+            defaults={'event_type': 'charge.success', 'reference': reference, 'payload': txn_data},
+        )
+        logger.info(
+            'Subscription callback %s: vendor %s already active on plan %s - no change',
+            reference, vendor.vendor_id, plan,
+        )
+        messages.warning(
+            request,
+            f'You already have an active {get_plan(plan)["display_name"]} '
+            'subscription - nothing was changed.',
+        )
+        return redirect('vendors:subscription_plans')
+
+    # 7. Resolve the Paystack subscription code this charge belongs to.  A
+    #    verify response carries neither metadata.subscription_code nor a
+    #    subscription object (see SubscriptionService.resolve_subscription_code),
+    #    so the code is looked up by customer + plan.  Paystack can create the
+    #    subscription a beat after the charge, so retry once.
+    lookup_plan_code = plan_code or get_paystack_plan_code(plan)
+    sub_code = ''
+    code_source = ''
+    for attempt in range(2):
+        sub_code, code_source = subscription_service.resolve_subscription_code(txn_data, lookup_plan_code)
+        if sub_code:
+            break
+        if attempt == 0:
+            time.sleep(0.4)
+    if not sub_code:
+        logger.error(
+            'Subscription callback %s verified but NOT applied: no subscription code '
+            '(plan %s, paystack plan code %r, customer id %r, metadata keys %s)',
+            reference, plan, lookup_plan_code,
+            customer.get('id'), sorted(metadata),
+        )
+        messages.error(
+            request,
+            'Payment verified but not applied yet. Do not pay again - please '
+            'contact support if this message persists.',
+        )
+        return redirect('vendors:subscription_plans')
+    logger.info(
+        'Subscription callback %s: applying subscription %s for plan %s '
+        '(amount %r, code source %s)',
+        reference, sub_code, plan, amount, code_source,
     )
-    if not meta_sub_code:
-        # Nothing to key the activation on. Leave the Subscription untouched.
-        messages.error(request, 'Could not identify your subscription payment. Please contact support.')
-        return redirect('vendors:subscription_plans')
 
-    # Hand the verified transaction to the same processor the webhook uses.
-    from apps.vendors.services.subscription_service import process_subscription_webhook
+    # 8. Hand the verified transaction to the same processor the webhook uses.
     synthetic_metadata = dict(metadata)
-    synthetic_metadata['subscription_code'] = meta_sub_code
+    synthetic_metadata['subscription_code'] = sub_code
+    synthetic_metadata.setdefault('plan', plan)
     synthetic_data = {
-        'subscription': {'subscription_code': meta_sub_code},
+        'subscription': {'subscription_code': sub_code},
         'customer': customer,
-        'plan': {'plan_code': plan_payload.get('plan_code', '') if isinstance(plan_payload, dict) else ''},
-        'amount': txn_data.get('amount', 0),
+        'plan': {'plan_code': lookup_plan_code},
+        'amount': amount,
         'metadata': synthetic_metadata,
     }
     result = process_subscription_webhook('charge.success', synthetic_data, event_id=event_id)
     if result.get('success'):
+        remaining = [ref for ref in pending_refs if ref != reference]
+        if remaining:
+            request.session[PENDING_SUBSCRIPTION_REFS_KEY] = remaining
+        else:
+            request.session.pop(PENDING_SUBSCRIPTION_REFS_KEY, None)
         if 'replay' in result.get('message', ''):
-            messages.success(request, 'Your subscription is already active.')
+            messages.success(request, 'Payment verified but already applied.')
         else:
             messages.success(request, 'Subscription activated successfully!')
     else:
-        messages.error(request, result.get('message', 'Activation failed.'))
+        logger.error('Subscription callback %s: activation failed: %s', reference, result.get('message'))
+        messages.error(request, 'We could not apply your payment. Please contact support.')
 
     return redirect('vendors:subscription_plans')
 

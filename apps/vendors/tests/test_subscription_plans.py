@@ -1927,3 +1927,539 @@ class VerifyWebhookSignatureTests(TestCase):
 import hmac
 import hashlib
 from unittest.mock import MagicMock
+
+
+# ---------------------------------------------------------------------------
+# Real-shape callback tests.
+#
+# The fixtures below copy the ACTUAL structure returned by Paystack's
+# /transaction/verify endpoint in TEST mode (reference T674579335914694,
+# captured 2026-10-03, and T344654379974387 for premium).  What matters:
+#
+#   * `plan` is a STRING plan code ("PLN_..."), never a dict
+#   * `metadata` echoes only what checkout sent: vendor_id + plan
+#     (there is NO subscription_code - we never send one)
+#   * there is NO `subscription` key anywhere in the payload
+#   * `customer` carries both `customer_code` and the numeric `id`, and the
+#     GET /subscription customer filter only honours the numeric id
+#
+# No Paystack network call is made: verify is patched, and the subscription
+# lookup is patched with the real /subscription response shape.
+# ---------------------------------------------------------------------------
+
+BASIC_PLAN_CODE = 'PLN_1xqxk3rzgsp9dgb'
+PREMIUM_PLAN_CODE = 'PLN_it3camcsx4yjb8y'
+
+
+class RealShapeSubscriptionCallbackTests(TestCase):
+    """Callback driven by a real Paystack TEST verify response shape."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            email='vendor_realshape@example.com',
+            password='password123',
+            username='vendor_realshape',
+            role='vendor',
+        )
+        self.vendor = self.user.vendorprofile
+        Subscription.objects.filter(vendor=self.vendor).delete()
+        self.category = MainCategory.objects.create(name='RealTech', slug='realtech')
+        self.store = Store.objects.create(
+            vendor=self.vendor,
+            store_name='RealShape Store',
+            slug='realshape-store',
+            main_category=self.category,
+        )
+        WebhookEvent.objects.all().delete()
+        self.client.force_login(self.user)
+        self.lookup_calls = []
+
+    # -- fixtures ---------------------------------------------------------
+
+    def real_verify(self, **overrides):
+        """Real verify payload for a BASIC plan charge (120000 kobo)."""
+        txn = {
+            'amount': 120000,
+            'channel': 'card',
+            'currency': 'NGN',
+            'customer': {
+                'customer_code': 'CUS_dai6p1aijshoxvx',
+                'email': self.user.email,
+                'first_name': 'Remedy',
+                'id': 405395500,
+                'last_name': 'Longkat',
+                'phone': '',
+            },
+            'domain': 'test',
+            'gateway_response': 'Successful',
+            'id': 3184567890,
+            'ip_address': '127.0.0.1',
+            'metadata': {
+                'plan': 'basic',
+                'vendor_id': str(self.vendor.vendor_id),
+            },
+            'paid_at': '2026-10-03T08:17:28.000Z',
+            'created_at': '2026-10-03T08:17:16.000Z',
+            'plan': BASIC_PLAN_CODE,  # STRING, not a dict
+            'plan_object': {
+                'amount': 120000,
+                'currency': 'NGN',
+                'interval': 'monthly',
+                'name': 'KasuMarketplace Basic Plan',
+                'plan_code': BASIC_PLAN_CODE,
+            },
+            'reference': 'T674579335914694',
+            'requested_amount': 120000,
+            'status': 'success',
+            'transaction_date': '2026-10-03T08:17:16.000Z',
+            # Real responses carry NO 'subscription' key at all.
+        }
+        txn.update(overrides)
+        return txn
+
+    def premium_verify(self, **overrides):
+        """Real verify payload for a PREMIUM plan charge (300000 kobo)."""
+        txn = self.real_verify(
+            amount=300000,
+            requested_amount=300000,
+            plan=PREMIUM_PLAN_CODE,
+            reference='T344654379974387',
+            paid_at='2026-10-04T15:49:33.000Z',
+            created_at='2026-10-04T15:49:25.000Z',
+            metadata={
+                'plan': 'premium',
+                'vendor_id': str(self.vendor.vendor_id),
+            },
+        )
+        txn['plan_object'] = {
+            'amount': 300000,
+            'currency': 'NGN',
+            'interval': 'monthly',
+            'name': 'KasuMarketplace Premium Plan',
+            'plan_code': PREMIUM_PLAN_CODE,
+        }
+        txn.update(overrides)
+        return txn
+
+    def subscription_list(self):
+        """Real GET /subscription data for customer 405395500 (both plans)."""
+        return [
+            {
+                'subscription_code': 'SUB_ol9jrnqrdkcut21',
+                'plan': {
+                    'plan_code': PREMIUM_PLAN_CODE,
+                    'amount': 300000,
+                    'interval': 'monthly',
+                    'name': 'KasuMarketplace Premium Plan',
+                },
+                'customer': {
+                    'customer_code': 'CUS_dai6p1aijshoxvx',
+                    'id': 405395500,
+                    'email': self.user.email,
+                },
+                'amount': 300000,
+                'status': 'active',
+                'domain': 'test',
+            },
+            {
+                'subscription_code': 'SUB_62l5lwtnfhb8qnk',
+                'plan': {
+                    'plan_code': BASIC_PLAN_CODE,
+                    'amount': 120000,
+                    'interval': 'monthly',
+                    'name': 'KasuMarketplace Basic Plan',
+                },
+                'customer': {
+                    'customer_code': 'CUS_dai6p1aijshoxvx',
+                    'id': 405395500,
+                    'email': self.user.email,
+                },
+                'amount': 120000,
+                'status': 'active',
+                'domain': 'test',
+            },
+        ]
+
+    def verify_patch(self, txn):
+        return patch.object(subscription_service, 'verify_transaction', return_value=txn)
+
+    def lookup_patch(self, subscriptions=None):
+        """Patch the Paystack HTTP layer with the real /subscription shape."""
+        payload = self.subscription_list() if subscriptions is None else subscriptions
+
+        def fake_request(method, endpoint, data=None):
+            self.lookup_calls.append((method, endpoint, data))
+            if endpoint == '/subscription':
+                return payload
+            if endpoint.endswith('/disable'):
+                return {'status': True, 'message': 'Subscription disabled'}
+            return {'status': True, 'data': {}}
+
+        return patch.object(subscription_service, '_request', side_effect=fake_request)
+
+    def hit_callback(self, reference, follow=True):
+        return self.client.get(
+            reverse('vendors:subscription_callback'),
+            {'reference': reference, 'trxref': reference},
+            follow=follow,
+        )
+
+    def messages_of(self, response):
+        return [str(m) for m in get_messages(response.wsgi_request)]
+
+    # -- plan + amount helpers -------------------------------------------
+
+    def test_plan_code_from_transaction_accepts_both_shapes(self):
+        from apps.vendors.services.subscription_service import plan_code_from_transaction
+        self.assertEqual(plan_code_from_transaction({'plan': BASIC_PLAN_CODE}), BASIC_PLAN_CODE)
+        self.assertEqual(plan_code_from_transaction({'plan': {'plan_code': 'PLN_x'}}), 'PLN_x')
+        self.assertEqual(plan_code_from_transaction({'plan': None}), '')
+        self.assertEqual(plan_code_from_transaction({}), '')
+
+    def test_resolve_prefers_metadata_and_skips_the_lookup(self):
+        txn = self.real_verify(metadata={
+            'vendor_id': str(self.vendor.vendor_id),
+            'plan': 'basic',
+            'subscription_code': 'SUB_from_metadata',
+        })
+        with self.lookup_patch():
+            code, source = subscription_service.resolve_subscription_code(txn, BASIC_PLAN_CODE)
+        self.assertEqual((code, source), ('SUB_from_metadata', 'metadata'))
+        self.assertEqual(self.lookup_calls, [])
+
+    def test_resolve_uses_customer_numeric_id_and_plan_code(self):
+        with self.lookup_patch():
+            code, source = subscription_service.resolve_subscription_code(
+                self.real_verify(), BASIC_PLAN_CODE,
+            )
+        self.assertEqual(code, 'SUB_62l5lwtnfhb8qnk')
+        self.assertEqual(source, 'paystack_api')
+        self.assertEqual(
+            self.lookup_calls, [('GET', '/subscription', {'customer': 405395500})],
+        )
+
+    # -- activation -------------------------------------------------------
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_basic_payment_with_real_shape_activates_basic(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='qualifying', plan='free',
+        )
+        with self.verify_patch(self.real_verify()), self.lookup_patch():
+            response = self.hit_callback('T674579335914694')
+
+        self.assertEqual(response.redirect_chain[0][1], 302)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.plan, 'basic')
+        self.assertEqual(sub.paystack_subscription_code, 'SUB_62l5lwtnfhb8qnk')
+        self.assertEqual(sub.paystack_plan_code, BASIC_PLAN_CODE)
+        self.assertEqual(sub.paystack_customer_code, 'CUS_dai6p1aijshoxvx')
+        self.assertEqual(sub.qualification_status, 'skipped')
+        self.assertTrue(
+            WebhookEvent.objects.filter(event_id='callback_T674579335914694').exists()
+        )
+        msgs = self.messages_of(response)
+        self.assertTrue(any('Subscription activated successfully' in m for m in msgs), msgs)
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_premium_payment_with_real_shape_activates_premium(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='qualifying', plan='free',
+        )
+        with self.verify_patch(self.premium_verify()), self.lookup_patch():
+            response = self.hit_callback('T344654379974387')
+
+        self.assertEqual(response.redirect_chain[0][1], 302)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.plan, 'premium')
+        self.assertEqual(sub.paystack_subscription_code, 'SUB_ol9jrnqrdkcut21')
+        self.assertEqual(sub.paystack_plan_code, PREMIUM_PLAN_CODE)
+        msgs = self.messages_of(response)
+        self.assertTrue(any('Subscription activated successfully' in m for m in msgs), msgs)
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_reloading_the_callback_is_idempotent(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='qualifying', plan='free',
+        )
+        with self.verify_patch(self.real_verify()), self.lookup_patch():
+            first = self.hit_callback('T674579335914694')
+        sub.refresh_from_db()
+        period_after_first = sub.period_end
+        self.assertEqual(sub.plan, 'basic')
+
+        with self.verify_patch(self.real_verify()), self.lookup_patch():
+            second = self.hit_callback('T674579335914694')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.plan, 'basic')
+        self.assertEqual(sub.period_end, period_after_first)
+        self.assertEqual(WebhookEvent.objects.filter(event_id='callback_T674579335914694').count(), 1)
+        msgs = self.messages_of(second)
+        self.assertTrue(any('already applied' in m for m in msgs), msgs)
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_paying_the_same_plan_again_is_a_friendly_no_op(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='active', plan='basic',
+            paystack_subscription_code='SUB_62l5lwtnfhb8qnk',
+            paystack_plan_code=BASIC_PLAN_CODE,
+            period_end=timezone.now() + timedelta(days=20),
+        )
+        before = sub.period_end
+
+        with self.verify_patch(self.real_verify()), self.lookup_patch():
+            response = self.hit_callback('T674579335914694')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.plan, 'basic')
+        self.assertEqual(sub.period_end, before)
+        self.assertEqual(sub.paystack_subscription_code, 'SUB_62l5lwtnfhb8qnk')
+        msgs = self.messages_of(response)
+        self.assertTrue(any('already have an active Basic Plan subscription' in m for m in msgs), msgs)
+        self.assertTrue(
+            WebhookEvent.objects.filter(event_id='callback_T674579335914694').exists()
+        )
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_basic_to_premium_upgrade_with_real_shape(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='active', plan='basic',
+            paystack_subscription_code='SUB_basic_old',
+            paystack_plan_code=BASIC_PLAN_CODE,
+            period_end=timezone.now() + timedelta(days=10),
+        )
+        with self.verify_patch(self.premium_verify()), self.lookup_patch():
+            response = self.hit_callback('T344654379974387')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.plan, 'premium')
+        self.assertEqual(sub.paystack_subscription_code, 'SUB_ol9jrnqrdkcut21')
+        self.assertEqual(sub.paystack_plan_code, PREMIUM_PLAN_CODE)
+        disable_calls = [c for c in self.lookup_calls if c[1].endswith('/disable')]
+        self.assertEqual(len(disable_calls), 1)
+        self.assertEqual(disable_calls[0][1], '/subscription/SUB_basic_old/disable')
+        msgs = self.messages_of(response)
+        self.assertTrue(any('Subscription activated successfully' in m for m in msgs), msgs)
+
+    # -- rejections -------------------------------------------------------
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_unknown_reference_is_rejected_without_activation(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='qualifying', plan='free',
+        )
+        with patch.object(
+            subscription_service, 'verify_transaction',
+            side_effect=SubscriptionServiceError('Transaction reference not found'),
+        ):
+            response = self.hit_callback('T000000000000000')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'qualifying')
+        self.assertEqual(sub.plan, 'free')
+        self.assertEqual(sub.paystack_subscription_code, '')
+        self.assertFalse(WebhookEvent.objects.exists())
+        msgs = self.messages_of(response)
+        self.assertTrue(any('Unable to verify payment' in m for m in msgs), msgs)
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_charge_without_a_plan_is_rejected(self):
+        """A successful non-plan charge (normal Paystack payment) must not activate."""
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='qualifying', plan='free',
+        )
+        txn = self.real_verify(
+            plan=None,
+            metadata={},
+            amount=50000,
+            reference='T111111111111111',
+        )
+        with self.verify_patch(txn), self.lookup_patch():
+            response = self.hit_callback('T111111111111111')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'qualifying')
+        self.assertEqual(sub.plan, 'free')
+        self.assertEqual(sub.paystack_subscription_code, '')
+        self.assertFalse(WebhookEvent.objects.exists())
+        msgs = self.messages_of(response)
+        self.assertTrue(any('could not be matched' in m for m in msgs), msgs)
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_amount_mismatch_is_rejected(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='qualifying', plan='free',
+        )
+        txn = self.real_verify(amount=50000, requested_amount=50000)
+        with self.verify_patch(txn), self.lookup_patch():
+            response = self.hit_callback('T674579335914694')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'qualifying')
+        self.assertEqual(sub.plan, 'free')
+        self.assertEqual(sub.paystack_subscription_code, '')
+        self.assertFalse(WebhookEvent.objects.exists())
+        msgs = self.messages_of(response)
+        self.assertTrue(any('amount paid does not match' in m for m in msgs), msgs)
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_plan_mismatch_is_rejected(self):
+        """Premium plan code + basic metadata plan = inconsistent, reject."""
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='qualifying', plan='free',
+        )
+        txn = self.premium_verify(metadata={
+            'plan': 'basic',
+            'vendor_id': str(self.vendor.vendor_id),
+        })
+        with self.verify_patch(txn), self.lookup_patch():
+            response = self.hit_callback('T344654379974387')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'qualifying')
+        self.assertEqual(sub.plan, 'free')
+        self.assertFalse(WebhookEvent.objects.exists())
+        msgs = self.messages_of(response)
+        self.assertTrue(any('could not be matched' in m for m in msgs), msgs)
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_logged_in_vendor_mismatch_is_rejected(self):
+        other = self.User.objects.create_user(
+            email='other_realshape@example.com',
+            password='password123',
+            username='other_realshape',
+            role='vendor',
+        )
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='qualifying', plan='free',
+        )
+        txn = self.real_verify(metadata={
+            'plan': 'basic',
+            'vendor_id': str(other.vendorprofile.vendor_id),
+        })
+        with self.verify_patch(txn), self.lookup_patch():
+            response = self.hit_callback('T674579335914694')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'qualifying')
+        self.assertEqual(sub.plan, 'free')
+        self.assertFalse(WebhookEvent.objects.exists())
+        msgs = self.messages_of(response)
+        self.assertTrue(any('does not belong to your account' in m for m in msgs), msgs)
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_reference_not_created_by_this_session_is_rejected(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='qualifying', plan='free',
+        )
+        session = self.client.session
+        session['pending_subscription_references'] = ['T999999999999999']
+        session.save()
+
+        with self.verify_patch(self.real_verify()), self.lookup_patch():
+            response = self.hit_callback('T674579335914694')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'qualifying')
+        self.assertEqual(sub.plan, 'free')
+        self.assertFalse(WebhookEvent.objects.exists())
+        msgs = self.messages_of(response)
+        self.assertTrue(any('does not belong to your account' in m for m in msgs), msgs)
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_subscription_not_created_yet_is_reported_not_applied(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='qualifying', plan='free',
+        )
+        with self.verify_patch(self.real_verify()), self.lookup_patch(subscriptions=[]):
+            response = self.hit_callback('T674579335914694')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'qualifying')
+        self.assertEqual(sub.plan, 'free')
+        self.assertFalse(WebhookEvent.objects.exists())
+        msgs = self.messages_of(response)
+        self.assertTrue(any('not applied yet' in m for m in msgs), msgs)
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_pending_transaction_reports_pending(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='qualifying', plan='free',
+        )
+        txn = self.real_verify(status='pending')
+        with self.verify_patch(txn), self.lookup_patch():
+            response = self.hit_callback('T674579335914694')
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'qualifying')
+        self.assertFalse(WebhookEvent.objects.exists())
+        msgs = self.messages_of(response)
+        self.assertTrue(any('still pending' in m for m in msgs), msgs)
+
+    @override_settings(
+        PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+        PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+    )
+    def test_subscribe_stores_the_reference_for_the_callback(self):
+        """checkout remembers the reference it created, keyed to this session."""
+        with patch.object(
+            subscription_service, 'initialize_subscription',
+            return_value=(True, {
+                'authorization_url': 'https://checkout.paystack.com/abc',
+                'reference': 'T222222222222222',
+            }),
+        ):
+            response = self.client.post(
+                reverse('vendors:subscription_subscribe'), {'plan': 'basic'},
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            self.client.session.get('pending_subscription_references'),
+            ['T222222222222222'],
+        )

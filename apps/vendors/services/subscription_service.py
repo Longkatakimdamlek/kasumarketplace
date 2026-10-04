@@ -55,6 +55,22 @@ def build_callback_url() -> str:
     return f'{base}{reverse("vendors:subscription_callback")}'
 
 
+def plan_code_from_transaction(txn: Dict) -> str:
+    """
+    The Paystack plan code carried by a transaction payload.
+
+    Paystack verify responses and charge.success webhook payloads carry
+    `plan` as a plain plan-code string ('PLN_...'); hand-built payloads
+    carry it as a dict with a `plan_code` key.  Accept both shapes.
+    """
+    plan = txn.get('plan')
+    if isinstance(plan, str):
+        return plan.strip()
+    if isinstance(plan, dict):
+        return str(plan.get('plan_code') or '').strip()
+    return ''
+
+
 class SubscriptionServiceError(Exception):
     """Raised when a Paystack subscription API call fails."""
 
@@ -186,6 +202,64 @@ class SubscriptionService:
         # _request already raises on a non-`status: true` Paystack envelope and
         # returns the `data` object, which is the transaction dict itself.
         return self._request('GET', f'/transaction/verify/{reference}')
+
+    def resolve_subscription_code(self, txn_data: Dict, plan_code: str) -> Tuple[str, str]:
+        """
+        Find the Paystack subscription code that a VERIFIED charge belongs to.
+
+        A real verify response for a plan-based charge carries neither
+        `metadata.subscription_code` (we never send one) nor a
+        `subscription` object (Paystack does not include one), so the code is
+        resolved from the first source that yields one:
+
+          1. metadata.subscription_code           -> source 'metadata'
+          2. transaction.subscription.subscription_code -> 'transaction'
+          3. GET /subscription?customer=<numeric id>, matched on plan_code
+                                                       -> 'paystack_api'
+
+        Returns (subscription_code, source); ('', '') when nothing matched.
+        The Paystack customer filter needs the NUMERIC customer id (the
+        `CUS_...` code silently returns an empty list), so the match on
+        plan_code is done client-side.
+        """
+        metadata = txn_data.get('metadata') or {}
+        if isinstance(metadata, dict):
+            code = str(metadata.get('subscription_code') or '').strip()
+            if code:
+                return code, 'metadata'
+
+        sub_payload = txn_data.get('subscription')
+        if isinstance(sub_payload, dict):
+            code = str(sub_payload.get('subscription_code') or '').strip()
+            if code:
+                return code, 'transaction'
+
+        customer = txn_data.get('customer') or {}
+        customer_id = customer.get('id') if isinstance(customer, dict) else None
+        if not customer_id or not plan_code:
+            return '', ''
+
+        try:
+            subscriptions = self._request('GET', '/subscription', {'customer': customer_id})
+        except SubscriptionServiceError as exc:
+            logger.error(
+                'Subscription lookup failed for reference %s (customer id %s): %s',
+                txn_data.get('reference', ''), customer_id, exc,
+            )
+            return '', ''
+        if isinstance(subscriptions, dict):
+            subscriptions = subscriptions.get('data') or []
+        if not isinstance(subscriptions, list):
+            return '', ''
+
+        for sub in subscriptions:
+            if not isinstance(sub, dict):
+                continue
+            sub_plan = sub.get('plan')
+            sub_plan_code = sub_plan.get('plan_code') if isinstance(sub_plan, dict) else sub_plan
+            if str(sub_plan_code or '').strip() == plan_code and sub.get('subscription_code'):
+                return str(sub['subscription_code']).strip(), 'paystack_api'
+        return '', ''
 
     # ------------------------------------------------------------------
     # Subscription status helpers
