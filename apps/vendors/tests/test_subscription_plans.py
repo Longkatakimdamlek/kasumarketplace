@@ -822,7 +822,7 @@ class SubscriptionSubscribeUpgradeTests(TestCase):
             reverse('vendors:subscription_subscribe'), {'plan': 'premium'}, follow=True,
         )
         msgs = [str(m) for m in get_messages(response.wsgi_request)]
-        self.assertTrue(any('already have an active paid subscription' in m for m in msgs), msgs)
+        self.assertTrue(any('already have an active Premium Plan subscription' in m for m in msgs), msgs)
         mock_init.assert_not_called()
 
     @patch('apps.vendors.services.subscription_service.subscription_service.initialize_subscription')
@@ -2462,4 +2462,362 @@ class RealShapeSubscriptionCallbackTests(TestCase):
         self.assertEqual(
             self.client.session.get('pending_subscription_references'),
             ['T222222222222222'],
+        )
+
+
+@override_settings(
+    PAYSTACK_BASIC_PLAN_CODE=BASIC_PLAN_CODE,
+    PAYSTACK_PREMIUM_PLAN_CODE=PREMIUM_PLAN_CODE,
+)
+class WebhookRealPayloadTests(TestCase):
+    """
+    Phase 2D (webhook parity): subscription events in the shape Paystack
+    really sends - `plan` as a STRING plan code, metadata that echoes only
+    {plan, vendor_id}, NO `subscription` key anywhere, and a customer
+    carrying customer_code + email + numeric id.
+    """
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            email='vendor_realwh@example.com',
+            password='password123',
+            username='vendor_realwh',
+            role='vendor',
+        )
+        self.vendor = self.user.vendorprofile
+        Subscription.objects.filter(vendor=self.vendor).delete()
+        self.category = MainCategory.objects.create(name='RealWH', slug='realwh')
+        self.store = Store.objects.create(
+            vendor=self.vendor,
+            store_name='RealWH Store',
+            slug='realwh-store',
+            main_category=self.category,
+        )
+        WebhookEvent.objects.all().delete()
+        self.client.force_login(self.user)
+
+    def charge(self, **overrides):
+        """A real charge.success payload: plan string, no subscription key."""
+        data = {
+            'reference': 'T261006000000001',
+            'amount': 120000,
+            'status': 'success',
+            'plan': BASIC_PLAN_CODE,
+            'customer': {
+                'customer_code': 'CUS_realwh',
+                'email': self.user.email,
+                'id': 405395500,
+            },
+            'metadata': {'plan': 'basic', 'vendor_id': str(self.vendor.vendor_id)},
+        }
+        data.update(overrides)
+        return data
+
+    def paystack(self, subscriptions=None):
+        """Patch the Paystack HTTP layer (lookup + disable); no network."""
+        payload = subscriptions or [{
+            'subscription_code': 'SUB_realwh_1',
+            'plan': {'plan_code': BASIC_PLAN_CODE, 'amount': 120000, 'interval': 'monthly'},
+            'customer': {'customer_code': 'CUS_realwh', 'id': 405395500},
+            'status': 'active',
+            'created_at': '2026-10-01T10:00:00.000Z',
+        }]
+
+        def fake_request(method, endpoint, data=None):
+            if endpoint == '/subscription':
+                return payload
+            if endpoint.endswith('/disable'):
+                return {'status': True, 'message': 'Subscription disabled'}
+            return {'status': True, 'data': {}}
+
+        return patch.object(subscription_service, '_request', side_effect=fake_request)
+
+    def verify_txn(self, reference):
+        """The matching real /transaction/verify response for this charge."""
+        return {
+            'status': 'success',
+            'reference': reference,
+            'amount': 120000,
+            'plan': BASIC_PLAN_CODE,
+            'customer': {
+                'customer_code': 'CUS_realwh',
+                'email': self.user.email,
+                'id': 405395500,
+            },
+            'metadata': {'plan': 'basic', 'vendor_id': str(self.vendor.vendor_id)},
+        }
+
+    def make_active_basic(self, **overrides):
+        """An active Basic row; returns (row, period_end read from the DB)."""
+        fields = {
+            'vendor': self.vendor,
+            'status': 'active',
+            'plan': 'basic',
+            'paystack_subscription_code': 'SUB_realwh_1',
+            'paystack_customer_code': 'CUS_realwh',
+            'paystack_plan_code': BASIC_PLAN_CODE,
+            'period_end': timezone.now() + timedelta(days=10),
+        }
+        fields.update(overrides)
+        sub = Subscription.objects.create(**fields)
+        sub.refresh_from_db()
+        return sub, sub.period_end
+
+    def test_first_charge_activates_through_vendor_id(self):
+        """First charge: no subscription key, matched by metadata.vendor_id."""
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='trial', plan='free',
+            trial_ends_at=timezone.now() + timedelta(days=14),
+        )
+        with self.paystack():
+            result = process_subscription_webhook(
+                'charge.success', self.charge(), event_id='evt_real_first',
+            )
+
+        sub.refresh_from_db()
+        self.assertTrue(result['success'], result)
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.plan, 'basic')
+        self.assertEqual(sub.paystack_subscription_code, 'SUB_realwh_1')
+        self.assertEqual(sub.paystack_customer_code, 'CUS_realwh')
+        self.assertEqual(sub.paystack_plan_code, BASIC_PLAN_CODE)
+        self.assertIsNotNone(sub.period_end)
+        self.assertTrue(WebhookEvent.objects.filter(
+            event_id='evt_real_first', reference='T261006000000001',
+        ).exists())
+
+    def test_renewal_extends_period_end_once(self):
+        sub, period = self.make_active_basic()
+        data = self.charge(reference='T261006000000002')
+        with self.paystack():
+            result = process_subscription_webhook('charge.success', data, event_id='evt_real_renew')
+
+        sub.refresh_from_db()
+        self.assertTrue(result['success'], result)
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.plan, 'basic')
+        self.assertEqual(sub.period_end, period + timedelta(days=30))
+        self.assertEqual(sub.paystack_subscription_code, 'SUB_realwh_1')
+
+    def test_same_webhook_delivered_twice_is_a_no_op(self):
+        sub, period = self.make_active_basic()
+        data = self.charge(reference='T261006000000003')
+        with self.paystack():
+            first = process_subscription_webhook('charge.success', data, event_id='evt_real_twice_1')
+            sub.refresh_from_db()
+            renewed_to = sub.period_end
+            second = process_subscription_webhook('charge.success', data, event_id='evt_real_twice_2')
+
+        sub.refresh_from_db()
+        self.assertTrue(first['success'], first)
+        self.assertNotEqual(renewed_to, period)
+        self.assertTrue(second['success'], second)
+        self.assertIn('replay', second['message'])
+        self.assertEqual(sub.period_end, renewed_to)
+        self.assertEqual(sub.plan, 'basic')
+
+    def test_zero_row_match_logs_warning_and_changes_nothing(self):
+        sub, period = self.make_active_basic()
+        data = self.charge(
+            metadata={'plan': 'basic'},
+            customer={'customer_code': 'CUS_nope', 'email': 'stranger@example.com', 'id': 99},
+        )
+        with self.assertLogs('apps.vendors.services.subscription_service', level='WARNING') as logs:
+            with self.paystack():
+                result = process_subscription_webhook('charge.success', data, event_id='evt_real_zero')
+
+        sub.refresh_from_db()
+        self.assertFalse(result['success'], result)
+        self.assertIn('no unique match', '\n'.join(logs.output))
+        self.assertEqual((sub.status, sub.plan, sub.period_end), ('active', 'basic', period))
+        self.assertFalse(WebhookEvent.objects.filter(event_id='evt_real_zero').exists())
+
+    def test_two_row_match_logs_warning_and_changes_nothing(self):
+        sub, period = self.make_active_basic()
+        other_user = self.User.objects.create_user(
+            email='vendor_realwh_two@example.com', password='password123',
+            username='vendor_realwh_two', role='vendor',
+        )
+        Subscription.objects.filter(vendor=other_user.vendorprofile).update(
+            status='active', plan='basic',
+            paystack_subscription_code='SUB_other_1',
+            paystack_customer_code='CUS_realwh',
+            paystack_plan_code=BASIC_PLAN_CODE,
+            period_end=timezone.now() + timedelta(days=10),
+        )
+        data = self.charge(metadata={'plan': 'basic'})
+        with self.assertLogs('apps.vendors.services.subscription_service', level='WARNING') as logs:
+            with self.paystack():
+                result = process_subscription_webhook(
+                    'charge.success', data, event_id='evt_real_two_rows',
+                )
+
+        sub.refresh_from_db()
+        self.assertFalse(result['success'], result)
+        self.assertIn('no unique match', '\n'.join(logs.output))
+        self.assertEqual((sub.status, sub.plan, sub.period_end), ('active', 'basic', period))
+        self.assertFalse(WebhookEvent.objects.filter(event_id='evt_real_two_rows').exists())
+
+    def test_renewal_matches_by_email_and_plan_when_code_is_empty(self):
+        sub, period = self.make_active_basic(paystack_customer_code='')
+        data = self.charge(metadata={'plan': 'basic'})
+        with self.paystack():
+            result = process_subscription_webhook('charge.success', data, event_id='evt_real_email')
+
+        sub.refresh_from_db()
+        self.assertTrue(result['success'], result)
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.plan, 'basic')
+        self.assertEqual(sub.period_end, period + timedelta(days=30))
+        self.assertEqual(sub.paystack_customer_code, 'CUS_realwh')
+
+    def test_subscription_create_links_identifiers_without_activating(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='trial', plan='free',
+            trial_ends_at=timezone.now() + timedelta(days=14),
+        )
+        data = self.charge(reference='T261006000000006', subscription_code='SUB_created_1')
+        with self.paystack():
+            result = process_subscription_webhook('subscription.create', data, event_id='evt_real_create')
+
+        sub.refresh_from_db()
+        self.assertTrue(result['success'], result)
+        self.assertEqual(sub.status, 'trial')
+        self.assertEqual(sub.plan, 'free')
+        self.assertIsNone(sub.period_end)
+        self.assertEqual(sub.paystack_subscription_code, 'SUB_created_1')
+        self.assertEqual(sub.paystack_customer_code, 'CUS_realwh')
+        self.assertEqual(sub.paystack_plan_code, BASIC_PLAN_CODE)
+        self.assertTrue(WebhookEvent.objects.filter(event_id='evt_real_create').exists())
+
+    def test_invoice_payment_failed_is_unchanged(self):
+        from apps.vendors.models import Notification
+        sub, _period = self.make_active_basic()
+        with self.paystack():
+            result = process_subscription_webhook(
+                'invoice.payment_failed',
+                {'subscription_code': 'SUB_realwh_1', 'amount': 120000},
+                event_id='evt_real_failed',
+            )
+
+        sub.refresh_from_db()
+        self.assertTrue(result['success'], result)
+        self.assertEqual(sub.status, 'past_due')
+        self.assertEqual(sub.retry_count, 1)
+        self.assertIsNotNone(sub.grace_ends_at)
+        self.assertEqual(sub.plan, 'basic')
+        self.assertTrue(Notification.objects.filter(
+            user=self.user, title__startswith='Payment Failed',
+        ).exists())
+        self.assertTrue(WebhookEvent.objects.filter(event_id='evt_real_failed').exists())
+
+    def test_subscription_disable_is_unchanged(self):
+        sub, _period = self.make_active_basic()
+        with self.paystack():
+            result = process_subscription_webhook(
+                'subscription.disable',
+                {'subscription': {'subscription_code': 'SUB_realwh_1'}},
+                event_id='evt_real_disable',
+            )
+
+        sub.refresh_from_db()
+        self.assertTrue(result['success'], result)
+        self.assertIn('processed', result['message'])
+        self.assertEqual(sub.status, 'cancelled')
+        self.assertIsNotNone(sub.grace_ends_at)
+        self.assertEqual(sub.plan, 'basic')
+        self.assertTrue(WebhookEvent.objects.filter(event_id='evt_real_disable').exists())
+
+    def test_subscription_not_renew_is_unchanged(self):
+        sub, period = self.make_active_basic()
+        with self.paystack():
+            result = process_subscription_webhook(
+                'subscription.not_renew',
+                {'subscription': {'subscription_code': 'SUB_realwh_1'}},
+                event_id='evt_real_not_renew',
+            )
+
+        sub.refresh_from_db()
+        self.assertTrue(result['success'], result)
+        self.assertIn('acknowledged', result['message'])
+        self.assertEqual((sub.status, sub.plan, sub.period_end), ('active', 'basic', period))
+        self.assertFalse(sub.cancel_at_period_end)
+        self.assertTrue(WebhookEvent.objects.filter(event_id='evt_real_not_renew').exists())
+
+    def test_bad_signature_returns_400_and_changes_nothing(self):
+        import json
+        sub, period = self.make_active_basic()
+        response = self.client.post(
+            reverse('vendors:subscription_webhook'),
+            data=json.dumps({'event': 'charge.success', 'data': self.charge()}),
+            content_type='application/json',
+            HTTP_X_PAYSTACK_SIGNATURE='bad-signature',
+        )
+
+        sub.refresh_from_db()
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual((sub.status, sub.plan, sub.period_end), ('active', 'basic', period))
+        self.assertFalse(WebhookEvent.objects.exists())
+
+    def test_callback_then_webhook_activates_exactly_once(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='trial', plan='free',
+            trial_ends_at=timezone.now() + timedelta(days=14),
+        )
+        reference = 'T261006000000009'
+        with patch.object(subscription_service, 'verify_transaction', return_value=self.verify_txn(reference)):
+            with self.paystack():
+                response = self.client.get(
+                    reverse('vendors:subscription_callback'), {'reference': reference},
+                )
+
+        self.assertEqual(response.status_code, 302)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.plan, 'basic')
+        period_after_callback = sub.period_end
+        self.assertIsNotNone(period_after_callback)
+
+        with self.paystack():
+            result = process_subscription_webhook(
+                'charge.success', self.charge(reference=reference), event_id='evt_real_after_cb',
+            )
+
+        self.assertIn('replay', result['message'])
+        sub.refresh_from_db()
+        self.assertEqual(sub.plan, 'basic')
+        self.assertEqual(sub.period_end, period_after_callback)
+
+    def test_webhook_then_callback_activates_exactly_once(self):
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='trial', plan='free',
+            trial_ends_at=timezone.now() + timedelta(days=14),
+        )
+        reference = 'T261006000000010'
+        with self.paystack():
+            first = process_subscription_webhook(
+                'charge.success', self.charge(reference=reference), event_id='evt_real_before_cb',
+            )
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.plan, 'basic')
+        self.assertNotIn('replay', first['message'])
+        period_after_webhook = sub.period_end
+
+        with patch.object(subscription_service, 'verify_transaction', return_value=self.verify_txn(reference)):
+            with self.paystack():
+                response = self.client.get(
+                    reverse('vendors:subscription_callback'), {'reference': reference}, follow=True,
+                )
+
+        self.assertEqual(response.status_code, 200)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, 'active')
+        self.assertEqual(sub.plan, 'basic')
+        self.assertEqual(sub.period_end, period_after_webhook)
+        msgs = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(
+            any('already have an active Basic Plan subscription' in m for m in msgs), msgs,
         )

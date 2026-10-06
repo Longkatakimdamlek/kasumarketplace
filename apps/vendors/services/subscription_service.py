@@ -221,6 +221,12 @@ class SubscriptionService:
         The Paystack customer filter needs the NUMERIC customer id (the
         `CUS_...` code silently returns an empty list), so the match on
         plan_code is done client-side.
+
+        A customer can hold several subscriptions on the SAME plan (an old
+        one that was cancelled and a new one).  Only `active` entries qualify;
+        when none is active a `non-renewing` one is used (the current period
+        is still paid).  A `cancelled` / `complete` subscription is never
+        returned, and when several qualify the newest `createdAt` wins.
         """
         metadata = txn_data.get('metadata') or {}
         if isinstance(metadata, dict):
@@ -252,14 +258,30 @@ class SubscriptionService:
         if not isinstance(subscriptions, list):
             return '', ''
 
+        candidates = []
         for sub in subscriptions:
             if not isinstance(sub, dict):
                 continue
             sub_plan = sub.get('plan')
             sub_plan_code = sub_plan.get('plan_code') if isinstance(sub_plan, dict) else sub_plan
-            if str(sub_plan_code or '').strip() == plan_code and sub.get('subscription_code'):
-                return str(sub['subscription_code']).strip(), 'paystack_api'
-        return '', ''
+            if str(sub_plan_code or '').strip() != plan_code:
+                continue
+            if not sub.get('subscription_code'):
+                continue
+            candidates.append(sub)
+
+        active = [s for s in candidates if str(s.get('status') or '').strip() == 'active']
+        if not active:
+            active = [
+                s for s in candidates
+                if str(s.get('status') or '').strip() == 'non-renewing'
+            ]
+        if not active:
+            return '', ''
+
+        # Paystack returns the list oldest-first; take the newest one.
+        newest = max(active, key=lambda s: str(s.get('createdAt') or s.get('created_at') or ''))
+        return str(newest['subscription_code']).strip(), 'paystack_api'
 
     # ------------------------------------------------------------------
     # Subscription status helpers
@@ -632,18 +654,128 @@ def _subscription_for_vendor_id(vendor_id: str):
         return None
 
 
+def _payload_subscription_code(data: dict) -> str:
+    """
+    Subscription code carried by an event payload, from any of the places
+    Paystack puts it: top level (`subscription_code`), nested
+    (`subscription.subscription_code`) or our own checkout metadata.
+    """
+    code = str(data.get('subscription_code') or '').strip()
+    if code:
+        return code
+    sub_data = data.get('subscription')
+    if isinstance(sub_data, dict):
+        code = str(sub_data.get('subscription_code') or '').strip()
+        if code:
+            return code
+    metadata = data.get('metadata')
+    if isinstance(metadata, dict):
+        return str(metadata.get('subscription_code') or '').strip()
+    return ''
+
+
+def _match_subscription_row(data: dict, plan_code: str):
+    """
+    Find the Subscription row a Paystack event belongs to.
+
+    Returns (row, how, candidate_count):
+      row             Subscription or None
+      how             'subscription_code' | 'vendor_id' | 'customer' | ''
+      candidate_count rows the customer rule considered (0, 1 or more)
+
+    Rules, in order, and never guessing:
+      1. a subscription_code in the payload that a row already holds
+      2. metadata.vendor_id (sent by our own checkout - first charge only)
+      3. customer code or customer email TOGETHER WITH the plan code, and only
+         when that points at exactly ONE row.  Zero or several rows -> None
+         and the caller logs a WARNING instead of guessing.
+
+    A real plan-based charge carries no subscription_code at all, and the
+    customer code is empty on rows activated before it was stored, so both
+    signals are tried (customer code first, payer email as fallback).
+    """
+    from django.db.models import Q
+
+    code = _payload_subscription_code(data)
+    if code:
+        row = Subscription.objects.filter(paystack_subscription_code=code).first()
+        if row is not None:
+            return row, 'subscription_code', 1
+
+    metadata = data.get('metadata')
+    if isinstance(metadata, dict) and metadata.get('vendor_id'):
+        row = _subscription_for_vendor_id(str(metadata.get('vendor_id')))
+        if row is not None:
+            return row, 'vendor_id', 1
+
+    if not plan_code:
+        return None, '', 0
+
+    plan_identifier = plan_for_paystack_code(plan_code)
+    rows = Subscription.objects.all()
+    if plan_identifier:
+        rows = rows.filter(Q(plan=plan_identifier) | Q(paystack_plan_code=plan_code))
+    else:
+        rows = rows.filter(paystack_plan_code=plan_code)
+    rows = list(rows)
+
+    customer = data.get('customer') if isinstance(data.get('customer'), dict) else {}
+    customer_code = str(customer.get('customer_code') or '').strip()
+    email = str(customer.get('email') or '').strip().lower()
+    if not rows or (not customer_code and not email):
+        return None, '', 0
+
+    matches = []
+    if customer_code:
+        matches = [r for r in rows if str(r.paystack_customer_code or '').strip() == customer_code]
+    if not matches and email:
+        matches = [r for r in rows if r.vendor.user.email.strip().lower() == email]
+    if len(matches) == 1:
+        return matches[0], 'customer', 1
+    return None, '', len(matches)
+
+
+def _backfill_identifiers(sub: Subscription, customer_code: str, plan_code: str) -> None:
+    """
+    Store identifiers a webhook payload carries, but only where the row has
+    none yet.  Never touches status, plan or period_end - it only makes later
+    matching possible.  `plan_code` is passed empty for plans we do not sell.
+    """
+    updates = []
+    if customer_code and not sub.paystack_customer_code:
+        sub.paystack_customer_code = customer_code
+        updates.append('paystack_customer_code')
+    if plan_code and not sub.paystack_plan_code:
+        sub.paystack_plan_code = plan_code
+        updates.append('paystack_plan_code')
+    if updates:
+        sub.save(update_fields=updates + ['updated_at'])
+        logger.info('Subscription %s: stored billing identifiers %s', sub.pk, ', '.join(updates))
+
+
 def process_subscription_webhook(event_type: str, data: dict, event_id: str = '') -> dict:
     """
     Handle vendor subscription billing events from Paystack.
 
-    Dispatches to:
-    - charge.success (initial: metadata.subscription_code; recurring: data.subscription.subscription_code)
-      → activate_subscription (initial) or handle_successful_payment (recurring)
-    - invoice.payment_failed → handle_failed_payment
-    - subscription.disable → disable_subscription (only when the code is the
+    Every branch first locates the Subscription row with
+    _match_subscription_row (payload subscription_code -> metadata.vendor_id
+    -> customer code/email + plan code, exactly one row).  When no unique row
+    matches, a WARNING is logged with the event type, reference and plan code
+    and NOTHING is changed; the endpoint still answers 200 so Paystack does
+    not retry forever.
+
+    Dispatch:
+    - charge.success -> first charge (activate / basic->premium upgrade) or
+      renewal (handle_successful_payment: period_end + 30 days, exactly as
+      before).  A reference that was already applied by the browser callback
+      or by an earlier delivery of this charge is a replay and changes nothing.
+    - subscription.create -> linking only: stores subscription / customer /
+      plan codes on a row that has none, never activates anything.
+    - invoice.payment_failed -> handle_failed_payment
+    - subscription.disable -> disable_subscription (only when the code is the
       row's current code and cancel_at_period_end is False; otherwise the
       event is acknowledged and ignored)
-    - subscription.not_renew → acknowledged and ignored (recorded only)
+    - subscription.not_renew -> acknowledged and ignored (recorded only)
 
     Idempotency: if event_id is provided and already exists in WebhookEvent,
     the event is acknowledged but not re-processed.
@@ -652,41 +784,55 @@ def process_subscription_webhook(event_type: str, data: dict, event_id: str = ''
     """
     from apps.vendors.models import WebhookEvent
 
+    def record(reference: str = '') -> None:
+        if event_id:
+            WebhookEvent.objects.get_or_create(
+                event_id=event_id,
+                defaults={'event_type': event_type, 'reference': reference, 'payload': data},
+            )
+
     # ---- Idempotency guard ----
     if event_id:
         if WebhookEvent.objects.filter(event_id=event_id).exists():
             logger.info('Duplicate webhook event %s — skipping', event_id)
             return {'success': True, 'message': f'Event {event_id} already processed (idempotent skip).'}
 
-    # ---- Extract subscription code from multiple possible locations ----
-    # Real Paystack subscription.* events may carry the code at the top level
-    # (data.subscription_code) or nested (data.subscription.subscription_code).
-    sub_code = data.get('subscription_code', '')
-    if not sub_code:
-        sub_data = data.get('subscription') or {}
-        if isinstance(sub_data, dict):
-            sub_code = sub_data.get('subscription_code', '')
-
-    # ---- Map Paystack plan code to our plan identifier ----
-    paystack_plan_code = ''
-    plan_data = data.get('plan') or {}
-    if isinstance(plan_data, dict):
-        paystack_plan_code = plan_data.get('plan_code', '')
-    # Also check top-level plan_code for charge.success initial payment
-    if not paystack_plan_code:
-        paystack_plan_code = data.get('plan', {}).get('plan_code', '')
-
+    # ---- Fields every branch needs ----
+    # A subscription code may sit at the top level, nested under
+    # `subscription`, or (for our own callback payload) in the metadata.
+    sub_code = _payload_subscription_code(data)
+    # `plan` is a plain plan-code string on some payloads and an object with a
+    # `plan_code` key on others - plan_code_from_transaction accepts both.
+    paystack_plan_code = plan_code_from_transaction(data)
     plan_identifier = plan_for_paystack_code(paystack_plan_code) if paystack_plan_code else None
+    reference = str(data.get('reference') or '').strip()
+    customer = data.get('customer') if isinstance(data.get('customer'), dict) else {}
+    metadata = data.get('metadata') if isinstance(data.get('metadata'), dict) else {}
+    meta_sub_code = str(metadata.get('subscription_code') or '').strip() if metadata else ''
+
+    def no_unique_match(message: str = '') -> dict:
+        logger.warning(
+            'Subscription webhook %s: no unique match (reference %s, plan code %s, '
+            'metadata keys %s) - acknowledged, no change',
+            event_type, reference or sub_code or '-', paystack_plan_code or '-',
+            sorted(metadata),
+        )
+        return {
+            'success': False,
+            'message': message or f'No subscription matched {event_type} event '
+                                  f'(reference {reference or sub_code or "-"}).',
+        }
 
     # ---- invoice.payment_failed ----
+    # An invoice carries no plan code, so only a subscription code already on
+    # file can identify the row - the same rule as before, now going through
+    # the shared matcher.
     if event_type == 'invoice.payment_failed' and sub_code:
-        try:
-            sub = Subscription.objects.get(paystack_subscription_code=sub_code)
-        except Subscription.DoesNotExist:
-            return {'success': False, 'message': f'No subscription for code {sub_code}.'}
+        sub, _how, _count = _match_subscription_row(data, paystack_plan_code)
+        if sub is None:
+            return no_unique_match(f'No subscription for code {sub_code}.')
         subscription_service.handle_failed_payment(sub)
-        if event_id:
-            WebhookEvent.objects.create(event_id=event_id, event_type=event_type, reference=sub_code, payload=data)
+        record(sub_code)
         return {'success': True, 'message': f'invoice.payment_failed processed for sub {sub_code}.'}
 
     # ---- subscription.disable / subscription.not_renew ----
@@ -694,23 +840,26 @@ def process_subscription_webhook(event_type: str, data: dict, event_id: str = ''
     # upgrade) and of a disable done outside our UI (Paystack dashboard), so
     # they are gated twice:
     #   1. the code must be the row's CURRENT paystack_subscription_code - an
-    #      event for the old Basic code that an upgrade replaced is ignored;
+    #      event for the old Basic code that an upgrade replaced is ignored.
+    #      The shared matcher may also identify a row that never stored a code
+    #      (matched by customer + plan); such a row still has to prove the
+    #      event belongs to it: a row holding a DIFFERENT code is stale, so a
+    #      codeless event can only act on a codeless row.
     #   2. a row already scheduled to end (cancel_at_period_end) is left alone:
     #      it keeps paid benefits until period_end, and expire_grace_periods()
     #      expires it then.
-    if event_type in ('subscription.disable', 'subscription.not_renew') and sub_code:
-        try:
-            sub = Subscription.objects.get(paystack_subscription_code=sub_code)
-        except Subscription.DoesNotExist:
+    if event_type in ('subscription.disable', 'subscription.not_renew'):
+        sub, _how, _count = _match_subscription_row(data, paystack_plan_code)
+        stale = sub is not None and str(sub.paystack_subscription_code or '') != str(sub_code or '')
+        if sub is None or stale:
             # No row currently holds this code (the Basic code that an upgrade
             # replaced, or a code we never knew). Acknowledge, record, ignore.
-            if event_id:
-                WebhookEvent.objects.create(event_id=event_id, event_type=event_type, reference=sub_code, payload=data)
+            record(sub_code)
             logger.info(
                 '%s ignored: event for non-current subscription code %s',
-                event_type, sub_code,
+                event_type, sub_code or '-',
             )
-            return {'success': True, 'message': f'{event_type} ignored: event for non-current subscription code {sub_code}.'}
+            return {'success': True, 'message': f'{event_type} ignored: event for non-current subscription code {sub_code or "-"}.'}
 
         if sub.cancel_at_period_end:
             # Our own disable call. Status stays active until period_end and
@@ -747,28 +896,24 @@ def process_subscription_webhook(event_type: str, data: dict, event_id: str = ''
 
     # ---- charge.success ----
     if event_type == 'charge.success':
-        # Check for initial payment first (metadata.subscription_code)
-        metadata = data.get('metadata', {}) or {}
-        meta_sub_code = metadata.get('subscription_code', '')
+        # (a) A reference this endpoint (or the browser callback) already
+        #     applied is a replay: record it and change nothing.
+        if reference and WebhookEvent.objects.filter(reference=reference).exists():
+            record(reference)
+            logger.info(
+                'Subscription webhook charge.success: reference %s already '
+                'applied - replay, no change', reference,
+            )
+            return {'success': True, 'message': f'charge.success replay: reference {reference} already applied, no change.'}
 
+        # (b) Locate the row; without one the charge is acknowledged only.
+        sub, _how, _count = _match_subscription_row(data, paystack_plan_code)
+        if sub is None:
+            return no_unique_match()
+
+        # (c) Our own checkout payload carries metadata.subscription_code:
+        #     first charge and basic -> premium upgrade, exactly as before.
         if meta_sub_code:
-            # Initial subscription payment
-            try:
-                sub = Subscription.objects.get(paystack_subscription_code=meta_sub_code)
-            except Subscription.DoesNotExist:
-                sub = None
-            except Subscription.MultipleObjectsReturned:
-                sub = Subscription.objects.filter(paystack_subscription_code=meta_sub_code).first()
-
-            if sub is None:
-                # The Paystack code is not the one on file.  For a first-time
-                # subscribe or a basic -> premium upgrade that is expected:
-                # Paystack created a NEW subscription for this vendor.  Resolve
-                # the vendor from the vendor_id metadata we send at checkout.
-                sub = _subscription_for_vendor_id(metadata.get('vendor_id', ''))
-                if sub is None:
-                    return {'success': False, 'message': f'No subscription for code {meta_sub_code}.'}
-
             # Determine plan from Paystack plan code in payload
             plan = plan_identifier
             if not plan:
@@ -790,21 +935,80 @@ def process_subscription_webhook(event_type: str, data: dict, event_id: str = ''
             else:
                 changed = subscription_service.activate_subscription(sub, paystack_args, plan=plan)
 
-            if event_id:
-                WebhookEvent.objects.create(event_id=event_id, event_type=event_type, reference=meta_sub_code, payload=data)
+            record(reference or meta_sub_code)
             kind = 'upgrade' if changed else 'replay'
             return {'success': True, 'message': f'charge.success (initial) {kind} processed for sub {meta_sub_code}.'}
 
-        # Recurring subscription payment (data.subscription.subscription_code)
-        if sub_code:
-            try:
-                sub = Subscription.objects.get(paystack_subscription_code=sub_code)
-            except Subscription.DoesNotExist:
-                return {'success': False, 'message': f'No subscription for code {sub_code}.'}
+        # (d) Real plan-based charge: no metadata.subscription_code.  The row
+        #     came from its stored code, the checkout vendor_id or exactly one
+        #     customer + plan match, so decide from the two plans in hand.
+        paystack_args = {
+            'customer_code': str(customer.get('customer_code') or ''),
+            'subscription_code': sub_code,
+            'plan_code': paystack_plan_code,
+        }
+
+        if plan_identifier is None or (sub.status in ('active', 'past_due') and sub.plan == plan_identifier):
+            # Unknown plan code, or a renewal of the plan already on the row.
             subscription_service.handle_successful_payment(sub)
-            if event_id:
-                WebhookEvent.objects.create(event_id=event_id, event_type=event_type, reference=sub_code, payload=data)
-            return {'success': True, 'message': f'charge.success (recurring) processed for sub {sub_code}.'}
+            _backfill_identifiers(
+                sub, paystack_args['customer_code'],
+                paystack_plan_code if plan_identifier else '',
+            )
+            record(reference or sub_code)
+            return {'success': True, 'message': f'charge.success (recurring) processed for sub {sub_code or sub.pk}.'}
+
+        if plan_identifier == 'premium' and sub.plan == 'basic':
+            changed = subscription_service.upgrade_subscription(sub, paystack_args)
+            record(reference or sub_code)
+            kind = 'upgrade' if changed else 'replay'
+            return {'success': True, 'message': f'charge.success (initial) {kind} processed for sub {sub_code or sub.pk}.'}
+
+        if sub.status == 'active' and sub.plan == 'premium' and plan_identifier == 'basic':
+            logger.warning(
+                'Subscription webhook charge.success: Basic charge for subscription %s '
+                'already active on premium - acknowledged, no change', sub.pk,
+            )
+            record(reference or sub_code)
+            return {'success': True, 'message': f'charge.success ignored: subscription {sub.pk} is active on premium.'}
+
+        # trial / expired / cancelled row: this charge is its first payment.
+        if not paystack_args['subscription_code']:
+            resolved_code, _src = subscription_service.resolve_subscription_code(
+                data, paystack_plan_code,
+            )
+            paystack_args['subscription_code'] = resolved_code
+        changed = subscription_service.activate_subscription(sub, paystack_args, plan=plan_identifier)
+        record(reference or sub_code)
+        kind = 'upgrade' if changed else 'replay'
+        return {'success': True, 'message': f'charge.success (initial) {kind} processed for sub {sub_code or sub.pk}.'}
+
+    # ---- subscription.create ----
+    # Paystack tells us the code it just created.  Linking only: identifiers
+    # the row does not have yet are filled in, but status, plan and period_end
+    # are set by the charge that follows, never by this event.  The reference
+    # stored here is the subscription code (not the charge reference) so a
+    # later charge.success for the same reference is not read as a replay.
+    if event_type == 'subscription.create':
+        sub, _how, _count = _match_subscription_row(data, paystack_plan_code)
+        if sub is None:
+            return no_unique_match()
+        updates = []
+        if sub_code and not sub.paystack_subscription_code:
+            sub.paystack_subscription_code = sub_code
+            updates.append('paystack_subscription_code')
+        customer_code = str(customer.get('customer_code') or '').strip()
+        if customer_code and not sub.paystack_customer_code:
+            sub.paystack_customer_code = customer_code
+            updates.append('paystack_customer_code')
+        if plan_identifier and not sub.paystack_plan_code:
+            sub.paystack_plan_code = paystack_plan_code
+            updates.append('paystack_plan_code')
+        if updates:
+            sub.save(update_fields=updates + ['updated_at'])
+            logger.info('Subscription %s: linked identifiers %s', sub.pk, ', '.join(updates))
+        record(sub_code)
+        return {'success': True, 'message': f'subscription.create linked subscription {sub.pk}.'}
 
     # ---- subscription.deactivate (Paystack may send this for expired subs) ----
     if event_type == 'subscription.deactivate' and sub_code:

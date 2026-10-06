@@ -2109,7 +2109,7 @@ def subscription_subscribe(request):
     Handle subscription request for a paid plan.
     Redirects to Paystack authorization URL.
     """
-    from apps.vendors.plans import paid_plans
+    from apps.vendors.plans import get_plan, paid_plans
     from apps.vendors.services.subscription_service import subscription_service
 
     plan = request.POST.get('plan', '').strip()
@@ -2139,7 +2139,10 @@ def subscription_subscribe(request):
             )
             return redirect('vendors:subscription_plans')
         if plan != 'premium' or subscription.plan != 'basic':
-            messages.warning(request, 'You already have an active paid subscription.')
+            messages.warning(
+                request,
+                f'You already have an active {get_plan(subscription.plan)["display_name"]} subscription.',
+            )
             return redirect('vendors:subscription_plans')
 
     # Initialize subscription
@@ -2400,6 +2403,7 @@ def subscription_callback(request):
         'plan': {'plan_code': lookup_plan_code},
         'amount': amount,
         'metadata': synthetic_metadata,
+        'reference': reference,
     }
     result = process_subscription_webhook('charge.success', synthetic_data, event_id=event_id)
     if result.get('success'):
