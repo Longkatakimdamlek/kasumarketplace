@@ -907,7 +907,7 @@ def process_subscription_webhook(event_type: str, data: dict, event_id: str = ''
             return {'success': True, 'message': f'charge.success replay: reference {reference} already applied, no change.'}
 
         # (b) Locate the row; without one the charge is acknowledged only.
-        sub, _how, _count = _match_subscription_row(data, paystack_plan_code)
+        sub, how, _count = _match_subscription_row(data, paystack_plan_code)
         if sub is None:
             return no_unique_match()
 
@@ -942,6 +942,28 @@ def process_subscription_webhook(event_type: str, data: dict, event_id: str = ''
         # (d) Real plan-based charge: no metadata.subscription_code.  The row
         #     came from its stored code, the checkout vendor_id or exactly one
         #     customer + plan match, so decide from the two plans in hand.
+        #
+        #     Phase 2E: when the payload carries no plan code we know, the only
+        #     proof left that this charge belongs to a subscription is a
+        #     subscription code this very row already holds.  A plain checkout
+        #     on our Paystack account that happens to carry vendor metadata (or
+        #     only the customer's email) has no such proof, so it is recorded
+        #     and ignored instead of extending a period.  A KNOWN plan code
+        #     keeps the rule it already had: renewal only when the row is
+        #     active or past_due on that same plan - the condition on the
+        #     branch below, which is the only other way into the renewal path.
+        if plan_identifier is None and not (sub_code and how == 'subscription_code'):
+            record(reference or sub_code)
+            logger.info(
+                'Subscription webhook charge.success: reference %s has no plan '
+                'and no subscription code - not a subscription charge, ignored',
+                reference or '-',
+            )
+            return {
+                'success': True,
+                'message': f'charge.success {reference or sub_code or "-"}: not a subscription charge, ignored.',
+            }
+
         paystack_args = {
             'customer_code': str(customer.get('customer_code') or ''),
             'subscription_code': sub_code,

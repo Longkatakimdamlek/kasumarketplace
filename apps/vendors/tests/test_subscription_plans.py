@@ -2821,3 +2821,125 @@ class WebhookRealPayloadTests(TestCase):
         self.assertTrue(
             any('already have an active Basic Plan subscription' in m for m in msgs), msgs,
         )
+
+    # ---- Phase 2E: a charge.success must prove it is a subscription charge ----
+
+    def test_charge_with_vendor_metadata_only_is_ignored(self):
+        """Sponsorship-style payment: vendor metadata, no plan, no code."""
+        from apps.vendors.models import Notification
+        sub, period = self.make_active_basic()
+        data = self.charge(
+            plan=None,
+            metadata={'vendor_id': str(self.vendor.vendor_id)},
+        )
+
+        with self.paystack():
+            with self.assertLogs(
+                'apps.vendors.services.subscription_service', level='INFO',
+            ) as logs:
+                result = process_subscription_webhook(
+                    'charge.success', data, event_id='evt_2e_vendor_only',
+                )
+
+        sub.refresh_from_db()
+        self.assertEqual((sub.status, sub.plan, sub.period_end), ('active', 'basic', period))
+        self.assertTrue(result['success'], result)
+        self.assertIn('not a subscription charge', result['message'])
+        self.assertIn(
+            'reference T261006000000001 has no plan and no subscription code - '
+            'not a subscription charge, ignored',
+            '\n'.join(logs.output),
+        )
+        self.assertTrue(WebhookEvent.objects.filter(
+            event_id='evt_2e_vendor_only', reference='T261006000000001',
+        ).exists())
+        self.assertFalse(Notification.objects.filter(
+            user=self.user, title__startswith='Subscription Renewed',
+        ).exists())
+
+    def test_charge_matched_only_by_customer_email_is_ignored(self):
+        """Metadata of another kind + matching customer email -> acknowledged."""
+        from apps.vendors.models import Notification
+        sub, period = self.make_active_basic(paystack_plan_code='PLN_legacy_basic')
+        data = self.charge(
+            plan='PLN_legacy_basic',
+            metadata={'order_id': 'ORD_77', 'channel': 'checkout'},
+        )
+
+        with self.paystack():
+            with self.assertLogs(
+                'apps.vendors.services.subscription_service', level='INFO',
+            ) as logs:
+                result = process_subscription_webhook(
+                    'charge.success', data, event_id='evt_2e_email_only',
+                )
+
+        sub.refresh_from_db()
+        self.assertEqual((sub.status, sub.plan, sub.period_end), ('active', 'basic', period))
+        self.assertTrue(result['success'], result)
+        self.assertIn('not a subscription charge', result['message'])
+        self.assertIn('not a subscription charge, ignored', '\n'.join(logs.output))
+        self.assertTrue(WebhookEvent.objects.filter(event_id='evt_2e_email_only').exists())
+        self.assertFalse(Notification.objects.filter(
+            user=self.user, title__startswith='Subscription Renewed',
+        ).exists())
+
+    def test_plan_string_renewal_of_active_row_still_extends_once(self):
+        """A real plan-string renewal of an active row still extends once."""
+        sub, period = self.make_active_basic()
+        data = self.charge(reference='T261006000000011')
+
+        with self.paystack():
+            result = process_subscription_webhook(
+                'charge.success', data, event_id='evt_2e_renew',
+            )
+
+        sub.refresh_from_db()
+        self.assertTrue(result['success'], result)
+        self.assertIn('(recurring)', result['message'])
+        self.assertEqual((sub.status, sub.plan), ('active', 'basic'))
+        self.assertEqual(sub.period_end, period + timedelta(days=30))
+
+    def test_plan_string_first_charge_on_expired_row_still_activates(self):
+        """A real plan-string first charge on an expired row still activates."""
+        sub = Subscription.objects.create(
+            vendor=self.vendor, status='expired', plan='free',
+            paystack_plan_code=BASIC_PLAN_CODE,
+        )
+        data = self.charge(reference='T261006000000012')
+
+        with self.paystack():
+            result = process_subscription_webhook(
+                'charge.success', data, event_id='evt_2e_first',
+            )
+
+        sub.refresh_from_db()
+        self.assertTrue(result['success'], result)
+        self.assertIn('(initial)', result['message'])
+        self.assertEqual((sub.status, sub.plan), ('active', 'basic'))
+        self.assertEqual(sub.paystack_subscription_code, 'SUB_realwh_1')
+        self.assertIsNotNone(sub.period_end)
+
+    def test_renewal_by_stored_subscription_code_without_plan_still_renews(self):
+        """No plan code at all, matched by the stored subscription code."""
+        from apps.vendors.models import Notification
+        sub, period = self.make_active_basic()
+        data = {
+            'subscription_code': 'SUB_realwh_1',
+            'amount': 120000,
+            'customer': {'customer_code': 'CUS_realwh', 'id': 405395500},
+        }
+
+        with self.paystack():
+            result = process_subscription_webhook(
+                'charge.success', data, event_id='evt_2e_code_only',
+            )
+
+        sub.refresh_from_db()
+        self.assertTrue(result['success'], result)
+        self.assertIn('(recurring)', result['message'])
+        self.assertEqual((sub.status, sub.plan), ('active', 'basic'))
+        self.assertEqual(sub.period_end, period + timedelta(days=30))
+        self.assertTrue(Notification.objects.filter(
+            user=self.user, title__startswith='Subscription Renewed',
+        ).exists())
