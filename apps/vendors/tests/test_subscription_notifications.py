@@ -11,8 +11,6 @@ isolation, --dry-run / --no-notify, a silent backfill_subscriptions
 --apply, the admin restart action, regression coverage for the existing
 payment-failed / renewed notifications, and the bounded query count of the
 command loop.
-
-No existing test is modified.
 """
 
 from datetime import datetime, timedelta
@@ -640,16 +638,22 @@ class FailureIsolationTests(SubscriptionNotificationFixture):
             vendors.append(vendor)
         failing = vendors[0]
 
-        original = notification_dispatch._send_notification_email
-
         def flaky(user, title, message, link=''):
             if user.email == failing.user.email:
-                raise RuntimeError('smtp down')
-            return original(user, title, message, link)
+                raise RuntimeError('API unavailable')
+
+        class InlineThread:
+            def __init__(self, target, args, daemon):
+                self.target = target
+                self.args = args
+                self.daemon = daemon
+
+            def start(self):
+                self.target(*self.args)
 
         with patch.object(
-            notification_dispatch, '_send_notification_email', side_effect=flaky,
-        ):
+            notification_dispatch.threading, 'Thread', InlineThread,
+        ), patch.object(notification_dispatch, '_send_notification_email', side_effect=flaky):
             output = self.run_command()
 
         # the command completed and reported the run
@@ -659,8 +663,8 @@ class FailureIsolationTests(SubscriptionNotificationFixture):
             self.assertEqual(self.notifications_for(v).count(), 1, v.user.email)
         failed_notif = self.notifications_for(failing).first()
         self.assertIsNone(failed_notif.email_sent_at)
-        # only the two healthy vendors produced an email
-        self.assertEqual(len(mail.outbox), 2)
+        for vendor in vendors[1:]:
+            self.assertIsNotNone(self.notifications_for(vendor).first().email_sent_at)
 
     def test_a_broken_row_is_counted_and_skipped(self):
         ok = self.make_vendor('loop-ok')

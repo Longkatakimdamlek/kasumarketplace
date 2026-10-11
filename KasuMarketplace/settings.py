@@ -343,6 +343,8 @@ EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@kasumarketplace.com.ng")
 DEFAULT_REPLY_TO_EMAIL = os.getenv("DEFAULT_REPLY_TO_EMAIL", "support@kasumarketplace.com.ng")
 SITE_URL = os.getenv('SITE_URL', 'https://kasumarketplace.com.ng')
+# Background email thread + API transport in production; synchronous in tests
+NOTIFICATION_EMAIL_ASYNC = 'test' not in sys.argv
 EMAIL_FAIL_SILENTLY = False
 ADMIN_EMAILS = os.getenv('ADMIN_EMAILS', 'admin@kasumarketplace.com.ng').split(',')
 OTP_EXPIRY_TIME = 5
