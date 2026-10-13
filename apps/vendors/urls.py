@@ -81,6 +81,11 @@ urlpatterns = [
     path('subscription/webhook/', views.subscription_webhook, name='subscription_webhook'),
 
     # ==========================================
+    # INTERNAL CRON (daily subscription check, bearer-token protected)
+    # ==========================================
+    path('internal/cron/check-subscriptions/', views.cron_check_subscriptions, name='cron_check_subscriptions'),
+
+    # ==========================================
     # CONTACT INTENT (fire-and-forget)
     # ==========================================
     path('products/<int:product_id>/contact-intent/', views.contact_intent, name='contact_intent'),

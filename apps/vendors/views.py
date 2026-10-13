@@ -23,7 +23,12 @@ from django.urls import reverse
 from django.conf import settings
 from decimal import Decimal
 from datetime import datetime, date, timedelta
+import hmac
 import logging
+import threading
+from io import StringIO
+
+from django.core.management import call_command
 
 from .models import (
     VendorProfile, Store, Product, ProductImage,
@@ -839,6 +844,15 @@ def product_create(request):
         'vendor': vendor,
         'subcategories': subcategories,
         'hide_verification_badge': True,
+        # Free-trial qualification banner (create page): only qualifying
+        # vendors see it, so the descriptor (one COUNT, qualifying rows
+        # only) is skipped entirely for suspended vendors and stays off
+        # the query budget of every other state (subscription cached by
+        # the vendor.is_available gate above).
+        'subscription_state': (
+            None if vendor.verification_status == 'suspended'
+            else describe_subscription_state(vendor)
+        ),
     }
 
     return render(request, 'vendors/products/create.html', context)
@@ -2479,3 +2493,49 @@ def subscription_downgrade(request):
         messages.error(request, 'Unable to schedule downgrade. Please try again later.')
 
     return redirect('vendors:subscription_plans')
+
+
+# ==========================================
+# INTERNAL CRON ENDPOINT (daily subscription check)
+# ==========================================
+
+_cron_check_running = threading.Lock()
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def cron_check_subscriptions(request):
+    """
+    Secret-protected trigger for the daily check_subscription_status pass.
+
+    Render FREE has no cron/shell, so an external scheduler POSTs here once
+    a day.  Auth: "Authorization: Bearer <CRON_SECRET>" compared with
+    hmac.compare_digest.  Endpoint is disabled (404) when CRON_SECRET is
+    unset.  The command runs synchronously (audit: bounded per-vendor
+    queries, emails threaded in production) with an overlap lock; a second
+    concurrent call gets 409.  The token is never logged or echoed.
+    """
+    secret = getattr(settings, 'CRON_SECRET', '') or ''
+    if not secret:
+        return JsonResponse({'ok': False, 'error': 'not found'}, status=404)
+
+    auth_header = request.headers.get('Authorization', '') or ''
+    expected = f'Bearer {secret}'
+    if not hmac.compare_digest(auth_header.encode('utf-8'), expected.encode('utf-8')):
+        # never log the presented header/token
+        logger.warning('cron_check_subscriptions: rejected request (bad or missing token)')
+        return JsonResponse({'ok': False, 'error': 'forbidden'}, status=403)
+
+    if not _cron_check_running.acquire(blocking=False):
+        return JsonResponse({'ok': False, 'error': 'already running'}, status=409)
+
+    try:
+        out = StringIO()
+        call_command('check_subscription_status', stdout=out)
+        output = out.getvalue()
+        return JsonResponse({'ok': True, 'output': output[-2000:]})
+    except Exception:
+        logger.exception('cron_check_subscriptions: check_subscription_status failed')
+        return JsonResponse({'ok': False, 'error': 'internal error'}, status=500)
+    finally:
+        _cron_check_running.release()

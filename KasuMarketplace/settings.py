@@ -350,6 +350,10 @@ ADMIN_EMAILS = os.getenv('ADMIN_EMAILS', 'admin@kasumarketplace.com.ng').split('
 OTP_EXPIRY_TIME = 5
 OTP_LENGTH = 6
 
+# Secret for the internal cron endpoint (daily check_subscription_status).
+# When empty the endpoint is disabled (returns 404).
+CRON_SECRET = os.getenv("CRON_SECRET", "")
+
 
 # reCAPTCHA CONFIGURATION (PLACEHOLDER)
 RECAPTCHA_PUBLIC_KEY = os.getenv("RECAPTCHA_PUBLIC_KEY")
