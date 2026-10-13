@@ -83,3 +83,28 @@ if settings.DEBUG:
             },
         ),
     ]
+
+# ---------------------------------------------------------------------------
+# Branded error handlers (see KasuMarketplace/error_views.py)
+# ---------------------------------------------------------------------------
+handler400 = "KasuMarketplace.error_views.bad_request"
+handler403 = "KasuMarketplace.error_views.permission_denied"
+handler404 = "KasuMarketplace.error_views.page_not_found"
+handler500 = "KasuMarketplace.error_views.server_error"
+
+# Local visual preview of the error pages.  Must not exist in production.
+if settings.DEBUG:
+    from KasuMarketplace import error_views
+
+    # NB: MEDIA_URL resolves to "/" here, so the media static() helper above
+    # registers a catch-all regex pattern.  A route appended after it would
+    # never match, so register the preview just before that catch-all.
+    _preview = path("__errors__/<str:kind>/", error_views.preview, name="error_preview")
+    _catch_all = next(
+        (i for i, p in enumerate(urlpatterns) if str(p.pattern).startswith("^")),
+        None,
+    )
+    if _catch_all is None:
+        urlpatterns.append(_preview)
+    else:
+        urlpatterns.insert(_catch_all, _preview)
